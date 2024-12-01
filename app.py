@@ -70,5 +70,11 @@ def alert_page():
     alerts = AlertPage.query.all()
     return render_template('alert_page.html', alerts=alerts)
 
+@app.route('/inventory_list')
+def inventory_list():
+    tires = InputPage.query.all()  # すべてのタイヤ情報を取得
+    return render_template('inventory_list.html', tires=tires)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
