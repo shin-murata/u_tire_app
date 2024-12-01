@@ -1,12 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for
+from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
 from forms import InputForm, SearchForm, EditForm
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
 
+# データベースを初期化
 db.init_app(app)
 
+# Flask-Migrate を初期化
+migrate = Migrate(app, db)
+
+# アプリケーションのルート設定
 @app.route('/')
 def index():
     return render_template('base.html')
@@ -15,6 +21,7 @@ def index():
 def input_page():
     form = InputForm()
     if form.validate_on_submit():
+        # 新しいタイヤ情報をデータベースに追加
         new_tire = InputPage(
             registration_date=form.registration_date.data,
             width=form.width.data,
@@ -38,6 +45,7 @@ def search_page():
     form = SearchForm()
     tires = None
     if form.validate_on_submit():
+        # 検索条件に基づいてタイヤ情報を取得
         tires = InputPage.query.filter_by(
             width=form.width.data,
             aspect_ratio=form.aspect_ratio.data,
@@ -50,6 +58,7 @@ def edit_page(id):
     tire = InputPage.query.get_or_404(id)
     form = EditForm(obj=tire)
     if form.validate_on_submit():
+        # フォームの内容でタイヤ情報を更新
         form.populate_obj(tire)
         db.session.commit()
         return redirect(url_for('index'))

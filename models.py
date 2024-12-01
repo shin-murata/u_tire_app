@@ -19,6 +19,7 @@ class Manufacturer(db.Model):
     name = db.Column(db.String, nullable=False)
 
 class PlyRating(db.Model):
+    __tablename__ = 'ply_rating'  # テーブル名を明示的に指定
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.String, nullable=False)
     is_custom = db.Column(db.Integer, nullable=False)

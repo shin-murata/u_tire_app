@@ -6,7 +6,7 @@
     {{ form.hidden_tag() }}
     <div>
         {{ form.registration_date.label }}
-        {{ form.registration_date() }}
+        {{ form.registration_date(class_="form-control", value=form.registration_date.data or date.today()) }}
     </div>
     <div>
         {{ form.width.label }}
