@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>履歴</h1>
+<table>
+    <thead>
+        <tr>
+            <th>タイヤID</th>
+            <th>ユーザーID</th>
+            <th>アクション</th>
+            <th>編集日</th>
+            <th>詳細</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in history %}
+        <tr>
+            <td>{{ record.tire_id }}</td>
+            <td>{{ record.user_id }}</td>
+            <td>{{ record.action }}</td>
+            <td>{{ record.edit_date }}</td>
+            <td>{{ record.details }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>アラート</h1>
+<table>
+    <thead>
+        <tr>
+            <th>幅</th>
+            <th>扁平率</th>
+            <th>インチ</th>
+            <th>在庫数</th>
+            <th>検索数</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for alert in alerts %}
+        <tr>
+            <td>{{ alert.width }}</td>
+            <td>{{ alert.aspect_ratio }}</td>
+            <td>{{ alert.inch }}</td>
+            <td>{{ alert.inventory_count }}</td>
+            <td>{{ alert.search_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>タイヤ検索</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.width.label }}
+        {{ form.width() }}
+    </div>
+    <div>
+        {{ form.aspect_ratio.label }}
+        {{ form.aspect_ratio() }}
+    </div>
+    <div>
+        {{ form.inch.label }}
+        {{ form.inch() }}
+    </div>
+    <button type="submit">検索</button>
+</form>
+
+{% if tires %}
+<h2>検索結果</h2>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>幅</th>
+            <th>扁平率</th>
+            <th>インチ</th>
+            <th>価格</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tire in tires %}
+        <tr>
+            <td>{{ tire.id }}</td>
+            <td>{{ tire.width }}</td>
+            <td>{{ tire.aspect_ratio }}</td>
+            <td>{{ tire.inch }}</td>
+            <td>{{ tire.price }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
