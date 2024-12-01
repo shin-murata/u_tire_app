@@ -25,6 +25,8 @@ class PlyRating(db.Model):
     added_date = db.Column(db.Date, nullable=False)
 
 class InputPage(db.Model):
+    __tablename__ = 'input_page'  # テーブル名を明示的に指定
+    
     id = db.Column(db.Integer, primary_key=True)
     registration_date = db.Column(db.Date, nullable=False)
     width = db.Column(db.Integer, db.ForeignKey('width.id'), nullable=False)
