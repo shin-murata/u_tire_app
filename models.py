@@ -41,6 +41,12 @@ class InputPage(db.Model):
     ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=False)
     price = db.Column(db.Float, nullable=False)
 
+    # リレーションを定義
+    width_ref = db.relationship('Width', backref='input_pages', lazy=True)
+    aspect_ratio_ref = db.relationship('AspectRatio', backref='input_pages', lazy=True)
+    inch_ref = db.relationship('Inch', backref='input_pages', lazy=True)
+    manufacturer_ref = db.relationship('Manufacturer', backref='input_pages', lazy=True)
+
 class HistoryPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)

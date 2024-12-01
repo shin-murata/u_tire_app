@@ -26,13 +26,14 @@
             {% for tire in tires %}
             <tr>
                 <td>{{ tire.registration_date }}</td>
-                <td>{{ tire.width }}</td>
-                <td>{{ tire.aspect_ratio }}</td>
-                <td>{{ tire.inch }}</td>
+                <td>{{ tire.width_ref.value }}</td> <!-- 幅の値 -->
+                <td>{{ tire.aspect_ratio_ref.value }}</td> <!-- アスペクト比の値 -->
+                <td>{{ tire.inch_ref.value }}</td> <!-- インチの値 -->
                 <td>{{ tire.manufacturing_year }}</td>
-                <td>{{ tire.manufacturer }}</td>
+                <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
                 <td>{{ tire.price }}</td>
                 <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
+            </tr>
             </tr>
             {% endfor %}
         </tbody>
