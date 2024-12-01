@@ -1,0 +1,42 @@
+<!-- templates/inventory_list.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タイヤ在庫一覧</title>
+</head>
+<body>
+    <h1>タイヤ在庫一覧</h1>
+    <a href="{{ url_for('input_page') }}">新しいタイヤを追加</a>
+    <table>
+        <thead>
+            <tr>
+                <th>登録日</th>
+                <th>幅</th>
+                <th>アスペクト比</th>
+                <th>インチ</th>
+                <th>製造年</th>
+                <th>メーカー</th>
+                <th>価格</th>
+                <th>編集</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tire in tires %}
+            <tr>
+                <td>{{ tire.registration_date }}</td>
+                <td>{{ tire.width_ref.value }}</td> <!-- 幅の値 -->
+                <td>{{ tire.aspect_ratio_ref.value }}</td> <!-- アスペクト比の値 -->
+                <td>{{ tire.inch_ref.value }}</td> <!-- インチの値 -->
+                <td>{{ tire.manufacturing_year }}</td>
+                <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
+                <td>{{ tire.price }}</td>
+                <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
+            </tr>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

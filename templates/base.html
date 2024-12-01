@@ -1,0 +1,26 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Tire Inventory Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('index') }}">ホーム</a>
+            <a href="{{ url_for('input_page') }}">タイヤ登録</a>
+            <a href="{{ url_for('search_page') }}">タイヤ検索</a>
+            <a href="{{ url_for('inventory_list') }}">在庫一覧</a> <!-- 在庫一覧ページへのリンク -->
+            <a href="{{ url_for('history_page') }}">履歴</a>
+            <a href="{{ url_for('dispatch_page') }}">出庫管理</a>
+            <a href="{{ url_for('alert_page') }}">アラート</a>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

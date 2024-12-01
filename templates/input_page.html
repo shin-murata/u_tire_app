@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>タイヤ登録</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.registration_date.label }}
+        {{ form.registration_date(class_="form-control", value=form.registration_date.data or date.today()) }}
+    </div>
+    <div>
+        {{ form.width.label }}
+        {{ form.width() }}
+    </div>
+    <div>
+        {{ form.aspect_ratio.label }}
+        {{ form.aspect_ratio() }}
+    </div>
+    <div>
+        {{ form.inch.label }}
+        {{ form.inch() }}
+    </div>
+    <div>
+        {{ form.other_details.label }}
+        {{ form.other_details() }}
+    </div>
+    <div>
+        {{ form.manufacturing_year.label }}
+        {{ form.manufacturing_year() }}
+    </div>
+    <div>
+        {{ form.manufacturer.label }}
+        {{ form.manufacturer() }}
+    </div>
+    <div>
+        {{ form.tread_depth.label }}
+        {{ form.tread_depth() }}
+    </div>
+    <div>
+        {{ form.uneven_wear.label }}
+        {{ form.uneven_wear() }}
+    </div>
+    <div>
+        {{ form.ply_rating.label }}
+        {{ form.ply_rating() }}
+    </div>
+    <div>
+        {{ form.price.label }}
+        {{ form.price() }}
+    </div>
+    <button type="submit">登録</button>
+</form>
+{% endblock %}
