@@ -4,9 +4,9 @@
 <h1>タイヤ登録</h1>
 <form method="POST" class="tire-form">
     {{ form.hidden_tag() }}
-    
-    <!-- 1, 2, 3, 4 -->
-    <div class="form-group large-inputs">
+
+    <!-- 1段目: width, /, aspect_ratio -->
+    <div class="form-group first-row">
         <div class="input-wrap">
             {{ form.width.label }}
             {{ form.width(class_="form-control") }}
@@ -16,6 +16,10 @@
             {{ form.aspect_ratio.label }}
             {{ form.aspect_ratio(class_="form-control") }}
         </div>
+    </div>
+
+    <!-- 2段目: R, inch, ply_rating -->
+    <div class="form-group second-row">
         <span>R</span>
         <div class="input-wrap">
             {{ form.inch.label }}
@@ -26,8 +30,8 @@
             {{ form.ply_rating(class_="form-control") }}
         </div>
     </div>
-    
-    <!-- 5, 6, 7, 8, 9, 10 -->
+
+    <!-- 他の入力欄 -->
     <div class="form-group small-inputs">
         <div class="input-wrap">
             {{ form.manufacturer.label }}
@@ -54,16 +58,12 @@
             {{ form.price(class_="form-control") }}
         </div>
     </div>
-    
-    <!-- Copy Button -->
+
+    <!-- ボタン -->
     <button type="button" id="copy-button" class="btn">コピー</button>
-    
-    <!-- Submit Button -->
     <button type="submit" class="btn submit-btn">登録</button>
 </form>
 
-<!-- Placeholder for copied entries -->
-<div id="copied-list" class="copied-list">
-    <!-- Copied entries will appear here -->
-</div>
+<!-- コピーされたエントリを表示するための場所 -->
+<div id="copied-list" class="copied-list"></div>
 {% endblock %}
