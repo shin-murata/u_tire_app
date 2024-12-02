@@ -1,0 +1,115 @@
+/* 全体のフォームスタイル */
+.tire-form {
+    max-width: 600px;
+    margin: auto;
+    font-family: Arial, sans-serif;
+}
+
+/* グループ全体のレイアウト調整 */
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* 1段目: width, /, aspect_ratio */
+.first-row {
+    display: grid; /* グリッドで横並びに */
+    grid-template-columns: 1fr auto 1fr; /* 入力欄と / を横並び */
+    gap: 15px; /* 各項目間の余白を設定 */
+    align-items: center; /* アイテムを垂直中央揃え */
+    margin-bottom: 20px; /* グループ間の余白を追加 */
+}
+
+/* 2段目: R, inch, ply_rating */
+.second-row {
+    display: grid; /* グリッドで横並びに */
+    grid-template-columns: auto 1fr 1fr; /* R と入力欄を横並び */
+    gap: 15px; /* 各項目間の余白を設定 */
+    align-items: center; /* アイテムを垂直中央揃え */
+}
+
+/* 入力欄のスタイル */
+.input-wrap {
+    min-width: 150px; /* 最低幅を広げる */
+    text-align: center; /* テキスト中央揃え */
+}
+
+.input-wrap .form-control {
+    width: 100%; /* 入力欄を親要素幅いっぱいに */
+    padding: 15px; /* 入力欄の高さを広げる */
+    font-size: 1.4rem; /* テキストサイズを大きく */
+}
+
+/* / や R のスタイル */
+.first-row span,
+.second-row span {
+    font-weight: bold;
+    font-size: 1.6rem; /* 強調して見やすく */
+    text-align: center;
+    margin: 0 10px; /* 左右の余白を設定 */
+}
+
+.small-inputs {
+    justify-content: space-between;
+}
+
+.small-inputs .input-wrap {
+    flex: 1 1 45%;
+}
+
+.input-wrap label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.input-wrap .form-control {
+    width: 100%;
+    padding: 12px; /* 入力欄を大きく */
+    font-size: 1.2rem; /* テキストを見やすく */
+}
+
+.btn {
+    padding: 10px 20px;
+    margin-top: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.copied-list {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+/* スマホ表示用の調整 */
+@media (max-width: 768px) {
+    /* 1段目 */
+    .first-row {
+        grid-template-columns: 1fr auto 1fr; /* 横並びを維持 */
+        gap: 10px;
+    }
+
+    /* 2段目 */
+    .second-row {
+        grid-template-columns: auto 1fr 1fr; /* 横並びを維持 */
+        gap: 10px;
+    }
+
+    .input-wrap {
+        min-width: 120px; /* モバイル向けにサイズを縮小 */
+    }
+
+    .first-row span,
+    .second-row span {
+        font-size: 1.4rem; /* フォントサイズを調整 */
+    }
+}

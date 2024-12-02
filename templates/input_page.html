@@ -2,52 +2,68 @@
 
 {% block content %}
 <h1>タイヤ登録</h1>
-<form method="POST">
+<form method="POST" class="tire-form">
     {{ form.hidden_tag() }}
-    <div>
-        {{ form.registration_date.label }}
-        {{ form.registration_date(class_="form-control", value=form.registration_date.data or date.today()) }}
+
+    <!-- 1段目: width, /, aspect_ratio -->
+    <div class="form-group first-row">
+        <div class="input-wrap">
+            {{ form.width.label }}
+            {{ form.width(class_="form-control") }}
+        </div>
+        <span>/</span>
+        <div class="input-wrap">
+            {{ form.aspect_ratio.label }}
+            {{ form.aspect_ratio(class_="form-control") }}
+        </div>
     </div>
-    <div>
-        {{ form.width.label }}
-        {{ form.width() }}
+
+    <!-- 2段目: R, inch, ply_rating -->
+    <div class="form-group second-row">
+        <span>R</span>
+        <div class="input-wrap">
+            {{ form.inch.label }}
+            {{ form.inch(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.ply_rating.label }}
+            {{ form.ply_rating(class_="form-control") }}
+        </div>
     </div>
-    <div>
-        {{ form.aspect_ratio.label }}
-        {{ form.aspect_ratio() }}
+
+    <!-- 他の入力欄 -->
+    <div class="form-group small-inputs">
+        <div class="input-wrap">
+            {{ form.manufacturer.label }}
+            {{ form.manufacturer(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.manufacturing_year.label }}
+            {{ form.manufacturing_year(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.tread_depth.label }}
+            {{ form.tread_depth(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.uneven_wear.label }}
+            {{ form.uneven_wear(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.other_details.label }}
+            {{ form.other_details(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.price.label }}
+            {{ form.price(class_="form-control") }}
+        </div>
     </div>
-    <div>
-        {{ form.inch.label }}
-        {{ form.inch() }}
-    </div>
-    <div>
-        {{ form.other_details.label }}
-        {{ form.other_details() }}
-    </div>
-    <div>
-        {{ form.manufacturing_year.label }}
-        {{ form.manufacturing_year() }}
-    </div>
-    <div>
-        {{ form.manufacturer.label }}
-        {{ form.manufacturer() }}
-    </div>
-    <div>
-        {{ form.tread_depth.label }}
-        {{ form.tread_depth() }}
-    </div>
-    <div>
-        {{ form.uneven_wear.label }}
-        {{ form.uneven_wear() }}
-    </div>
-    <div>
-        {{ form.ply_rating.label }}
-        {{ form.ply_rating() }}
-    </div>
-    <div>
-        {{ form.price.label }}
-        {{ form.price() }}
-    </div>
-    <button type="submit">登録</button>
+
+    <!-- ボタン -->
+    <button type="button" id="copy-button" class="btn">コピー</button>
+    <button type="submit" class="btn submit-btn">登録</button>
 </form>
+
+<!-- コピーされたエントリを表示するための場所 -->
+<div id="copied-list" class="copied-list"></div>
 {% endblock %}

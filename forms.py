@@ -34,9 +34,16 @@ class InputForm(FlaskForm):
         self.ply_rating.choices = [(p.id, p.value) for p in PlyRating.query.all()]  # 'name' ではなく 'value' に修正
 
 class SearchForm(FlaskForm):
-    width = SelectField('Width', coerce=int, choices=[(1, '195'), (2, '205')], validators=[DataRequired()])
-    aspect_ratio = SelectField('Aspect Ratio', coerce=int, choices=[(1, '50'), (2, '60')], validators=[DataRequired()])
-    inch = SelectField('Inch', coerce=int, choices=[(1, '15'), (2, '16')], validators=[DataRequired()])
+    width = SelectField('Width', coerce=int, validators=[DataRequired()])
+    aspect_ratio = SelectField('Aspect Ratio', coerce=int, validators=[DataRequired()])
+    inch = SelectField('Inch', coerce=int, validators=[DataRequired()])
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # データベースから動的に選択肢を設定
+        self.width.choices = [(w.id, w.value) for w in Width.query.all()]
+        self.aspect_ratio.choices = [(ar.id, ar.value) for ar in AspectRatio.query.all()]
+        self.inch.choices = [(i.id, i.value) for i in Inch.query.all()]
 class EditForm(InputForm):
     pass

@@ -14,7 +14,7 @@
             <tr>
                 <th>登録日</th>
                 <th>幅</th>
-                <th>アスペクト比</th>
+                <th>扁平率</th>
                 <th>インチ</th>
                 <th>製造年</th>
                 <th>メーカー</th>
@@ -33,7 +33,6 @@
                 <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
                 <td>{{ tire.price }}</td>
                 <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
-            </tr>
             </tr>
             {% endfor %}
         </tbody>
