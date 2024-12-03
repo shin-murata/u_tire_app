@@ -48,8 +48,45 @@
     margin: 0 10px; /* 左右の余白を設定 */
 }
 
-.small-inputs {
-    justify-content: space-between;
+/* 共通スタイル */
+.group-1, .group-2, .group-3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* グループ1のスタイル */
+.group-1-style {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #ddd;
+}
+.group-1-style .input-wrap {
+    flex: 1 1 45%; /* 各要素が45%の幅で並ぶ */
+}
+
+/* グループ2のスタイル */
+.group-2-style {
+    background-color: #eef;
+    padding: 20px;
+    border: 1px solid #aac;
+}
+.group-2-style .input-wrap {
+    flex: 1 1 30%; /* 各要素が30%の幅で並ぶ */
+}
+
+/* グループ3のスタイル */
+.group-3-style {
+    background-color: #ffe;
+    padding: 10px;
+    border: 1px solid #dda;
+    justify-content: space-between; /* ボタンを右側に寄せる */
+}
+.group-3-style .input-wrap {
+    flex: 1 1 60%; /* 入力欄が60%の幅を占める */
+}
+.group-3-style .btn {
+    flex: 0 0 auto; /* ボタンは自分の大きさを維持 */
 }
 
 .small-inputs .input-wrap {
@@ -88,6 +125,41 @@
     padding: 10px;
     background-color: #f9f9f9;
     border-radius: 5px;
+}
+
+/* フッターのボタン */
+.form-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.submit-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.submit-btn:hover {
+    background-color: #0056b3;
+}
+
+/* コピー用ボタン */
+#copy-button {
+    align-self: center;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#copy-button:hover {
+    background-color: #218838;
 }
 
 /* スマホ表示用の調整 */
