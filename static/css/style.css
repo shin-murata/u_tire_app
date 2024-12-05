@@ -3,6 +3,9 @@
     max-width: 600px;
     margin: auto;
     font-family: Arial, sans-serif;
+    box-sizing: border-box; /* 幅管理を適切に */
+    padding: 10px; /* 内側に余白を追加 */
+    overflow: hidden; /* はみ出しを隠す */
 }
 
 /* グループ全体のレイアウト調整 */
@@ -60,9 +63,16 @@
     background-color: #f9f9f9;
     padding: 15px;
     border: 1px solid #ddd;
+    display: flex;
+    gap: 1rem; /* フィールド間の余白を設定 */
 }
-.group-1-style .input-wrap {
-    flex: 1 1 45%; /* 各要素が45%の幅で並ぶ */
+
+.manufacturer-wrap {
+    flex: 3; /* manufacturer を広く設定 */
+}
+
+.manufacturing-year-wrap {
+    flex: 1; /* manufacturing_year を狭く設定 */
 }
 
 /* グループ2のスタイル */
