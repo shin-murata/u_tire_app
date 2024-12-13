@@ -1,9 +1,12 @@
+* {
+    box-sizing: border-box;
+}
+
 /* 全体のフォームスタイル */
 .tire-form {
     max-width: 600px;
     margin: auto;
     font-family: Arial, sans-serif;
-    box-sizing: border-box; /* 幅管理を適切に */
     padding: 10px; /* 内側に余白を追加 */
     overflow: hidden; /* はみ出しを隠す */
 }
@@ -56,6 +59,9 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    white-space: nowrap; /* テキストを1行に表示 */
+    verflow: hidden;    /* はみ出す部分を隠す */
+    text-overflow: ellipsis; /* 必要に応じて "..." を表示 */    
 }
 
 /* グループ1のスタイル */
