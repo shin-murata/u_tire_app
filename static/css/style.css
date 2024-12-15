@@ -35,7 +35,7 @@
 
 /* 入力欄のスタイル */
 .input-wrap {
-    min-width: 150px; /* 最低幅を広げる */
+    /* min-width: 150px; 最低幅を広げる */
     text-align: center; /* テキスト中央揃え */
 }
 
@@ -55,12 +55,12 @@
 }
 
 /* 共通スタイル */
-.group-1, .group-2, .group-3 {
+.group-1, .group-2 {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     white-space: nowrap; /* テキストを1行に表示 */
-    verflow: hidden;    /* はみ出す部分を隠す */
+    overflow: hidden;    /* はみ出す部分を隠す */
     text-overflow: ellipsis; /* 必要に応じて "..." を表示 */    
 }
 
@@ -83,30 +83,44 @@
 
 /* グループ2のスタイル */
 .group-2-style {
+    display: flex; /* フレックスで横並び */
+    flex-wrap: wrap; /* 狭い画面で要素を折り返し可能に */
     background-color: #eef;
-    padding: 20px;
-    border: 1px solid #aac;
-}
-.group-2-style .input-wrap {
-    flex: 1 1 30%; /* 各要素が30%の幅で並ぶ */
-}
-
-/* グループ3のスタイル */
-.group-3-style {
-    background-color: #ffe;
     padding: 10px;
-    border: 1px solid #dda;
-    justify-content: space-between; /* ボタンを右側に寄せる */
-}
-.group-3-style .input-wrap {
-    flex: 1 1 60%; /* 入力欄が60%の幅を占める */
-}
-.group-3-style .btn {
-    flex: 0 0 auto; /* ボタンは自分の大きさを維持 */
+    border: 1px solid #aac;
+    gap: 1rem; /* フィールド間の余白を設定 */
+    align-items: center; /* 縦方向中央揃え */
 }
 
-.small-inputs .input-wrap {
-    flex: 1 1 45%;
+.group-2-style .small-input { /* tread_depth と uneven_wear に適用 */
+    flex: 1 1 10%;
+    max-width: 10%; /* 最大幅を10%に制限 */
+    min-width: 50px; /* 最小幅を設定して適切に縮小 */
+    box-sizing: border-box; /* パディングとボーダーを含む幅計算 */
+    text-align: center; /* テキストを中央揃え */
+}
+
+.group-2-style .large-input { /* other_details に適用 */
+    flex: 5 1 50%;
+    
+}
+
+/* コピー用ボタンのスタイル */
+.copy-btn-group-2 {
+    align-self: center; /* フレックス内で中央揃え */
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    flex: 0 0 auto; /* 固定サイズ */
+    margin-left: 1rem; /* ボタンと入力欄の間に余白を追加 */
+    white-space: nowrap; /* テキストの折り返しを防止 */
+}
+
+.copy-btn-group-2:hover {
+    background-color: #218838;
 }
 
 .input-wrap label {
@@ -200,4 +214,45 @@
     .second-row span {
         font-size: 1.4rem; /* フォントサイズを調整 */
     }
+
+    .group-2-style {
+        display: grid; /* グリッドレイアウトに変更 */
+        grid-template-columns: 1fr 1fr 5fr; /* 上段に1:1:5の比率で表示 */
+        grid-template-rows: auto auto; /* 2段のグリッド行を設定 */
+        grid-gap: 10px; /* 各要素間の余白を設定 */
+        align-items: center; /* 縦方向の中央揃え */
+    }
+
+    .group-2-style .small-input {
+        grid-column: span 1; /* 各小入力欄を1つのグリッド幅に設定 */
+        grid-row: 1; /* 1段目に配置 */
+    }
+
+    .group-2-style .large-input {
+        grid-column: span 3; /* 大入力欄を1:5に対応する幅に設定 */
+        grid-row: 1; /* 1段目に配置 */
+    }
+
+    .copy-btn-group-2 {
+        grid-column: 1 / -1; /* ボタンをグリッド全幅（2段目）に配置 */
+        grid-row: 2; /* 1段目に配置 */
+        justify-self: center; /* 横方向の中央揃え */
+        max-width: fit-content; /* コンテンツ幅に合わせる */
+        margin-top: 10px; /* 上段との余白を設定 */
+        padding: 10px 20px; /* ボタンの余白を調整 */
+    }
+
+    button {
+        width: auto !important; /* ボタンの幅を自動に戻す */
+        max-width: fit-content; /* コンテンツに合わせた最大幅 */
+        padding: 1rem; /* 余白の調整 */
+        font-size: 1rem; /* フォントサイズの調整 */
+    }
+
+    .copy-button {
+        width: auto !important; /* コピーボタンの幅を固定 */
+        max-width: 120px; /* 必要に応じて最大幅を設定 */
+        height: 40px; /* 高さを固定 */
+    }
+
 }

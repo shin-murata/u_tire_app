@@ -45,29 +45,20 @@
 
 <!-- グループ2: tread_depth, uneven_wear, other_details -->
 <div class="form-group group-2 group-2-style">
-    <div class="input-wrap">
+    <div class="input-wrap small-input" id="tread-depth">
         {{ form.tread_depth.label }}
         {{ form.tread_depth(class_="form-control") }}
     </div>
-    <div class="input-wrap">
+    <div class="input-wrap small-input" id="uneven-wear">
         {{ form.uneven_wear.label }}
         {{ form.uneven_wear(class_="form-control") }}
     </div>
-    <div class="input-wrap">
+    <div class="input-wrap large-input" id="other-details">
         {{ form.other_details.label }}
         {{ form.other_details(class_="form-control") }}
     </div>
+    <button type="button" id="copy-button" class="btn copy-btn-group-2">コピー</button>
 </div>
-
-<!-- グループ3: price, copy-button -->
-<div class="form-group group-3 group-3-style">
-    <div class="input-wrap">
-        {{ form.price.label }}
-        {{ form.price(class_="form-control") }}
-    </div>
-    <button type="button" id="copy-button" class="btn">コピー</button>
-</div>
-
     <!-- フッター: 登録ボタン -->
     <div class="form-footer">
         <button type="submit" class="btn submit-btn">登録</button>
