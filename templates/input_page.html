@@ -58,6 +58,8 @@
         {{ form.other_details(class_="form-control") }}
     </div>
     <button type="button" id="copy-button" class="btn copy-btn-group-2">コピー</button>
+<!-- コピーされたエントリを表示するための場所 -->
+<div id="copied-list" class="copied-list"></div>
 </div>
     <!-- フッター: 登録ボタン -->
     <div class="form-footer">
@@ -65,6 +67,4 @@
     </div>
 </form>
 
-<!-- コピーされたエントリを表示するための場所 -->
-<div id="copied-list" class="copied-list"></div>
 {% endblock %}
