@@ -255,4 +255,10 @@
         height: 40px; /* 高さを固定 */
     }
 
+    .copied-tire-form {
+        width: 100%; /* 親要素の幅を継承 */
+        padding: 10px; /* 必要に応じて調整 */
+        margin: 10px 0; /* 見た目を揃えるための外側余白 */
+        box-sizing: border-box; /* パディングとボーダーを含む幅計算 */
+    }
 }
