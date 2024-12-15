@@ -149,14 +149,6 @@
     background-color: #0056b3;
 }
 
-.copied-list {
-    margin-top: 20px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
-}
-
 /* フッターのボタン */
 .form-footer {
     display: flex;
@@ -175,21 +167,6 @@
 
 .submit-btn:hover {
     background-color: #0056b3;
-}
-
-/* コピー用ボタン */
-#copy-button {
-    align-self: center;
-    padding: 10px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-#copy-button:hover {
-    background-color: #218838;
 }
 
 /* スマホ表示用の調整 */
