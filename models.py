@@ -40,6 +40,7 @@ class InputPage(db.Model):
     uneven_wear = db.Column(db.Integer)
     ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    is_dispatched = db.Column(db.Boolean, default=False)  # 新規追加
 
     # リレーションを定義
     width_ref = db.relationship('Width', backref='input_pages', lazy=True)

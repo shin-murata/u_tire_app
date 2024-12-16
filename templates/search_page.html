@@ -5,16 +5,16 @@
 <form method="POST">
     {{ form.hidden_tag() }}
     <div>
-        {{ form.width.label }}
-        {{ form.width() }}
+        {{ form.width.label }} {{ form.width() }}
     </div>
     <div>
-        {{ form.aspect_ratio.label }}
-        {{ form.aspect_ratio() }}
+        {{ form.aspect_ratio.label }} {{ form.aspect_ratio() }}
     </div>
     <div>
-        {{ form.inch.label }}
-        {{ form.inch() }}
+        {{ form.inch.label }} {{ form.inch() }}
+    </div>
+    <div>
+        {{ form.ply_rating.label }} {{ form.ply_rating() }}
     </div>
     <button type="submit">検索</button>
 </form>
@@ -24,25 +24,37 @@
 <table>
     <thead>
         <tr>
-            <th>ID</th>
-            <th>幅</th>
-            <th>扁平率</th>
-            <th>インチ</th>
-            <th>製造年</th>
+            <th>在庫番号</th>
             <th>メーカー</th>
+            <th>製造年</th>
+            <th>溝</th>
+            <th>片減り</th>
+            <th>その他</th>
             <th>価格</th>
+            <th>登録日</th>
+            <th>操作</th>
         </tr>
     </thead>
     <tbody>
         {% for tire in tires %}
         <tr>
-            <td>{{ tire.registration_date }}</td>
-            <td>{{ tire.width_ref.value }}</td> <!-- 幅の値 -->
-            <td>{{ tire.aspect_ratio_ref.value }}</td> <!-- アスペクト比の値 -->
-            <td>{{ tire.inch_ref.value }}</td> <!-- インチの値 -->
+            <!-- タイヤの在庫番号（id） -->
+            <td>{{ tire.id }}</td>
+            <!-- メーカー（manufacturer） -->
+            <td>{{ tire.manufacturer_ref.name }}</td>
+            <!-- 製造年（manufacturing_year） -->
             <td>{{ tire.manufacturing_year }}</td>
-            <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
+            <!-- 溝（tread_depth） -->
+            <td>{{ tire.tread_depth }}</td>
+            <!-- 片減り（uneven_wear） -->
+            <td>{{ tire.uneven_wear }}</td>
+            <!-- その他の詳細（other_details） -->
+            <td>{{ tire.other_details }}</td>
+            <!-- 価格（price） -->
             <td>{{ tire.price }}</td>
+            <!-- 登録日（registration_date） -->
+            <td>{{ tire.registration_date }}</td>
+            <!-- 編集リンク -->
             <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
         </tr>
         {% endfor %}

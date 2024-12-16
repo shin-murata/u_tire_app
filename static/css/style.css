@@ -66,9 +66,9 @@
 
 /* グループ1のスタイル */
 .group-1-style {
-    background-color: #f9f9f9;
+    background-color: #eef;
     padding: 15px;
-    border: 1px solid #ddd;
+    /* border: 1px solid #ddd; */
     display: flex;
     gap: 1rem; /* フィールド間の余白を設定 */
 }
@@ -87,7 +87,7 @@
     flex-wrap: wrap; /* 狭い画面で要素を折り返し可能に */
     background-color: #eef;
     padding: 10px;
-    border: 1px solid #aac;
+    /* border: 1px solid #aac; */
     gap: 1rem; /* フィールド間の余白を設定 */
     align-items: center; /* 縦方向中央揃え */
 }
@@ -102,7 +102,6 @@
 
 .group-2-style .large-input { /* other_details に適用 */
     flex: 5 1 50%;
-    
 }
 
 /* コピー用ボタンのスタイル */
@@ -121,6 +120,10 @@
 
 .copy-btn-group-2:hover {
     background-color: #218838;
+}
+
+.copied-tire-form {
+    background-color: #eef;
 }
 
 .input-wrap label {

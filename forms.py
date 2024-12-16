@@ -34,16 +34,18 @@ class InputForm(FlaskForm):
         self.ply_rating.choices = [(p.id, p.value) for p in PlyRating.query.all()]  # 'name' ではなく 'value' に修正
 
 class SearchForm(FlaskForm):
-    width = SelectField('Width', coerce=int, validators=[DataRequired()])
-    aspect_ratio = SelectField('Aspect Ratio', coerce=int, validators=[DataRequired()])
-    inch = SelectField('Inch', coerce=int, validators=[DataRequired()])
+    width = SelectField('Width', coerce=int, validators=[Optional()])
+    aspect_ratio = SelectField('Aspect Ratio', coerce=int, validators=[Optional()])
+    inch = SelectField('Inch', coerce=int, validators=[Optional()])
+    ply_rating = SelectField('Ply Rating', coerce=int, validators=[Optional()])  # ply_rating フィールドを追加
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # データベースから動的に選択肢を設定
-        self.width.choices = [(w.id, w.value) for w in Width.query.all()]
-        self.aspect_ratio.choices = [(ar.id, ar.value) for ar in AspectRatio.query.all()]
-        self.inch.choices = [(i.id, i.value) for i in Inch.query.all()]
+        self.width.choices = [(0, '選択してください')] + [(w.id, w.value) for w in Width.query.all()]
+        self.aspect_ratio.choices = [(0, '選択してください')] + [(ar.id, ar.value) for ar in AspectRatio.query.all()]
+        self.inch.choices = [(0, '選択してください')] + [(i.id, i.value) for i in Inch.query.all()]
+        self.ply_rating.choices = [(0, '選択してください')] + [(p.id, p.value) for p in PlyRating.query.all()]  # ply_rating の選択肢を設定
 class EditForm(InputForm):
     pass

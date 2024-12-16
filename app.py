@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
 from forms import InputForm, SearchForm, EditForm
+from datetime import date
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -33,7 +34,8 @@ def input_page():
             tread_depth=form.tread_depth.data,
             uneven_wear=form.uneven_wear.data,
             ply_rating=form.ply_rating.data,
-            price=form.price.data
+            price=form.price.data,
+            is_dispatched=0  # 出庫フラグを明示的に0で設定
         )
         db.session.add(new_tire)
         db.session.commit()
@@ -69,10 +71,35 @@ def history_page():
     history = HistoryPage.query.all()
     return render_template('history_page.html', history=history)
 
-@app.route('/dispatch')
-def dispatch_page():
-    dispatch_history = DispatchHistory.query.all()
-    return render_template('dispatch_page.html', dispatch_history=dispatch_history)
+@app.route('/dispatch', methods=['GET', 'POST'])
+def dispatch():
+    if request.method == 'GET':
+        # 出庫履歴を表示
+        dispatch_history = DispatchHistory.query.all()
+        return render_template('dispatch_page.html', dispatch_history=dispatch_history)
+
+    elif request.method == 'POST':
+        # 出庫処理
+        selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
+        user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
+
+        for tire_id in selected_tires:
+            tire = InputPage.query.get(tire_id)
+            if tire:
+                tire.is_dispatched = 1  # 出庫フラグを1に更新
+                # 出庫履歴を記録
+                new_dispatch = DispatchHistory(
+                    tire_id=tire_id,
+                    user_id=user_id,
+                    dispatch_date=date.today(),
+                    dispatch_note="販売による出庫"
+                )
+                db.session.add(new_dispatch)
+
+        db.session.commit()  # 一括でコミット
+
+        return redirect(url_for('search_page'))  # 在庫検索画面に戻る
+
 
 @app.route('/alerts')
 def alert_page():
@@ -83,7 +110,6 @@ def alert_page():
 def inventory_list():
     tires = InputPage.query.all()  # すべてのタイヤ情報を取得
     return render_template('inventory_list.html', tires=tires)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
