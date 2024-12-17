@@ -20,7 +20,7 @@ class InputForm(FlaskForm):
     tread_depth = IntegerField('残り溝', validators=[DataRequired()])
     uneven_wear = IntegerField('片減り')
     ply_rating = SelectField('プライ', coerce=int, validators=[DataRequired()])
-    price = FloatField('価格', validators=[DataRequired()])
+    price = FloatField('価格', validators=[Optional()])  # Optionalに変更
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

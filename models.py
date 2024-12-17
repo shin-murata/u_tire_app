@@ -39,8 +39,8 @@ class InputPage(db.Model):
     tread_depth = db.Column(db.Integer)
     uneven_wear = db.Column(db.Integer)
     ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    is_dispatched = db.Column(db.Boolean, default=False)  # 新規追加
+    price = db.Column(db.Float, nullable=True)  # nullable=Trueに変更
+    is_dispatched = db.Column(db.Boolean, default=False, nullable=False)
 
     # リレーションを定義
     width_ref = db.relationship('Width', backref='input_pages', lazy=True)

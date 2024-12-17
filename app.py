@@ -22,6 +22,7 @@ def index():
 def input_page():
     form = InputForm()
     if form.validate_on_submit():
+        print("Form validated successfully")  # バリデーション成功の確認
         # 新しいタイヤ情報をデータベースに追加
         new_tire = InputPage(
             registration_date=form.registration_date.data,
@@ -35,11 +36,14 @@ def input_page():
             uneven_wear=form.uneven_wear.data,
             ply_rating=form.ply_rating.data,
             price=form.price.data,
-            is_dispatched=0  # 出庫フラグを明示的に0で設定
+            is_dispatched=False  # 出庫フラグを明示的にFalseで設定
         )
         db.session.add(new_tire)
         db.session.commit()
         return redirect(url_for('index'))
+    else:
+        print("Form validation failed")  # バリデーション失敗時の確認
+        print(form.errors)  # エラー内容を表示    
     return render_template('input_page.html', form=form)
 
 @app.route('/search', methods=['GET', 'POST'])
