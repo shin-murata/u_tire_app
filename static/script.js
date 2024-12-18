@@ -1,22 +1,40 @@
+async function loadOptions(selectElement, apiUrl) {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    selectElement.innerHTML = ''; // 初期化
+    data.data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name || item.value;
+        selectElement.appendChild(option);
+    });
+}
+
+function initializeForm(selectors) {
+    selectors.forEach(({ selector, api }) => {
+        const element = document.querySelector(selector);
+        if (element) {
+            loadOptions(element, api);
+        }
+    });
+}
+
 function addTireForm(targetContainerId, group1Class, group2Class) {
-    // コピー先のコンテナを取得
     const container = document.querySelector(`#${targetContainerId}`);
     if (!container) {
         console.error(`Container with ID '${targetContainerId}' not found.`);
         return;
     }
 
-    // 新しいフォーム全体を包むコンテナを作成
     const formContainer = document.createElement("div");
     formContainer.className = "copied-tire-form";
-    
-    // グループ1を生成
+
     const group1 = document.createElement("div");
     group1.className = `form-group ${group1Class}`;
     group1.innerHTML = `
         <div class="input-wrap manufacturer-wrap">
             <label for="manufacturer">メーカー:</label>
-            <input type="text" name="manufacturer[]" class="form-control">
+            <select name="manufacturer[]" class="form-control"></select>
         </div>
         <div class="input-wrap manufacturing-year-wrap">
             <label for="manufacturing_year">製造年:</label>
@@ -24,7 +42,6 @@ function addTireForm(targetContainerId, group1Class, group2Class) {
         </div>
     `;
 
-    // グループ2を生成
     const group2 = document.createElement("div");
     group2.className = `form-group ${group2Class}`;
     group2.innerHTML = `
@@ -43,29 +60,27 @@ function addTireForm(targetContainerId, group1Class, group2Class) {
         <button type="button" class="btn copy-btn-group-2">コピー</button>
     `;
 
-    // グループ1とグループ2を新しいフォームコンテナに追加
     formContainer.appendChild(group1);
     formContainer.appendChild(group2);
-
-
-    // 親要素に新しいフォームを追加
     container.appendChild(formContainer);
+
+    // 新しい選択肢を動的にロード
+    loadOptions(group1.querySelector('select[name="manufacturer[]"]'), '/api/manufacturers');
 }
-    
-// コピーボタン用のイベントリスナーを設定
+
 function setupAddTireFormListener(buttonId, targetContainerId, group1Class, group2Class) {
     const button = document.getElementById(buttonId);
     if (!button) {
         console.error(`Button with ID '${buttonId}' not found.`);
         return;
     }
-    
+
     button.addEventListener("click", () => {
         addTireForm(targetContainerId, group1Class, group2Class);
     });
 }
 
-// 親要素にイベントリスナーを設定
+// イベント委譲を追加
 function setupEventDelegation(targetContainerId, group1Class, group2Class) {
     const container = document.getElementById(targetContainerId);
     if (!container) {
@@ -74,18 +89,28 @@ function setupEventDelegation(targetContainerId, group1Class, group2Class) {
     }
 
     container.addEventListener("click", (event) => {
-        // クリックされた要素がコピー用ボタンか確認
         if (event.target && event.target.classList.contains("copy-btn-group-2")) {
+            console.log("Copy button clicked!"); // 動作確認用ログ
             addTireForm(targetContainerId, group1Class, group2Class);
         }
     });
 }
 
-// 実行: ページ読み込み時にイベントリスナーを登録
 document.addEventListener("DOMContentLoaded", () => {
+    // APIから選択肢をロード
+    initializeForm([
+        { selector: 'select[name="manufacturer[]"]', api: '/api/manufacturers' },
+        { selector: 'select[name="ply_rating"]', api: '/api/ply_ratings' },
+    ]);
+
     // 元のコピーボタン用イベントリスナー
-    setupAddTireFormListener("copy-button", "copied-list", "group-1 group-1-style", "group-2 group-2-style");
-    
-    // 新しいフォーム用のイベント委任を追加
+    setupAddTireFormListener(
+        "copy-button",
+        "copied-list",
+        "group-1 group-1-style",
+        "group-2 group-2-style"
+    );
+
+    // 新しく追加されたフォーム用のイベント委譲を復元
     setupEventDelegation("copied-list", "group-1 group-1-style", "group-2 group-2-style");
 });

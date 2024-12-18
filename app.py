@@ -18,12 +18,22 @@ migrate = Migrate(app, db)
 def index():
     return render_template('base.html')
 
+@app.route('/api/manufacturers', methods=['GET'])
+def get_manufacturers():
+    manufacturers = Manufacturer.query.all()
+    return {'data': [{'id': m.id, 'name': m.name} for m in manufacturers]}
+
+@app.route('/api/ply_ratings', methods=['GET'])
+def get_ply_ratings():
+    ply_ratings = PlyRating.query.all()
+    return {'data': [{'id': p.id, 'value': p.value} for p in ply_ratings]}
+
 @app.route('/input', methods=['GET', 'POST'])
 def input_page():
     form = InputForm()
-    if form.validate_on_submit():
+
+    if form.validate_on_submit():  # 1つのフォーム入力のバリデーション
         print("Form validated successfully")  # バリデーション成功の確認
-        # 新しいタイヤ情報をデータベースに追加
         new_tire = InputPage(
             registration_date=form.registration_date.data,
             width=form.width.data,
@@ -35,15 +45,45 @@ def input_page():
             tread_depth=form.tread_depth.data,
             uneven_wear=form.uneven_wear.data,
             ply_rating=form.ply_rating.data,
-            price=form.price.data,
-            is_dispatched=False  # 出庫フラグを明示的にFalseで設定
+            is_dispatched=False
         )
         db.session.add(new_tire)
         db.session.commit()
         return redirect(url_for('index'))
+
+    elif request.method == 'POST':  # 複数フォームデータを処理する場合
+        # 複数のフォームデータを取得
+        manufacturers = request.form.getlist('manufacturer[]')
+        manufacturing_years = request.form.getlist('manufacturing_year[]')
+        tread_depths = request.form.getlist('tread_depth[]')
+        uneven_wears = request.form.getlist('uneven_wear[]')
+        other_details = request.form.getlist('other_details[]')
+
+        # データが空でない場合に処理
+        for i in range(len(manufacturers)):
+            if manufacturers[i]:  # 入力がある場合のみ追加
+                new_tire = InputPage(
+                    registration_date=date.today(),
+                    width=form.width.data,
+                    aspect_ratio=form.aspect_ratio.data,
+                    inch=form.inch.data,
+                    manufacturer=manufacturers[i],
+                    manufacturing_year=manufacturing_years[i] if manufacturing_years else None,
+                    tread_depth=tread_depths[i] if tread_depths else None,
+                    uneven_wear=uneven_wears[i] if uneven_wears else None,
+                    other_details=other_details[i] if other_details else None,
+                    ply_rating=form.ply_rating.data,
+                    is_dispatched=False
+                )
+                db.session.add(new_tire)
+
+        db.session.commit()
+        return redirect(url_for('index'))
+
     else:
         print("Form validation failed")  # バリデーション失敗時の確認
-        print(form.errors)  # エラー内容を表示    
+        print(form.errors)
+
     return render_template('input_page.html', form=form)
 
 @app.route('/search', methods=['GET', 'POST'])
