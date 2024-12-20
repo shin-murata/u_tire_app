@@ -56,20 +56,25 @@ def input_page():
 
         # データ登録
         try:
-            if not manufacturers:
-                # 動的フォームがない場合（単一登録）
+            if not manufacturers: # 動的フォームがない場合（単一登録）
+                manufacturer = request.form.get('manufacturer')  # 固定フォームから取得
+                manufacturing_year = request.form.get('manufacturing_year')
+                tread_depth = request.form.get('tread_depth')
+                uneven_wear = request.form.get('uneven_wear')
+                other_details = request.form.get('other_details')
+                
                 new_tire = InputPage(
                     registration_date=registration_date,
                     width=width,
                     aspect_ratio=aspect_ratio,
                     inch=inch,
                     ply_rating=ply_rating,
-                    manufacturer=None,
-                    manufacturing_year=None,
-                    tread_depth=None,
-                    uneven_wear=None,
-                    other_details=None,
-                    is_dispatched=False
+                    manufacturer=manufacturer,
+                    manufacturing_year=manufacturing_year,
+                    tread_depth=tread_depth,
+                    uneven_wear=uneven_wear,
+                    other_details=other_details,
+                    is_dispatched=False  # 新規登録時は未出庫
                 )
                 db.session.add(new_tire)
             else:
