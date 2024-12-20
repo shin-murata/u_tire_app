@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for,  jsonify
 from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
 from forms import InputForm, SearchForm, EditForm
@@ -32,57 +32,69 @@ def get_ply_ratings():
 def input_page():
     form = InputForm()
 
-    if form.validate_on_submit():  # 1つのフォーム入力のバリデーション
-        print("Form validated successfully")  # バリデーション成功の確認
-        new_tire = InputPage(
-            registration_date=form.registration_date.data,
-            width=form.width.data,
-            aspect_ratio=form.aspect_ratio.data,
-            inch=form.inch.data,
-            other_details=form.other_details.data,
-            manufacturing_year=form.manufacturing_year.data,
-            manufacturer=form.manufacturer.data,
-            tread_depth=form.tread_depth.data,
-            uneven_wear=form.uneven_wear.data,
-            ply_rating=form.ply_rating.data,
-            is_dispatched=False
-        )
-        db.session.add(new_tire)
-        db.session.commit()
-        return redirect(url_for('index'))
+    if request.method == 'GET':
+        # フォームを表示
+        return render_template('input_page.html', form=form)
 
-    elif request.method == 'POST':  # 複数フォームデータを処理する場合
-        # 複数のフォームデータを取得
+    elif request.method == 'POST':
+        # 共通データの取得
+        registration_date = request.form.get('registration_date')
+        if not registration_date:
+            # registration_dateが指定されていない場合、現在日付を自動設定
+            registration_date = date.today()
+        width = request.form.get('width')
+        aspect_ratio = request.form.get('aspect_ratio')
+        inch = request.form.get('inch')
+        ply_rating = request.form.get('ply_rating')
+
+        # 動的フォームの個別データ取得
         manufacturers = request.form.getlist('manufacturer[]')
         manufacturing_years = request.form.getlist('manufacturing_year[]')
         tread_depths = request.form.getlist('tread_depth[]')
         uneven_wears = request.form.getlist('uneven_wear[]')
         other_details = request.form.getlist('other_details[]')
 
-        # データが空でない場合に処理
-        for i in range(len(manufacturers)):
-            if manufacturers[i]:  # 入力がある場合のみ追加
+        # データ登録
+        try:
+            if not manufacturers:
+                # 動的フォームがない場合（単一登録）
                 new_tire = InputPage(
-                    registration_date=date.today(),
-                    width=form.width.data,
-                    aspect_ratio=form.aspect_ratio.data,
-                    inch=form.inch.data,
-                    manufacturer=manufacturers[i],
-                    manufacturing_year=manufacturing_years[i] if manufacturing_years else None,
-                    tread_depth=tread_depths[i] if tread_depths else None,
-                    uneven_wear=uneven_wears[i] if uneven_wears else None,
-                    other_details=other_details[i] if other_details else None,
-                    ply_rating=form.ply_rating.data,
+                    registration_date=registration_date,
+                    width=width,
+                    aspect_ratio=aspect_ratio,
+                    inch=inch,
+                    ply_rating=ply_rating,
+                    manufacturer=None,
+                    manufacturing_year=None,
+                    tread_depth=None,
+                    uneven_wear=None,
+                    other_details=None,
                     is_dispatched=False
                 )
                 db.session.add(new_tire)
-
-        db.session.commit()
-        return redirect(url_for('index'))
-
-    else:
-        print("Form validation failed")  # バリデーション失敗時の確認
-        print(form.errors)
+            else:
+                # 複数登録
+                for i in range(len(manufacturers)):
+                    new_tire = InputPage(
+                        registration_date=registration_date,
+                        width=width,
+                        aspect_ratio=aspect_ratio,
+                        inch=inch,
+                        ply_rating=ply_rating,
+                        manufacturer=manufacturers[i],
+                        manufacturing_year=manufacturing_years[i] if i < len(manufacturing_years) else None,
+                        tread_depth=tread_depths[i] if i < len(tread_depths) else None,
+                        uneven_wear=uneven_wears[i] if i < len(uneven_wears) else None,
+                        other_details=other_details[i] if i < len(other_details) else None,
+                        is_dispatched=False
+                    )
+                    db.session.add(new_tire)
+            db.session.commit()
+            return jsonify({'message': '登録が完了しました！'})
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error: {e}")
+            return jsonify({'error': '登録中にエラーが発生しました！'})
 
     return render_template('input_page.html', form=form)
 

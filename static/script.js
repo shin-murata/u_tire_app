@@ -1,15 +1,25 @@
+let formCount = 0; // フォーム数カウンター
+
 async function loadOptions(selectElement, apiUrl) {
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-    selectElement.innerHTML = ''; // 初期化
-    data.data.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.id;
-        option.textContent = item.name || item.value;
-        selectElement.appendChild(option);
-    });
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`Failed to fetch options from ${apiUrl}`);
+        const { data } = await response.json();
+        
+        // 選択肢をリセット
+        selectElement.innerHTML = ''; // 初期化
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.name || item.value;
+            selectElement.appendChild(option);
+        });
+    } catch (error) {
+    console.error(`Error loading options for ${selectElement.name}:`, error);
+    }
 }
 
+// 初期化: 共通フォームのロード
 function initializeForm(selectors) {
     selectors.forEach(({ selector, api }) => {
         const element = document.querySelector(selector);
@@ -19,98 +29,62 @@ function initializeForm(selectors) {
     });
 }
 
-function addTireForm(targetContainerId, group1Class, group2Class) {
+// フォームを追加する関数
+function addTireForm(targetContainerId) {
     const container = document.querySelector(`#${targetContainerId}`);
     if (!container) {
         console.error(`Container with ID '${targetContainerId}' not found.`);
         return;
     }
 
-    const formContainer = document.createElement("div");
-    formContainer.className = "copied-tire-form";
+    formCount++; // フォームカウントをインクリメント
 
-    const group1 = document.createElement("div");
-    group1.className = `form-group ${group1Class}`;
-    group1.innerHTML = `
-        <div class="input-wrap manufacturer-wrap">
-            <label for="manufacturer">メーカー:</label>
-            <select name="manufacturer[]" class="form-control"></select>
-        </div>
-        <div class="input-wrap manufacturing-year-wrap">
-            <label for="manufacturing_year">製造年:</label>
-            <input type="text" name="manufacturing_year[]" class="form-control">
+    // 個別データフォームを生成
+    const formHTML = `
+        <div class="copied-tire-form" id="tire-form-${formCount}">
+            <div class="form-group">
+                <label for="manufacturer-${formCount}">メーカー:</label>
+                <select name="manufacturer[]" id="manufacturer-${formCount}" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label for="manufacturing_year-${formCount}">製造年:</label>
+                <input type="text" name="manufacturing_year[]" id="manufacturing_year-${formCount}" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="tread_depth-${formCount}">残り溝:</label>
+                <input type="number" name="tread_depth[]" id="tread_depth-${formCount}" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="uneven_wear-${formCount}">片減り:</label>
+                <input type="text" name="uneven_wear[]" id="uneven_wear-${formCount}" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="other_details-${formCount}">その他:</label>
+                <input type="text" name="other_details[]" id="other_details-${formCount}" class="form-control">
+            </div>
+            <button type="button" class="btn copy-btn-group-2" onclick="addTireForm('${targetContainerId}')">コピー</button>
         </div>
     `;
 
-    const group2 = document.createElement("div");
-    group2.className = `form-group ${group2Class}`;
-    group2.innerHTML = `
-        <div class="input-wrap small-input">
-            <label for="tread_depth">残り溝:</label>
-            <input type="number" name="tread_depth[]" class="form-control">
-        </div>
-        <div class="input-wrap small-input">
-            <label for="uneven_wear">片減り:</label>
-            <input type="text" name="uneven_wear[]" class="form-control">
-        </div>
-        <div class="input-wrap large-input">
-            <label for="other_details">その他:</label>
-            <input type="text" name="other_details[]" class="form-control">
-        </div>
-        <button type="button" class="btn copy-btn-group-2">コピー</button>
-    `;
+    container.insertAdjacentHTML("beforeend", formHTML);
 
-    formContainer.appendChild(group1);
-    formContainer.appendChild(group2);
-    container.appendChild(formContainer);
-
-    // 新しい選択肢を動的にロード
-    loadOptions(group1.querySelector('select[name="manufacturer[]"]'), '/api/manufacturers');
+    // 新しいフォームのオプションをロード
+    const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
+    loadOptions(manufacturerSelect, '/api/manufacturers');
 }
 
-function setupAddTireFormListener(buttonId, targetContainerId, group1Class, group2Class) {
-    const button = document.getElementById(buttonId);
-    if (!button) {
-        console.error(`Button with ID '${buttonId}' not found.`);
-        return;
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    const copiedListContainer = document.getElementById('copied-list');
 
-    button.addEventListener("click", () => {
-        addTireForm(targetContainerId, group1Class, group2Class);
+    // 初期化：コピー元ボタンのリスナー
+    document.getElementById('copy-button').addEventListener('click', () => {
+        addTireForm('copied-list');
     });
-}
 
-// イベント委譲を追加
-function setupEventDelegation(targetContainerId, group1Class, group2Class) {
-    const container = document.getElementById(targetContainerId);
-    if (!container) {
-        console.error(`Container with ID '${targetContainerId}' not found.`);
-        return;
-    }
-
-    container.addEventListener("click", (event) => {
-        if (event.target && event.target.classList.contains("copy-btn-group-2")) {
-            console.log("Copy button clicked!"); // 動作確認用ログ
-            addTireForm(targetContainerId, group1Class, group2Class);
+    // 動的ボタン用のイベント委譲
+    copiedListContainer.addEventListener('click', (event) => {
+        if (event.target && event.target.classList.contains('copy-btn-group-2')) {
+            addTireForm('copied-list');
         }
     });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    // APIから選択肢をロード
-    initializeForm([
-        { selector: 'select[name="manufacturer[]"]', api: '/api/manufacturers' },
-        { selector: 'select[name="ply_rating"]', api: '/api/ply_ratings' },
-    ]);
-
-    // 元のコピーボタン用イベントリスナー
-    setupAddTireFormListener(
-        "copy-button",
-        "copied-list",
-        "group-1 group-1-style",
-        "group-2 group-2-style"
-    );
-
-    // 新しく追加されたフォーム用のイベント委譲を復元
-    setupEventDelegation("copied-list", "group-1 group-1-style", "group-2 group-2-style");
-});
+}); // ここで閉じる
