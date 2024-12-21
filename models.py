@@ -47,6 +47,7 @@ class InputPage(db.Model):
     aspect_ratio_ref = db.relationship('AspectRatio', backref='input_pages', lazy=True)
     inch_ref = db.relationship('Inch', backref='input_pages', lazy=True)
     manufacturer_ref = db.relationship('Manufacturer', backref='input_pages', lazy=True)
+    ply_rating_ref = db.relationship('PlyRating', backref='input_pages', lazy=True)  # 新たに追加
 
 class HistoryPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
