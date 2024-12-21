@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>登録が完了しました！</h1>
+    <p>以下のタイヤが登録されました。</p>
+
+    <!-- 共通フォームデータの表示 -->
+    <h2>共通データ</h2>
+    <ul>
+        <li>登録日: {{ registration_date }}</li>
+        <li>幅: {{ width }}</li>
+        <li>アスペクト比: {{ aspect_ratio }}</li>
+        <li>インチ: {{ inch }}</li>
+        <li>プライレーティング: {{ ply_rating }}</li>
+    </ul>
+
+    <!-- タイヤ個別データのリスト表示 -->
+    <h2>登録されたタイヤ一覧</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>メーカー</th>
+                <th>製造年</th>
+                <th>溝深さ</th>
+                <th>偏摩耗</th>
+                <th>その他の詳細</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tire in tires %}
+            <tr>
+                <td>{{ tire.id }}</td>
+                <td>{{ tire.manufacturer }}</td>
+                <td>{{ tire.manufacturing_year }}</td>
+                <td>{{ tire.tread_depth }}</td>
+                <td>{{ tire.uneven_wear }}</td>
+                <td>{{ tire.other_details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

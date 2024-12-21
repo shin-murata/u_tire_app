@@ -54,54 +54,56 @@ def input_page():
         uneven_wears = request.form.getlist('uneven_wear[]')
         other_details = request.form.getlist('other_details[]')
 
+        # コピー元フォームのデータを動的リストの先頭に追加
+        manufacturers.insert(0, request.form.get('manufacturer'))
+        manufacturing_years.insert(0, request.form.get('manufacturing_year'))
+        tread_depths.insert(0, request.form.get('tread_depth'))
+        uneven_wears.insert(0, request.form.get('uneven_wear'))
+        other_details.insert(0, request.form.get('other_details'))
+
         # データ登録
         try:
-            if not manufacturers: # 動的フォームがない場合（単一登録）
-                manufacturer = request.form.get('manufacturer')  # 固定フォームから取得
-                manufacturing_year = request.form.get('manufacturing_year')
-                tread_depth = request.form.get('tread_depth')
-                uneven_wear = request.form.get('uneven_wear')
-                other_details = request.form.get('other_details')
-                
+            ids = []
+            for i in range(len(manufacturers)):
                 new_tire = InputPage(
                     registration_date=registration_date,
                     width=width,
                     aspect_ratio=aspect_ratio,
                     inch=inch,
                     ply_rating=ply_rating,
-                    manufacturer=manufacturer,
-                    manufacturing_year=manufacturing_year,
-                    tread_depth=tread_depth,
-                    uneven_wear=uneven_wear,
-                    other_details=other_details,
-                    is_dispatched=False  # 新規登録時は未出庫
+                    manufacturer=manufacturers[i],
+                    manufacturing_year=manufacturing_years[i] if i < len(manufacturing_years) else None,
+                    tread_depth=tread_depths[i] if i < len(tread_depths) else None,
+                    uneven_wear=uneven_wears[i] if i < len(uneven_wears) else None,
+                    other_details=other_details[i] if i < len(other_details) else None,
+                    is_dispatched=False
                 )
                 db.session.add(new_tire)
-            else:
-                # 複数登録
-                for i in range(len(manufacturers)):
-                    new_tire = InputPage(
-                        registration_date=registration_date,
-                        width=width,
-                        aspect_ratio=aspect_ratio,
-                        inch=inch,
-                        ply_rating=ply_rating,
-                        manufacturer=manufacturers[i],
-                        manufacturing_year=manufacturing_years[i] if i < len(manufacturing_years) else None,
-                        tread_depth=tread_depths[i] if i < len(tread_depths) else None,
-                        uneven_wear=uneven_wears[i] if i < len(uneven_wears) else None,
-                        other_details=other_details[i] if i < len(other_details) else None,
-                        is_dispatched=False
-                    )
-                    db.session.add(new_tire)
-            db.session.commit()
-            return jsonify({'message': '登録が完了しました！'})
+                db.session.commit()
+                ids.append(new_tire.id)
+            
+            # 登録完了画面にリダイレクト
+            return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
         except Exception as e:
             db.session.rollback()
             print(f"Error: {e}")
             return jsonify({'error': '登録中にエラーが発生しました！'})
 
     return render_template('input_page.html', form=form)
+
+@app.route('/register_success')
+def register_success():
+    ids = request.args.get('ids').split(',')
+    width = request.args.get('width')
+    aspect_ratio = request.args.get('aspect_ratio')
+    inch = request.args.get('inch')
+    ply_rating = request.args.get('ply_rating')
+    registration_date = request.args.get('registration_date')
+
+    # 登録されたタイヤのデータを取得
+    tires = InputPage.query.filter(InputPage.id.in_(ids)).all()
+
+    return render_template('register_success.html', tires=tires, width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date)
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_page():
