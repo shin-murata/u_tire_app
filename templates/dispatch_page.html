@@ -1,27 +1,41 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>出庫管理</h1>
-<table>
-    <thead>
-        <tr>
-            <th>出庫ID</th>
-            <th>タイヤID</th>
-            <th>ユーザーID</th>
-            <th>出庫日</th>
-            <th>メモ</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for history in dispatch_history %}
-        <tr>
-            <td>{{ history.id }}</td>
-            <td>{{ history.tire_id }}</td>
-            <td>{{ history.user_id }}</td>
-            <td>{{ history.dispatch_date }}</td>
-            <td>{{ history.dispatch_note }}</td>
-        </tr>
+<body>
+    <!-- フラッシュメッセージの表示 -->
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
         {% endfor %}
-    </tbody>
-</table>
+        </ul>
+    {% endif %}
+    {% endwith %}
+
+    <h1>出庫履歴</h1>
+    <!-- 出庫履歴表示のテーブルなど -->
+    <table>
+        <thead>
+            <tr>
+                <th>出庫ID</th>
+                <th>タイヤID</th>
+                <th>ユーザーID</th>
+                <th>出庫日</th>
+                <th>メモ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for history in dispatch_history %}
+            <tr>
+                <td>{{ history.id }}</td>
+                <td>{{ history.tire_id }}</td>
+                <td>{{ history.user_id }}</td>
+                <td>{{ history.dispatch_date }}</td>
+                <td>{{ history.dispatch_note }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
 {% endblock %}

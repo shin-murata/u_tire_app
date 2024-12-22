@@ -108,14 +108,28 @@ def register_success():
 @app.route('/search', methods=['GET', 'POST'])
 def search_page():
     form = SearchForm()
-    tires = None
+    tires = None  # 結果を保持する変数
     if form.validate_on_submit():
-        # 検索条件に基づいてタイヤ情報を取得
-        tires = InputPage.query.filter_by(
+        # ply_rating をフォームデータから取得
+        ply_rating = form.ply_rating.data
+
+        # 基本的な検索条件をクエリとして初期化
+        query = InputPage.query.filter_by(
             width=form.width.data,
             aspect_ratio=form.aspect_ratio.data,
             inch=form.inch.data
-        ).all()
+        )
+
+        # ply_rating が指定されている場合は追加条件を設定
+        if ply_rating and ply_rating != 0:  # 0 は「選択してください」に対応
+            query = query.filter(InputPage.ply_rating == ply_rating)
+
+        # 出庫済みではない条件を追加
+        query = query.filter(InputPage.is_dispatched == False)
+
+        # クエリを実行して結果を取得
+        tires = query.all()
+
     return render_template('search_page.html', form=form, tires=tires)
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
