@@ -95,3 +95,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 }); // ここで閉じる
+
+// ==========================================
+// フィルタープルダウン更新のスクリプト
+// ==========================================
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof filters === "undefined") {
+        console.error("Filters data is not available!");
+        return;
+    }
+
+    const filterColumn = document.getElementById("filter_column");
+    const filterValue = document.getElementById("filter_value");
+
+    if (!filterColumn || !filterValue) {
+        console.error("Filter elements are not available in the DOM!");
+        return;
+    }
+
+    // 初期ロード時にフィルターデータを更新
+    updateFilterValuesFromFilters();
+
+    // フィルターカラム変更時にフィルターデータを更新
+    filterColumn.addEventListener("change", () => {
+        const selectedColumn = filterColumn.value;
+        if (filters[selectedColumn]) {
+            updateFilterValuesFromFilters();
+        } else {
+            updateFilterValuesFromAPI(selectedColumn);
+        }
+    });
+
+    // filters 変数を利用してプルダウンを更新
+    function updateFilterValuesFromFilters() {
+        filterValue.innerHTML = '<option value="">選択してください</option>';
+        const selectedColumn = filterColumn.value;
+
+        if (filters[selectedColumn]) {
+            const blankOption = document.createElement("option");
+            blankOption.value = "NULL";
+            blankOption.textContent = "空欄";
+            filterValue.appendChild(blankOption);
+
+            filters[selectedColumn].forEach(value => {
+                const option = document.createElement("option");
+                option.value = value || "NULL";
+                option.textContent = value || "空欄";
+                filterValue.appendChild(option);
+            });
+        }
+    }
+
+    // API から値を取得してプルダウンを更新
+    function updateFilterValuesFromAPI(columnName) {
+        filterValue.innerHTML = '<option value="">選択してください</option>';
+        if (!columnName) return;
+
+        fetch(`/api/unique_values/${columnName}`)
+            .then(response => response.json())
+            .then(data => {
+                data.data.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    filterValue.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching filter values:', error));
+    }
+});

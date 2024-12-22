@@ -169,10 +169,87 @@ def alert_page():
     alerts = AlertPage.query.all()
     return render_template('alert_page.html', alerts=alerts)
 
-@app.route('/inventory_list')
+@app.route('/inventory_list', methods=['GET', 'POST'])
 def inventory_list():
-    tires = InputPage.query.all()  # すべてのタイヤ情報を取得
-    return render_template('inventory_list.html', tires=tires)
+    query = InputPage.query.order_by(InputPage.id.desc())
+
+    # フィルターデータの準備（リレーション値を取得）
+    filters = {
+        'registration_date': [
+            row[0].strftime('%Y-%m-%d') for row in db.session.query(InputPage.registration_date).distinct() if row[0]
+        ],
+        'width': [{'id': row.id, 'value': row.value} for row in db.session.query(Width).distinct()],
+        'aspect_ratio': [{'id': row.id, 'value': row.value} for row in db.session.query(AspectRatio).distinct()],
+        'inch': [{'id': row.id, 'value': row.value} for row in db.session.query(Inch).distinct()],
+        'manufacturer': [{'id': row.id, 'name': row.name} for row in db.session.query(Manufacturer).distinct()],
+        'ply_rating': [{'id': row.id, 'value': row.value} for row in db.session.query(PlyRating).distinct()],
+        'other_details': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.other_details).distinct() if row[0]],
+        'manufacturing_year': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.manufacturing_year).distinct() if row[0]],
+        'tread_depth': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.tread_depth).distinct() if row[0]],
+        'uneven_wear': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.uneven_wear).distinct() if row[0]],
+        'price': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.price).distinct() if row[0]],
+        'is_dispatched': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.is_dispatched).distinct()],
+    }
+
+    selected_column = None
+    selected_value = None
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        selected_column = request.form.get('filter_column')
+        selected_value = request.form.get('filter_value')
+
+        if action == 'filter' and selected_column:
+            if selected_value == "":
+                print("Selected value is empty, skipping filter.")
+            elif selected_value == "NULL":  # 値が空欄の場合
+                query = query.filter(getattr(InputPage, selected_column) == None)
+            else:
+                try:
+                    if selected_column == 'registration_date':
+                        selected_value = datetime.strptime(selected_value, '%Y-%m-%d').date()
+                    elif selected_column in ['price', 'tread_depth', 'uneven_wear']:
+                        selected_value = float(selected_value) if '.' in selected_value else int(selected_value)
+                    elif selected_column in ['manufacturer', 'inch', 'width', 'aspect_ratio', 'ply_rating']:
+                        selected_value = int(selected_value)
+                    query = query.filter(getattr(InputPage, selected_column) == selected_value)
+
+                except ValueError as e:
+                    print(f"Error converting value for column {selected_column}: {e}")
+                    query = InputPage.query.order_by(InputPage.id.desc())
+
+    # クエリ結果を取得
+    tires = query.all()
+
+    # デバッグ用出力
+    print("Filters:", filters)
+    print("Selected Column:", selected_column)
+    print("Selected Value:", selected_value)
+
+    return render_template(
+        'inventory_list.html',
+        tires=tires,
+        filters=filters,
+        selected_column=selected_column,
+        selected_value=selected_value,
+    )
+
+
+
+# リレーション値を取得するヘルパー関数
+def lookup_name(column, id):
+    if column == 'width':
+        return db.session.query(Width).filter_by(id=id).first().value
+    elif column == 'aspect_ratio':
+        return db.session.query(AspectRatio).filter_by(id=id).first().value
+    elif column == 'inch':
+        return db.session.query(Inch).filter_by(id=id).first().value
+    elif column == 'manufacturer':
+        return db.session.query(Manufacturer).filter_by(id=id).first().name
+    elif column == 'ply_rating':
+        return db.session.query(PlyRating).filter_by(id=id).first().value
+    return id
+
 
 if __name__ == '__main__':
     app.run(debug=True)
