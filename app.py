@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for,  jsonify
+from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash
 from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
 from forms import InputForm, SearchForm, EditForm
@@ -142,13 +142,18 @@ def dispatch():
         return render_template('dispatch_page.html', dispatch_history=dispatch_history)
 
     elif request.method == 'POST':
-        # 出庫処理
+        # POSTデータで送信されたチェックされたタイヤIDリストを取得
         selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
         user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
 
+        if not selected_tires:
+            flash("出庫するタイヤを選択してください。", "warning")
+            return redirect(url_for('search_page'))
+
+        # 選択されたタイヤを処理
         for tire_id in selected_tires:
             tire = InputPage.query.get(tire_id)
-            if tire:
+            if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
                 tire.is_dispatched = 1  # 出庫フラグを1に更新
                 # 出庫履歴を記録
                 new_dispatch = DispatchHistory(
@@ -159,11 +164,11 @@ def dispatch():
                 )
                 db.session.add(new_dispatch)
 
-        db.session.commit()  # 一括でコミット
-
-        return redirect(url_for('search_page'))  # 在庫検索画面に戻る
-
-
+        # データベースを更新
+        db.session.commit()
+        flash("出庫処理が完了しました。", "success")
+        return redirect(url_for('dispatch'))
+    
 @app.route('/alerts')
 def alert_page():
     alerts = AlertPage.query.all()
@@ -171,85 +176,47 @@ def alert_page():
 
 @app.route('/inventory_list', methods=['GET', 'POST'])
 def inventory_list():
+    form = SearchForm()  # SearchForm をそのまま利用
+    edit_forms = {}  # 各アイテムごとにフォームを保持
     query = InputPage.query.order_by(InputPage.id.desc())
+    tires = None
 
-    # フィルターデータの準備（リレーション値を取得）
-    filters = {
-        'registration_date': [
-            row[0].strftime('%Y-%m-%d') for row in db.session.query(InputPage.registration_date).distinct() if row[0]
-        ],
-        'width': [{'id': row.id, 'value': row.value} for row in db.session.query(Width).distinct()],
-        'aspect_ratio': [{'id': row.id, 'value': row.value} for row in db.session.query(AspectRatio).distinct()],
-        'inch': [{'id': row.id, 'value': row.value} for row in db.session.query(Inch).distinct()],
-        'manufacturer': [{'id': row.id, 'name': row.name} for row in db.session.query(Manufacturer).distinct()],
-        'ply_rating': [{'id': row.id, 'value': row.value} for row in db.session.query(PlyRating).distinct()],
-        'other_details': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.other_details).distinct() if row[0]],
-        'manufacturing_year': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.manufacturing_year).distinct() if row[0]],
-        'tread_depth': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.tread_depth).distinct() if row[0]],
-        'uneven_wear': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.uneven_wear).distinct() if row[0]],
-        'price': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.price).distinct() if row[0]],
-        'is_dispatched': [{'id': row[0], 'value': row[0]} for row in db.session.query(InputPage.is_dispatched).distinct()],
-    }
+    # リセットボタンの処理
+    if request.method == 'POST' and 'reset' in request.form:
+        # 全ての条件を解除して初期状態を表示
+        tires = query.all()
+    elif form.validate_on_submit():
+        # 登録日でのみフィルタリング
+        if form.registration_date.data:
+            query = query.filter(InputPage.registration_date == form.registration_date.data)
+        # 結果を取得
+        tires = query.all()
+    else:
+        tires = query.all()
 
-    selected_column = None
-    selected_value = None
+    # 一括更新処理
+    if request.method == 'POST' and 'update_all' in request.form:
+        for tire in tires:
+            # フィールド名にIDを含めてユニークにする
+            price_key = f"price_{tire.id}"
+            other_details_key = f"other_details_{tire.id}"
 
-    if request.method == 'POST':
-        action = request.form.get('action')
-        selected_column = request.form.get('filter_column')
-        selected_value = request.form.get('filter_value')
-
-        if action == 'filter' and selected_column:
-            if selected_value == "":
-                print("Selected value is empty, skipping filter.")
-            elif selected_value == "NULL":  # 値が空欄の場合
-                query = query.filter(getattr(InputPage, selected_column) == None)
-            else:
+            # 入力データがある場合に更新
+            if price_key in request.form and request.form[price_key]:
                 try:
-                    if selected_column == 'registration_date':
-                        selected_value = datetime.strptime(selected_value, '%Y-%m-%d').date()
-                    elif selected_column in ['price', 'tread_depth', 'uneven_wear']:
-                        selected_value = float(selected_value) if '.' in selected_value else int(selected_value)
-                    elif selected_column in ['manufacturer', 'inch', 'width', 'aspect_ratio', 'ply_rating']:
-                        selected_value = int(selected_value)
-                    query = query.filter(getattr(InputPage, selected_column) == selected_value)
+                    # 空白や無効な値を弾く
+                    tire.price = float(request.form[price_key])
+                except ValueError:
+                    # 無効な値の場合はスキップ
+                    print(f"Invalid price value for tire ID {tire.id}, skipping update.")
+            if other_details_key in request.form and request.form[other_details_key]:
+                tire.other_details = request.form[other_details_key]
 
-                except ValueError as e:
-                    print(f"Error converting value for column {selected_column}: {e}")
-                    query = InputPage.query.order_by(InputPage.id.desc())
+        # 変更をデータベースに保存
+        db.session.commit()
+        return redirect(url_for('inventory_list'))
 
-    # クエリ結果を取得
-    tires = query.all()
-
-    # デバッグ用出力
-    print("Filters:", filters)
-    print("Selected Column:", selected_column)
-    print("Selected Value:", selected_value)
-
-    return render_template(
-        'inventory_list.html',
-        tires=tires,
-        filters=filters,
-        selected_column=selected_column,
-        selected_value=selected_value,
-    )
-
-
-
-# リレーション値を取得するヘルパー関数
-def lookup_name(column, id):
-    if column == 'width':
-        return db.session.query(Width).filter_by(id=id).first().value
-    elif column == 'aspect_ratio':
-        return db.session.query(AspectRatio).filter_by(id=id).first().value
-    elif column == 'inch':
-        return db.session.query(Inch).filter_by(id=id).first().value
-    elif column == 'manufacturer':
-        return db.session.query(Manufacturer).filter_by(id=id).first().name
-    elif column == 'ply_rating':
-        return db.session.query(PlyRating).filter_by(id=id).first().value
-    return id
-
+    return render_template('inventory_list.html', form=form, tires=tires)
 
 if __name__ == '__main__':
     app.run(debug=True)

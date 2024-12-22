@@ -2,63 +2,88 @@
 
 {% block content %}
 <h1>タイヤ検索</h1>
-<form method="POST">
+<form method="POST" class="tire-form">
     {{ form.hidden_tag() }}
-    <div>
-        {{ form.width.label }} {{ form.width() }}
+
+    <!-- 1段目: width, /, aspect_ratio -->
+    <div class="form-group first-row">
+        <div class="input-wrap">
+            {{ form.width.label }}
+            {{ form.width(class_="form-control") }}
+        </div>
+        <span>/</span>
+        <div class="input-wrap">
+            {{ form.aspect_ratio.label }}
+            {{ form.aspect_ratio(class_="form-control") }}
+        </div>
     </div>
-    <div>
-        {{ form.aspect_ratio.label }} {{ form.aspect_ratio() }}
+
+    <!-- 2段目: R, inch, ply_rating -->
+    <div class="form-group second-row">
+        <span>R</span>
+        <div class="input-wrap">
+            {{ form.inch.label }}
+            {{ form.inch(class_="form-control") }}
+        </div>
+        <div class="input-wrap">
+            {{ form.ply_rating.label }}
+            {{ form.ply_rating(class_="form-control") }}
+        </div>
     </div>
-    <div>
-        {{ form.inch.label }} {{ form.inch() }}
-    </div>
-    <div>
-        {{ form.ply_rating.label }} {{ form.ply_rating() }}
-    </div>
-    <button type="submit">検索</button>
+<button type="submit">検索</button>
 </form>
 
 {% if tires %}
 <h2>検索結果</h2>
-<table>
-    <thead>
-        <tr>
-            <th>在庫番号</th>
-            <th>メーカー</th>
-            <th>製造年</th>
-            <th>溝</th>
-            <th>片減り</th>
-            <th>その他</th>
-            <th>価格</th>
-            <th>登録日</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for tire in tires %}
-        <tr>
-            <!-- タイヤの在庫番号（id） -->
-            <td>{{ tire.id }}</td>
-            <!-- メーカー（manufacturer） -->
-            <td>{{ tire.manufacturer_ref.name }}</td>
-            <!-- 製造年（manufacturing_year） -->
-            <td>{{ tire.manufacturing_year }}</td>
-            <!-- 溝（tread_depth） -->
-            <td>{{ tire.tread_depth }}</td>
-            <!-- 片減り（uneven_wear） -->
-            <td>{{ tire.uneven_wear }}</td>
-            <!-- その他の詳細（other_details） -->
-            <td>{{ tire.other_details }}</td>
-            <!-- 価格（price） -->
-            <td>{{ tire.price }}</td>
-            <!-- 登録日（registration_date） -->
-            <td>{{ tire.registration_date }}</td>
-            <!-- 編集リンク -->
-            <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<form method="POST" action="{{ url_for('dispatch') }}">
+    <table>
+        <thead>
+            <tr>
+                <th>在庫番号</th>
+                <th>メーカー</th>
+                <th>製造年</th>
+                <th>溝</th>
+                <th>片減り</th>
+                <th>その他</th>
+                <th>価格</th>
+                <th>登録日</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tire in tires %}
+            <tr>
+                <!-- タイヤの在庫番号（id） -->
+                <td>{{ tire.id }}</td>
+                <!-- メーカー（manufacturer） -->
+                <td>{{ tire.manufacturer_ref.name }}</td>
+                <!-- 製造年（manufacturing_year） -->
+                <td>{{ tire.manufacturing_year }}</td>
+                <!-- 溝（tread_depth） -->
+                <td>{{ tire.tread_depth }}</td>
+                <!-- 片減り（uneven_wear） -->
+                <td>{{ tire.uneven_wear }}</td>
+                <!-- その他の詳細（other_details） -->
+                <td>{{ tire.other_details }}</td>
+                <!-- 価格（price） -->
+                <td>{{ tire.price }}</td>
+                <!-- 登録日（registration_date） -->
+                <td>{{ tire.registration_date }}</td>
+                <td>
+                    {% if not tire.is_dispatched %}
+                        <input type="checkbox" name="tire_ids" value="{{ tire.id }}">
+                    {% else %}
+                        出庫済
+                    {% endif %}
+                </td>
+                <td>{% if tire.is_dispatched %}出庫済{% else %}在庫{% endif %}</td>
+                <!-- 編集リンク -->
+                <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit">出庫</button>
+</form>
 {% endif %}
 {% endblock %}

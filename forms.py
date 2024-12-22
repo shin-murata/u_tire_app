@@ -33,11 +33,17 @@ class InputForm(FlaskForm):
         self.manufacturer.choices = [(m.id, m.name) for m in Manufacturer.query.all()]  # 'name' は正しい
         self.ply_rating.choices = [(p.id, p.value) for p in PlyRating.query.all()]  # 'name' ではなく 'value' に修正
 
+from flask_wtf import FlaskForm
+from wtforms import SelectField, DateField, SubmitField
+from wtforms.validators import Optional
+
 class SearchForm(FlaskForm):
     width = SelectField('Width', coerce=int, validators=[Optional()])
     aspect_ratio = SelectField('Aspect Ratio', coerce=int, validators=[Optional()])
     inch = SelectField('Inch', coerce=int, validators=[Optional()])
-    ply_rating = SelectField('Ply Rating', coerce=int, validators=[Optional()])  # ply_rating フィールドを追加
+    ply_rating = SelectField('Ply Rating', coerce=int, validators=[Optional()])  # ply_rating フィールド
+    registration_date = DateField('登録日', format='%Y-%m-%d', validators=[Optional()])  # 日付フィールド追加
+    submit = SubmitField('検索')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,6 +52,9 @@ class SearchForm(FlaskForm):
         self.width.choices = [(0, '選択してください')] + [(w.id, w.value) for w in Width.query.all()]
         self.aspect_ratio.choices = [(0, '選択してください')] + [(ar.id, ar.value) for ar in AspectRatio.query.all()]
         self.inch.choices = [(0, '選択してください')] + [(i.id, i.value) for i in Inch.query.all()]
-        self.ply_rating.choices = [(0, '選択してください')] + [(p.id, p.value) for p in PlyRating.query.all()]  # ply_rating の選択肢を設定
+        self.ply_rating.choices = [(0, '選択してください')] + [(p.id, p.value) for p in PlyRating.query.all()]
 class EditForm(InputForm):
+    price = FloatField('価格', validators=[Optional()])
+    other_details = StringField('その他', validators=[Optional()])
+    submit = SubmitField('登録')
     pass
