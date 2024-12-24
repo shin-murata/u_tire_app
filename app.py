@@ -158,14 +158,31 @@ def dispatch():
     elif request.method == 'POST':
         # POSTデータで送信されたチェックされたタイヤIDリストを取得
         selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
-        user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
+        print(f"Selected tires: {selected_tires}")  # デバッグ用
 
         if not selected_tires:
             flash("出庫するタイヤを選択してください。", "warning")
             return redirect(url_for('search_page'))
+        
+        # 選択されたタイヤを確認画面に渡す
+        tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
+        print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
+        return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+    
+@app.route('/dispatch/confirm', methods=['POST'])
+def dispatch_confirm():
+        # 確認ボタンから送信されたタイヤIDリストを取得
+    confirmed_tires = request.form.getlist('confirmed_tire_ids')  # 確認されたタイヤIDリスト
+    print(f"Confirmed tires: {confirmed_tires}")  # デバッグ用
+    
+    if not confirmed_tires:
+        flash("出庫するタイヤが確認されていません。", "warning")
+        return redirect(url_for('dispatch'))
 
-        # 選択されたタイヤを処理
-        for tire_id in selected_tires:
+    # 選択されたタイヤを処理
+    try:
+        user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
+        for tire_id in confirmed_tires:
             tire = InputPage.query.get(tire_id)
             if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
                 tire.is_dispatched = 1  # 出庫フラグを1に更新
@@ -178,10 +195,15 @@ def dispatch():
                 )
                 db.session.add(new_dispatch)
 
-        # データベースを更新
-        db.session.commit()
-        flash("出庫処理が完了しました。", "success")
+            # データベースを更新
+            db.session.commit()
+            flash("出庫処理が完了しました。", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"出庫処理中にエラーが発生しました: {e}", "danger")
         return redirect(url_for('dispatch'))
+        
+    return redirect(url_for('search_page'))
     
 @app.route('/alerts')
 def alert_page():

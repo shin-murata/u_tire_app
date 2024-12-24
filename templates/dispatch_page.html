@@ -1,41 +1,51 @@
 {% extends "base.html" %}
 
 {% block content %}
-<body>
-    <!-- フラッシュメッセージの表示 -->
-    {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-        <ul>
-        {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
-    {% endwith %}
 
-    <h1>出庫履歴</h1>
-    <!-- 出庫履歴表示のテーブルなど -->
-    <table>
-        <thead>
-            <tr>
-                <th>出庫ID</th>
-                <th>タイヤID</th>
-                <th>ユーザーID</th>
-                <th>出庫日</th>
-                <th>メモ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for history in dispatch_history %}
-            <tr>
-                <td>{{ history.id }}</td>
-                <td>{{ history.tire_id }}</td>
-                <td>{{ history.user_id }}</td>
-                <td>{{ history.dispatch_date }}</td>
-                <td>{{ history.dispatch_note }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
+<!-- フラッシュメッセージの表示 -->
+{% with messages = get_flashed_messages(with_categories=True) %}
+{% if messages %}
+    <ul>
+    {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endwith %}
+<!-- タイヤ選択フォーム -->
+<form method="POST" action="{{ url_for('dispatch') }}">
+    <!-- タイヤ一覧をここに表示し、選択可能にする -->
+    {% for tire in tires %}
+    <div>
+        <input type="checkbox" name="tire_ids" value="{{ tire.id }}" id="tire-{{ tire.id }}"
+        {% if tire.id|string in selected_tires %}checked{% endif %}>
+        <label for="tire-{{ tire.id }}">{{ tire.name }}</label>
+    </div>
+    {% endfor %}
+</form>
+<h1>出庫履歴</h1>
+<!-- 出庫履歴表示のテーブルなど -->
+<table>
+    <thead>
+        <tr>
+            <th>出庫ID</th>
+            <th>タイヤID</th>
+            <th>ユーザーID</th>
+            <th>出庫日</th>
+            <th>メモ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for history in dispatch_history %}
+        <tr>
+            <td>{{ history.id }}</td>
+            <td>{{ history.tire_id }}</td>
+            <td>{{ history.user_id }}</td>
+            <td>{{ history.dispatch_date }}</td>
+            <td>{{ history.dispatch_note }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 {% endblock %}
