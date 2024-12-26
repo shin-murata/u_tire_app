@@ -71,7 +71,8 @@
                 <td>{{ tire.registration_date }}</td>
                 <td>
                     {% if not tire.is_dispatched %}
-                        <input type="checkbox" name="tire_ids" value="{{ tire.id }}">
+                        <input type="checkbox" name="tire_ids" value="{{ tire.id }}"
+                        {% if tire.id|string in selected_tires %}checked{% endif %}>
                     {% else %}
                         出庫済
                     {% endif %}

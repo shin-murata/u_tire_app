@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash, session
 from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
 from forms import InputForm, SearchForm, EditForm
@@ -153,58 +153,63 @@ def dispatch():
     if request.method == 'GET':
         # 出庫履歴を表示
         dispatch_history = DispatchHistory.query.all()
-        return render_template('dispatch_page.html', dispatch_history=dispatch_history)
+        # セッションから選択済みのタイヤIDを取得（戻ってきた場合に利用）
+        selected_tires = session.get('selected_tires', [])
+        return render_template('dispatch_page.html', dispatch_history=dispatch_history, selected_tires=selected_tires)
 
     elif request.method == 'POST':
         # POSTデータで送信されたチェックされたタイヤIDリストを取得
         selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
-        print(f"Selected tires: {selected_tires}")  # デバッグ用
-
+        print(f"Selected tires (POST): {selected_tires}")  # デバッグ用
         if not selected_tires:
             flash("出庫するタイヤを選択してください。", "warning")
             return redirect(url_for('search_page'))
         
+        # セッションに選択されたタイヤIDを保存
+        session['selected_tires'] = selected_tires
         # 選択されたタイヤを確認画面に渡す
         tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
         print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
         return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
-    
-@app.route('/dispatch/confirm', methods=['POST'])
+
+@app.route('/dispatch/confirm', methods=['GET', 'POST'])
 def dispatch_confirm():
+    if request.method == 'POST':
         # 確認ボタンから送信されたタイヤIDリストを取得
-    confirmed_tires = request.form.getlist('confirmed_tire_ids')  # 確認されたタイヤIDリスト
-    print(f"Confirmed tires: {confirmed_tires}")  # デバッグ用
-    
-    if not confirmed_tires:
-        flash("出庫するタイヤが確認されていません。", "warning")
-        return redirect(url_for('dispatch'))
+        confirmed_tires = request.form.getlist('confirmed_tire_ids')  # 確認されたタイヤIDリスト
+        print(f"Confirmed tires: {confirmed_tires}")  # デバッグ用
+        if not confirmed_tires:
+            flash("出庫するタイヤが確認されていません。", "warning")
+            return redirect(url_for('dispatch'))
 
-    # 選択されたタイヤを処理
-    try:
-        user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
-        for tire_id in confirmed_tires:
-            tire = InputPage.query.get(tire_id)
-            if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
-                tire.is_dispatched = 1  # 出庫フラグを1に更新
-                # 出庫履歴を記録
-                new_dispatch = DispatchHistory(
-                    tire_id=tire_id,
-                    user_id=user_id,
-                    dispatch_date=date.today(),
-                    dispatch_note="販売による出庫"
-                )
-                db.session.add(new_dispatch)
-
+        # 選択されたタイヤを処理
+        try:
+            user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
+            for tire_id in confirmed_tires:
+                tire = InputPage.query.get(tire_id)
+                if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
+                    tire.is_dispatched = 1  # 出庫フラグを1に更新
+                    # 出庫履歴を記録
+                    new_dispatch = DispatchHistory(
+                        tire_id=tire_id,
+                        user_id=user_id,
+                        dispatch_date=date.today(),
+                        dispatch_note="販売による出庫"
+                    )
+                    db.session.add(new_dispatch)
             # データベースを更新
             db.session.commit()
             flash("出庫処理が完了しました。", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"出庫処理中にエラーが発生しました: {e}", "danger")
-        return redirect(url_for('dispatch'))
-        
-    return redirect(url_for('search_page'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"出庫処理中にエラーが発生しました: {e}", "danger")
+        return redirect(url_for('search_page'))
     
+    # GETの場合、セッションから選択済みのタイヤを取得して表示
+    selected_tires = session.get('selected_tires', [])
+    tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
+    return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+
 @app.route('/alerts')
 def alert_page():
     alerts = AlertPage.query.all()

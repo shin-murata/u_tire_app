@@ -62,6 +62,9 @@
 
 <!-- 戻るボタン -->
 <form method="POST" action="{{ url_for('dispatch') }}">
+    {% for tire in tires_to_dispatch %}
+        <input type="hidden" name="tire_ids" value="{{ tire.id }}">
+    {% endfor %}
     <button type="submit" class="btn btn-secondary">戻る</button>
 </form>
 {% endblock %}
