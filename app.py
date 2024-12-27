@@ -109,9 +109,16 @@ def register_success():
 def search_page():
     form = SearchForm()
     tires = None  # 結果を保持する変数
+    # 初期状態で selected_tires をクリア 
+    selected_tires = [] # popを使用せずリストを初期化する
+
     if form.validate_on_submit():
+        # フォームからの値を取得 
+        width_value = form.width.data 
+        aspect_ratio_value = form.aspect_ratio.data 
+        inch_value = form.inch.data
         # ply_rating をフォームデータから取得
-        ply_rating = form.ply_rating.data
+        ply_rating_value = form.ply_rating.data
 
         # 基本的な検索条件をクエリとして初期化
         query = InputPage.query.filter_by(
@@ -121,32 +128,44 @@ def search_page():
         )
 
         # ply_rating が指定されている場合は追加条件を設定
-        if ply_rating and ply_rating != 0:  # 0 は「選択してください」に対応
-            query = query.filter(InputPage.ply_rating == ply_rating)
+        if ply_rating_value and ply_rating_value != 0:  # 0 は「選択してください」に対応
+            query = query.filter(InputPage.ply_rating == ply_rating_value)
 
         # 出庫済みではない条件を追加
         query = query.filter(InputPage.is_dispatched == False)
-
         # クエリを実行して結果を取得
         tires = query.all()
 
-    return render_template('search_page.html', form=form, tires=tires)
+        search_conditions = { 
+            'width': width_value or '', 
+            'aspect_ratio': aspect_ratio_value or '', 
+            'inch': inch_value or '', 
+            'ply_rating': ply_rating_value or '' 
+        }
 
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit_page(id):
-    tire = InputPage.query.get_or_404(id)
-    form = EditForm(obj=tire)
-    if form.validate_on_submit():
-        # フォームの内容でタイヤ情報を更新
-        form.populate_obj(tire)
-        db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('edit_page.html', form=form, tire=tire)
+        # 検索条件をセッションに保存
+        session['search_conditions'] = search_conditions 
+        session['selected_tires'] = []
+        return render_template('search_page.html', form=form, tires=tires, selected_tires=selected_tires) 
+    
+    # セッションから検索条件を読み込み 
+    if 'search_conditions' in session: 
+        search_conditions = session['search_conditions']
+        form = SearchForm(data=search_conditions)
+        selected_tires = session.get('selected_tires', [])
+        # 検索条件を使ってクエリを実行
+        query = InputPage.query.filter_by( 
+            width=search_conditions.get('width'), 
+            aspect_ratio=search_conditions.get('aspect_ratio'), 
+            inch=search_conditions.get('inch') 
+            ) 
+        ply_rating = search_conditions.get('ply_rating') 
+        if ply_rating and ply_rating != '0': 
+            query = query.filter(InputPage.ply_rating == ply_rating) 
+        query = query.filter(InputPage.is_dispatched == False) 
+        tires = query.all()
 
-@app.route('/history')
-def history_page():
-    history = HistoryPage.query.all()
-    return render_template('history_page.html', history=history)
+    return render_template('search_page.html', form=form, tires=tires, selected_tires=selected_tires)
 
 @app.route('/dispatch', methods=['GET', 'POST'])
 def dispatch():
@@ -155,22 +174,110 @@ def dispatch():
         dispatch_history = DispatchHistory.query.all()
         # セッションから選択済みのタイヤIDを取得（戻ってきた場合に利用）
         selected_tires = session.get('selected_tires', [])
-        return render_template('dispatch_page.html', dispatch_history=dispatch_history, selected_tires=selected_tires)
+        # セッションから検索条件を取得
+        search_conditions = session.get('search_conditions', {})
+        print(f"Search conditions in GET: {search_conditions}")
+
+        # 検索条件を使って検索結果を再取得
+        query = InputPage.query.filter_by(
+            width=search_conditions.get('width') or None,
+            aspect_ratio=search_conditions.get('aspect_ratio') or None,
+            inch=search_conditions.get('inch') or None
+        )
+        # ply_rating の特別処理
+        ply_rating = search_conditions.get('ply_rating')
+        if ply_rating and ply_rating != '0':  # 0 または未入力の場合は無視
+            query = query.filter(InputPage.ply_rating == ply_rating)
+        # クエリ実行
+        tires = query.all()
+
+        # テンプレートに必要な変数を渡す
+        return render_template(
+            'search_page.html',
+            form=SearchForm(data=search_conditions),
+            dispatch_history=dispatch_history,
+            tires=tires, 
+            selected_tires=selected_tires
+            )
 
     elif request.method == 'POST':
-        # POSTデータで送信されたチェックされたタイヤIDリストを取得
-        selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
-        print(f"Selected tires (POST): {selected_tires}")  # デバッグ用
-        if not selected_tires:
-            flash("出庫するタイヤを選択してください。", "warning")
+        # POSTから送信されたデータを基に処理を分岐
+        action = request.form.get('action')  # どのボタンからのリクエストかを識別
+        print(f"Action: {action}")
+        print(f"Raw POST data: {request.form}") # 全POSTデータを確認するデバッグログ
+        
+        if action == 'back':
+            # 戻るボタンの処理
+            selected_tires = request.form.getlist('tire_ids')
+            print(f"Selected tires (POST): {selected_tires}") # デバッグ用
+            
+            search_conditions = { 
+                'width': request.form.get('width') if request.form.get('width') not in [None, 'None', ''] else None, 
+                'aspect_ratio': request.form.get('aspect_ratio') if request.form.get('aspect_ratio') not in [None, 'None', ''] else None, 
+                'inch': request.form.get('inch') if request.form.get('inch') not in [None, 'None', ''] else None, 
+                'ply_rating': request.form.get('ply_rating') if request.form.get('ply_rating') not in [None, 'None', ''] else None, 
+            }
+            print(f"Search conditions to save: {search_conditions}")
+            
+            # セッションに選択されたタイヤIDを保存
+            session['selected_tires'] = selected_tires
+            # 検索条件をセッションに保存
+            session['search_conditions'] = search_conditions
+
+            print(f"Search conditions to save: {search_conditions}")
+            print(f"Back button selected tires (POST): {selected_tires}")
+            print(f"Session saved search conditions: {session['search_conditions']}")
+
             return redirect(url_for('search_page'))
         
-        # セッションに選択されたタイヤIDを保存
-        session['selected_tires'] = selected_tires
-        # 選択されたタイヤを確認画面に渡す
-        tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
-        print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
-        return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+        elif action == 'confirm':
+            # 出庫確認画面への処理
+            # POSTデータで送信されたチェックされたタイヤIDリストを取得
+            selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
+            print(f"Selected tires (POST): {selected_tires}")  # デバッグ用
+            if not selected_tires:
+                flash("出庫するタイヤを選択してください。", "warning")
+                return redirect(url_for('search_page'))
+            
+            # 選択されたタイヤを確認画面に渡す
+            tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
+            print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
+            return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+
+        else:
+            # その他のPOSTリクエスト（既存の処理）
+            selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
+            print(f"Selected tires (POST): {selected_tires}")  # デバッグ用
+            if not selected_tires:
+                flash("出庫するタイヤを選択してください。", "warning")
+                return redirect(url_for('search_page'))
+
+            # 新しい検索を行うため、セッションをクリア 
+            session.pop('selected_tires', None) 
+            session.pop('search_conditions', None)
+            
+            # セッションに選択されたタイヤIDを保存
+            session['selected_tires'] = selected_tires
+
+            # 検索条件をセッションに保存
+            session['search_conditions'] = { 
+                'width': request.form.get('width') if request.form.get('width') not in [None, 'None', ''] else None, 
+                'aspect_ratio': request.form.get('aspect_ratio') if request.form.get('aspect_ratio') not in [None, 'None', ''] else None, 
+                'inch': request.form.get('inch') if request.form.get('inch') not in [None, 'None', ''] else None, 
+                'ply_rating': request.form.get('ply_rating') if request.form.get('ply_rating') not in [None, 'None', ''] else None, 
+            }
+
+            print(f"Other action selected tires (POST): {selected_tires}") 
+            print(f"Other action search conditions (POST): {session['search_conditions']}")
+
+            # 選択されたタイヤを確認画面に渡す
+            tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
+            print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
+            return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+
+    # 万が一どの分岐にも一致しない場合のデフォルトレスポンス
+    return redirect(url_for('search_page'))
+
 
 @app.route('/dispatch/confirm', methods=['GET', 'POST'])
 def dispatch_confirm():
@@ -203,12 +310,32 @@ def dispatch_confirm():
         except Exception as e:
             db.session.rollback()
             flash(f"出庫処理中にエラーが発生しました: {e}", "danger")
+
+        # セッションをクリアして検索ページに戻る
+        session.pop('selected_tires', None)
+        session.pop('search_conditions', None)
         return redirect(url_for('search_page'))
     
     # GETの場合、セッションから選択済みのタイヤを取得して表示
     selected_tires = session.get('selected_tires', [])
     tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
     return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit_page(id):
+    tire = InputPage.query.get_or_404(id)
+    form = EditForm(obj=tire)
+    if form.validate_on_submit():
+        # フォームの内容でタイヤ情報を更新
+        form.populate_obj(tire)
+        db.session.commit()
+        return redirect(url_for('index'))
+    return render_template('edit_page.html', form=form, tire=tire)
+
+@app.route('/history')
+def history_page():
+    history = HistoryPage.query.all()
+    return render_template('history_page.html', history=history)
 
 @app.route('/alerts')
 def alert_page():

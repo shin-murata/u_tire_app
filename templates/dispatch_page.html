@@ -12,17 +12,7 @@
     </ul>
 {% endif %}
 {% endwith %}
-<!-- タイヤ選択フォーム -->
-<form method="POST" action="{{ url_for('dispatch') }}">
-    <!-- タイヤ一覧をここに表示し、選択可能にする -->
-    {% for tire in tires %}
-    <div>
-        <input type="checkbox" name="tire_ids" value="{{ tire.id }}" id="tire-{{ tire.id }}"
-        {% if tire.id|string in selected_tires %}checked{% endif %}>
-        <label for="tire-{{ tire.id }}">{{ tire.name }}</label>
-    </div>
-    {% endfor %}
-</form>
+
 <h1>出庫履歴</h1>
 <!-- 出庫履歴表示のテーブルなど -->
 <table>
