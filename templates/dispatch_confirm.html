@@ -16,45 +16,24 @@
             <!-- 共通データの行 -->
             {% if tires_to_dispatch|length > 0 %}
             <tr>
-                <td>{{ tires_to_dispatch[0].width_ref.value }}</td>
-                <td>{{ tires_to_dispatch[0].aspect_ratio_ref.value }}</td>
-                <td>{{ tires_to_dispatch[0].inch_ref.value }}</td>
-                <td>{{ tires_to_dispatch[0].ply_rating_ref.value }}</td>
+                <td>
+                    <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
+                    {{ tires_to_dispatch[0].width_ref.value }}
+                </td>
+                <td>
+                    <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
+                    {{ tires_to_dispatch[0].aspect_ratio_ref.value }}
+                </td>
+                <td>
+                    <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
+                    {{ tires_to_dispatch[0].inch_ref.value }}
+                </td>
+                <td>
+                    <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
+                    {{ tires_to_dispatch[0].ply_rating_ref.value }}
+                </td>
             </tr>
             {% endif %}
-        </tbody>
-    </table>
-    
-    <h3>個別データ</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>在庫番号</th>
-                <th>メーカー</th>
-                <th>製造年</th>
-                <th>溝</th>
-                <th>片減り</th>
-                <th>その他の詳細</th>
-                <th>価格</th>
-                <th>登録日</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- 個別のユニークなデータを表示 -->
-            {% for tire in tires_to_dispatch %}
-            <tr>
-                <td>{{ tire.id }}</td>
-                <td>{{ tire.manufacturer_ref.name }}</td>
-                <td>{{ tire.manufacturing_year }}</td>
-                <td>{{ tire.tread_depth }}</td>
-                <td>{{ tire.uneven_wear }}</td>
-                <td>{{ tire.other_details }}</td>
-                <td>{{ tire.price }}</td>
-                <td>{{ tire.registration_date }}</td>
-                <!-- 隠しフィールドとしてタイヤIDを送信 -->
-                <input type="hidden" name="confirmed_tire_ids" value="{{ tire.id }}">
-            </tr>
-            {% endfor %}
         </tbody>
     </table>
     <button type="submit" class="btn btn-success">確認</button>
