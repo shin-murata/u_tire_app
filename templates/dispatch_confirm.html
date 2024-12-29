@@ -1,8 +1,7 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h3>以下のタイヤを出庫しますか？</h3>
-<form method="POST" action="{{ url_for('dispatch_confirm') }}">
+<form method="POST" action="{{ url_for('dispatch') }}">
     <table>
         <thead>
             <tr>
@@ -11,7 +10,7 @@
                 <th>インチ</th>
                 <th>プライレーティング</th>
             </tr>
-        </thead>
+        </thead> 
         <tbody>
             <!-- 共通データの行 -->
             {% if tires_to_dispatch|length > 0 %}
@@ -35,28 +34,52 @@
             </tr>
             {% endif %}
         </tbody>
-    </table>
+    </table>   
+    <!-- 個別データの一覧表示 -->
+    <h4>個別データ</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>在庫番号</th>
+                <th>メーカー</th>
+                <th>製造年</th>
+                <th>溝</th>
+                <th>片減り</th>
+                <th>その他の詳細</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tire in tires_to_dispatch %}
+            <tr>
+                <td>{{ tire.id }}</td>
+                <td>{{ tire.manufacturer_ref.name }}</td>
+                <td>{{ tire.manufacturing_year }}</td>
+                <td>{{ tire.tread_depth }}</td>
+                <td>{{ tire.uneven_wear }}</td>
+                <td>{{ tire.other_details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>    
     <button type="submit" class="btn btn-success">確認</button>
 </form>
-
 <!-- 戻るボタン -->
-<form method="POST" action="{{ url_for('dispatch') }}">
+<form method="POST" action="{{ url_for('search_page') }}">
     <input type="hidden" name="action" value="back">
-    
-    <!-- 検索条件を隠しフィールドで送信 --> 
-    <input type="hidden" name="width" value="{{ session.get('search_conditions', {}).get('width', '') }}"> 
-    <input type="hidden" name="aspect_ratio" value="{{ session.get('search_conditions', {}).get('aspect_ratio', '') }}"> 
-    <input type="hidden" name="inch" value="{{ session.get('search_conditions', {}).get('inch', '') }}"> 
-    <input type="hidden" name="ply_rating" value="{{ session.get('search_conditions', {}).get('ply_rating', '') }}"> 
-    <p>Width: {{ session.get('search_conditions', {}).get('width', '') }}</p> 
-    <p>Aspect Ratio: {{ session.get('search_conditions', {}).get('aspect_ratio', '') }}</p> 
-    <p>Inch: {{ session.get('search_conditions', {}).get('inch', '') }}</p> 
-    <p>Ply Rating: {{ session.get('search_conditions', {}).get('ply_rating', '') }}</p>
-    <!-- 選択済みのタイヤIDを送信 -->
-    {% for tire_id in selected_tires %}
-        <input type="hidden" name="tire_ids" value="{{ tire_id }}">
-    {% endfor %}
 
+    <!-- 検索条件を隠しフィールドで送信 -->
+    <input type="hidden" name="width" value="{{ session.get('search_conditions', {}).get('width', '') }}">
+    <input type="hidden" name="aspect_ratio" value="{{ session.get('search_conditions', {}).get('aspect_ratio', '') }}">
+    <input type="hidden" name="inch" value="{{ session.get('search_conditions', {}).get('inch', '') }}">
+    <input type="hidden" name="ply_rating" value="{{ session.get('search_conditions', {}).get('ply_rating', '') }}">
+
+    <!-- 選択済みのタイヤIDを送信 -->
+    {% for tire in selected_tires %}
+        <input type="hidden" name="tire_ids" value="{{ tire.id }}">
+        <!-- デバッグ用 -->
+        <span>{{ tire.id }} {{ 'checked' if tire.id|string in selected_tires else '' }}</span>
+    {% endfor %}
     <button type="submit">戻る</button>
+    <a href="{{ url_for('dispatch_confirm', action='back') }}">戻る</a>
 </form>
 {% endblock %}

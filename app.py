@@ -111,52 +111,55 @@ def search_page():
     tires = []  # 検索結果を保持する変数
     # 初期状態で selected_tires をクリア 
     selected_tires = session.get('selected_tires', [])  # セッションから選択されたタイヤを取得
-
-    # 初期化
-    search_conditions = {}  # 空の辞書として初期化
-
-    # POSTリクエストの場合
-    if request.method == 'POST':
-        action = request.form.get('action', None)
-        print(f"Form data: {form.data}")  # フォームの全データ
-        print(f"Request form data: {request.form}")  # POSTリクエストデータ
-        print(f"Search conditions: {search_conditions}")  # 作成された検索条件
-
+    search_conditions = session.get('search_conditions', {})
     
-    # 「戻る」ボタンで戻った場合のみ検索条件を保持 
-        if action == 'back':
-            # 戻るボタンの処理
-            selected_tires = request.form.getlist('tire_ids')
-            print(f"Selected tires (POST): {selected_tires}") # デバッグ用
-            print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグログ
+    # GETリクエストまたは「戻る」で復元する場合
+    if request.args.get('from_dispatch_confirm'):
+        # dispatch_confirmから戻ってきた場合
+        print("GET action from dispatch_confirm triggered")
+        # セッションに保存された条件をフォームに反映
+        form.width.data = search_conditions.get('width', '')
+        form.aspect_ratio.data = search_conditions.get('aspect_ratio', '')
+        form.inch.data = search_conditions.get('inch', '')
+        form.ply_rating.data = search_conditions.get('ply_rating', '')
 
-            # 検索条件をセッションから取得し更新
-            search_conditions = {
-                'width': request.form.get('width', None),
-                'aspect_ratio': request.form.get('aspect_ratio', None),
-                'inch': request.form.get('inch', None),
-                'ply_rating': request.form.get('ply_rating', None),
-            }
-            
-            print(f"Search conditions to save: {search_conditions}")
-            
-            # セッションに選択されたタイヤIDを保存
-            session['selected_tires'] = selected_tires
-            
-            print(f"Form data: {form.data}")  # フォームの全データ
-            print(f"Request form data: {request.form}")  # POSTリクエストデータ
-            print(f"Search conditions: {search_conditions}")  # 作成された検索条件
-            print(f"Search conditions to save: {search_conditions}")
-            print(f"Back button selected tires (POST): {selected_tires}")
-            print(f"Session saved search conditions: {session['search_conditions']}")
-            # 検索条件をセッションに保存
-            session['search_conditions'] = {k: str(v) if v is not None else '' for k, v in search_conditions.items()}
-
-            
-            return redirect(url_for('search_page', from_dispatch=True))
+        # 検索クエリの実行
+        query = InputPage.query.filter_by(
+            width=search_conditions.get('width'),
+            aspect_ratio=search_conditions.get('aspect_ratio'),
+            inch=search_conditions.get('inch')
+        )
+        if search_conditions.get('ply_rating') and search_conditions['ply_rating'] != '0':
+            query = query.filter(InputPage.ply_rating == search_conditions['ply_rating'])
+        tires = query.filter(InputPage.is_dispatched == False).all()
         
-        # 通常の検索処理
-        elif form.validate_on_submit():
+        # クエリ結果をデバッグ
+        print(f"GET action from dispatch_confirm - Conditions: {search_conditions}")
+        print(f"Tires after GET action: {[tire.id for tire in tires]} -> Count: {len(tires)}")
+
+        # 選択済みタイヤを検索結果に追加
+        existing_tire_ids = {tire.id for tire in tires}
+        selected_tire_ids = set(session.get('selected_tires', []))
+        # すでに検索結果に含まれるタイヤは除外する
+        additional_tires = [
+            InputPage.query.get(tire_id) for tire_id in selected_tire_ids if tire_id not in existing_tire_ids
+            and tire_id is not None  # Noneのタイヤも排除
+        ]
+        # Noneを除外して追加
+        tires.extend([tire for tire in additional_tires if tire and tire.id not in existing_tire_ids])
+
+        # 更新後の重複チェックを追加
+        existing_tire_ids.update(tire.id for tire in tires)
+
+        # デバッグコード
+        print(f"Existing tire IDs: {existing_tire_ids}")
+        print(f"Selected tire IDs: {selected_tire_ids}")
+        print(f"Additional tires to add: {[tire.id for tire in additional_tires if tire]}")
+        print(f"Final tires in result: {[tire.id for tire in tires]}")
+
+    elif request.method == 'POST':
+        if form.validate_on_submit():
+            session['selected_tires'] = []
             # フォームから値を取得して検索条件を作成
             search_conditions = {
                 'width': form.width.data,
@@ -164,176 +167,106 @@ def search_page():
                 'inch': form.inch.data,
                 'ply_rating': form.ply_rating.data,
             }
-
-            # セッションに検索条件を保存
-            session['search_conditions'] = search_conditions
-            session['selected_tires'] = []
-
+            session['search_conditions'] = search_conditions  # セッションに保存
             # 検索クエリの実行
             query = InputPage.query.filter_by(
                 width=search_conditions['width'],
                 aspect_ratio=search_conditions['aspect_ratio'],
                 inch=search_conditions['inch']
             )
-
             # ply_rating の条件追加
             if search_conditions['ply_rating'] and search_conditions['ply_rating'] != '0':
                 query = query.filter(InputPage.ply_rating == search_conditions['ply_rating'])
-
             # 出庫されていないタイヤのみを取得
             tires = query.filter(InputPage.is_dispatched == False).all()
-
-            print(f"Search conditions saved: {search_conditions}")
-
-    # GETリクエストまたは「戻る」で復元する場合
-    elif 'search_conditions' in session and request.args.get('from_dispatch'):
-        # セッションから検索条件を復元
-        form = SearchForm(data=session['search_conditions'])
-        query = InputPage.query.filter_by(
-            width=form.width.data,
-            aspect_ratio=form.aspect_ratio.data,
-            inch=form.inch.data
-        )
-
-        if form.ply_rating.data and form.ply_rating.data != '0':
-            query = query.filter(InputPage.ply_rating == form.ply_rating.data)
-
-        tires = query.filter(InputPage.is_dispatched == False).all()
-        print(f"Search conditions loaded: {session['search_conditions']}")
-        print(f"Search conditions: {search_conditions}")
-
-    # 最終的にテンプレートをレンダリングして結果を表示
-    return render_template('search_page.html', form=form, tires=tires, selected_tires=selected_tires)
-
-@app.route('/dispatch', methods=['GET', 'POST'])
-def dispatch():
-    if request.method == 'GET':
-        # 出庫履歴を表示
-        dispatch_history = DispatchHistory.query.all()
-        # セッションから選択済みのタイヤIDを取得（戻ってきた場合に利用）
-        selected_tires = session.get('selected_tires', [])
-        # セッションから検索条件を取得
-        search_conditions = session.get('search_conditions', {})
-        print(f"Search conditions in GET: {search_conditions}")
-
-        # 検索条件を使って検索結果を再取得
-        query = InputPage.query.filter_by(
-            width=search_conditions.get('width') or None,
-            aspect_ratio=search_conditions.get('aspect_ratio') or None,
-            inch=search_conditions.get('inch') or None
-        )
-        # ply_rating の特別処理
-        ply_rating = search_conditions.get('ply_rating')
-        if ply_rating and ply_rating != '0':  # 0 または未入力の場合は無視
-            query = query.filter(InputPage.ply_rating == ply_rating)
-        # クエリ実行
-        tires = query.all()
-
-        # テンプレートに必要な変数を渡す
-        return render_template(
-            'dispatch_page.html',
-            form=SearchForm(data=search_conditions),
-            dispatch_history=dispatch_history,
-            tires=tires, 
-            selected_tires=selected_tires
-        )
-
-    elif request.method == 'POST':
-        # POSTから送信されたデータを基に処理を分岐
-        action = request.form.get('action')  # どのボタンからのリクエストかを識別
-        print(f"Action: {action}")
-        print(f"Raw POST data: {request.form}") # 全POSTデータを確認するデバッグログ
+            # デバッグログ
+            print(f"SEARCH action - Conditions: {search_conditions}")
+            print(f"Tires after SEARCH action: {[tire.id for tire in tires]} -> Count: {len(tires)}")
         
-        if action == 'confirm':
-            # 出庫確認画面への処理
-            # POSTデータで送信されたチェックされたタイヤIDリストを取得
-            selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
-            print(f"Selected tires (POST): {selected_tires}")  # デバッグ用
-            if not selected_tires:
-                flash("出庫するタイヤを選択してください。", "warning")
-                return redirect(url_for('search_page'))
-            
-            # 選択されたタイヤを確認画面に渡す
-            tires_to_dispatch = [db.session.get(InputPage, tire_id) for tire_id in selected_tires]
-            print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
-            return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
-
-        else:
-            # その他のPOSTリクエスト（既存の処理）
-            selected_tires = request.form.getlist('tire_ids')  # 選択されたタイヤIDリスト
-            print(f"Selected tires (POST): {selected_tires}")  # デバッグ用
-            if not selected_tires:
-                flash("出庫するタイヤを選択してください。", "warning")
-                return redirect(url_for('search_page'))
-
-            # 新しい検索を行うため、セッションをクリア 
-            #session.pop('selected_tires', None) 
-            #session.pop('search_conditions', None)
-            
-            # セッションに選択されたタイヤIDを保存
-            session['selected_tires'] = selected_tires
-
-            # 検索条件をセッションに保存
-            session['search_conditions'] = { 
-                'width': request.form.get('width') if request.form.get('width') and request.form.get('width') != 'None' else None, 
-                'aspect_ratio': request.form.get('aspect_ratio') if request.form.get('aspect_ratio') and request.form.get('aspect_ratio') != 'None' else None, 
-                'inch': request.form.get('inch') if request.form.get('inch') and request.form.get('inch') != 'None' else None, 
-                'ply_rating': request.form.get('ply_rating') if request.form.get('ply_rating') and request.form.get('ply_rating') != 'None' else None, 
-                }
-
-            print(f"Other action selected tires (POST): {selected_tires}") 
-            print(f"Other action search conditions (POST): {session['search_conditions']}")
-
-            # 選択されたタイヤを確認画面に渡す
-            tires_to_dispatch = [db.session.get(InputPage, tire_id) for tire_id in selected_tires]
-            print(f"Tires to dispatch: {tires_to_dispatch}")  # デバッグ用
-            return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
-
-    # 万が一どの分岐にも一致しない場合のデフォルトレスポンス
-    return redirect(url_for('search_page'))
-
+        # デバッグログ
+        print(f"GET action from dispatch_confirm - Conditions: {search_conditions}")
+        print(f"Tires after GET action: {[tire.id for tire in tires]} -> Count: {len(tires)}")
+        
+    else:
+        # 初期画面または他の処理
+        tires = []
+    
+    # 最終的にテンプレートをレンダリングして結果を表示
+    return render_template(
+        'search_page.html', 
+        form=form, 
+        tires=tires, 
+        selected_tires=selected_tires, 
+        search_conditions=search_conditions  # 検索条件を渡す
+    )
 
 @app.route('/dispatch/confirm', methods=['GET', 'POST'])
 def dispatch_confirm():
+    # POSTリクエスト（出庫ボタンが押された場合）
     if request.method == 'POST':
         # 確認ボタンから送信されたタイヤIDリストを取得
-        confirmed_tires = request.form.getlist('confirmed_tire_ids')  # 確認されたタイヤIDリスト
-        print(f"Confirmed tires: {confirmed_tires}")  # デバッグ用
-        if not confirmed_tires:
+        selected_tires = request.form.getlist('tire_ids')
+        print(f"POST action - Selected tires: {selected_tires}")
+        # 確認リストが空の場合のエラーメッセージ
+        if not selected_tires:
             flash("出庫するタイヤが確認されていません。", "warning")
-            return redirect(url_for('dispatch'))
+            return redirect(url_for('search_page'))
 
-        # 選択されたタイヤを処理
-        try:
-            user_id = 1  # 固定値でログインユーザーIDを仮定（実際にはログインセッションから取得）
-            for tire_id in confirmed_tires:
-                tire = InputPage.query.get(tire_id)
-                if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
-                    tire.is_dispatched = 1  # 出庫フラグを1に更新
-                    # 出庫履歴を記録
-                    new_dispatch = DispatchHistory(
-                        tire_id=tire_id,
-                        user_id=user_id,
-                        dispatch_date=date.today(),
-                        dispatch_note="販売による出庫"
-                    )
-                    db.session.add(new_dispatch)
-            # データベースを更新
-            db.session.commit()
-            flash("出庫処理が完了しました。", "success")
-        except Exception as e:
-            db.session.rollback()
-            flash(f"出庫処理中にエラーが発生しました: {e}", "danger")
+        # セッションに確認されたタイヤを保存し、出庫処理へ移動
+        session['selected_tires'] = list(set(selected_tires))
 
-        # セッションをクリアして検索ページに戻る
-        session.pop('selected_tires', None)
-        session.pop('search_conditions', None)
-        return redirect(url_for('dispatch'))
+        # デバッグコード
+        print(f"POST action - Session updated selected tires: {session['selected_tires']}")
+
+        return redirect(url_for('dispatch_confirm'))  # 出庫処理へリダイレクト
     
-    # GETの場合、セッションから選択済みのタイヤを取得して表示
+    # 「戻る」ボタンで検索画面に戻る場合
+    if request.args.get('action') == 'back':
+        print("Back action triggered from dispatch_confirm")
+        return redirect(url_for('search_page', from_dispatch_confirm=True))
+
+    # GETリクエスト（初めて確認画面を開いた場合）
     selected_tires = session.get('selected_tires', [])
     tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
+
+    # デバッグログ
+    print(f"GET action - Tires to dispatch: {[tire.id for tire in tires_to_dispatch]} -> Count: {len(tires_to_dispatch)}")
+    
     return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+
+@app.route('/dispatch', methods=['GET', 'POST'])
+def dispatch():
+    # デバッグログ
+    print(f"Request method: {request.method}")
+    print(f"Session selected tires before processing: {session.get('selected_tires')}")
+
+    # 確認画面から送信された確認済みタイヤIDリストを取得
+    selected_tires = session.pop('selected_tires', [])
+    try:
+        # データベース処理: 確認済みタイヤを出庫処理
+        for tire_id in selected_tires:
+            print(f"Processing tire ID: {tire_id}")
+            tire = InputPage.query.get(tire_id)  # タイヤ情報を取得
+            if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
+                tire.is_dispatched = True  # 出庫済みフラグを設定
+                # 出庫履歴を記録
+                new_dispatch = DispatchHistory(
+                    tire_id=tire_id,
+                    user_id=1,  # 仮のログインユーザーID（実際にはセッションなどから取得）
+                    dispatch_date=date.today()
+                )
+                db.session.add(new_dispatch)
+
+        # データベースの変更を保存
+        db.session.commit()
+        flash("出庫処理が完了しました。", "success")
+    except Exception as e:
+        # エラー発生時はロールバック
+        db.session.rollback()
+        flash(f"エラーが発生しました: {e}", "danger")
+
+    # 処理完了後、検索画面にリダイレクト
+    return redirect(url_for('search_page'))
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):

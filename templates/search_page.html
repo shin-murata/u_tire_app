@@ -35,7 +35,7 @@
 
 {% if tires %}
 <h2>検索結果</h2>
-<form method="POST" action="{{ url_for('dispatch') }}">
+<form method="POST" action="{{ url_for('dispatch_confirm') }}">
     <table>
         <thead>
             <tr>
@@ -53,10 +53,6 @@
         <tbody>
             {% for tire in tires %}
             <tr>
-                <td>
-                    <input type="checkbox" name="tire_ids" value="{{ tire.id }}" 
-                    {% if tire.id in selected_tires %} checked {% endif %}>
-                </td>
                 <!-- タイヤの在庫番号（id） -->
                 <td>{{ tire.id }}</td>
                 <!-- メーカー（manufacturer） -->
@@ -74,14 +70,9 @@
                 <!-- 登録日（registration_date） -->
                 <td>{{ tire.registration_date }}</td>
                 <td>
-                    {% if not tire.is_dispatched %}
-                        <input type="checkbox" name="tire_ids" value="{{ tire.id }}"
-                        {% if tire.id|string in selected_tires %}checked{% endif %}>
-                    {% else %}
-                        出庫済
-                    {% endif %}
+                    <input type="checkbox" name="tire_ids" value="{{ tire.id }}"
+                    {% if tire.id|string in selected_tires %}checked{% endif %}>
                 </td>
-                <td>{% if tire.is_dispatched %}出庫済{% else %}在庫{% endif %}</td>
                 <!-- 編集リンク -->
                 <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
             </tr>
@@ -90,5 +81,20 @@
     </table>
     <button type="submit">出庫</button>
 </form>
+{% if tires %}
+    <p>検索結果が見つかりました。</p>
+    <table>
+        {% for tire in tires %}
+        <tr>
+            <td>{{ tire.id }}</td>
+            <td>{{ tire.manufacturer_ref.name }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>該当するタイヤが見つかりません。</p>
+{% endif %}
+{% else %}
+<p>該当するタイヤが見つかりません。</p>
 {% endif %}
 {% endblock %}
