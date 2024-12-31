@@ -4,30 +4,24 @@
 <h1>タイヤ検索</h1>
 <form method="POST" class="tire-form">
     {{ form.hidden_tag() }}
-
     <!-- 1段目: width, /, aspect_ratio -->
     <div class="form-group first-row">
         <div class="input-wrap">
-            {{ form.width.label }}
-            {{ form.width(class_="form-control") }}
+            {{ form.width(class_="form-control", placeholder=form.width.label.text) }}
         </div>
         <span>/</span>
         <div class="input-wrap">
-            {{ form.aspect_ratio.label }}
-            {{ form.aspect_ratio(class_="form-control") }}
+            {{ form.aspect_ratio(class_="form-control", placeholder=form.aspect_ratio.label.text) }}
         </div>
     </div>
-
     <!-- 2段目: R, inch, ply_rating -->
     <div class="form-group second-row">
         <span>R</span>
         <div class="input-wrap">
-            {{ form.inch.label }}
-            {{ form.inch(class_="form-control") }}
+            {{ form.inch(class_="form-control", placeholder=form.inch.label.text) }}
         </div>
         <div class="input-wrap">
-            {{ form.ply_rating.label }}
-            {{ form.ply_rating(class_="form-control") }}
+            {{ form.ply_rating(class_="form-control", placeholder=form.ply_rating.label.text) }}
         </div>
     </div>
 <button type="submit">検索</button>

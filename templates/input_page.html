@@ -1,20 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>タイヤ登録</h1>
+<h2>タイヤ登録</h2>
 <form method="POST" class="tire-form">
     {{ form.hidden_tag() }}
 
     <!-- 1段目: width, /, aspect_ratio -->
     <div class="form-group first-row">
         <div class="input-wrap">
-            {{ form.width.label }}
-            {{ form.width(class_="form-control") }}
+            {{ form.width(class_="form-control", placeholder=form.width.label.text) }}
         </div>
         <span>/</span>
         <div class="input-wrap">
-            {{ form.aspect_ratio.label }}
-            {{ form.aspect_ratio(class_="form-control") }}
+            {{ form.aspect_ratio(class_="form-control", placeholder=form.aspect_ratio.label.text) }}
         </div>
     </div>
 
@@ -22,12 +20,10 @@
     <div class="form-group second-row">
         <span>R</span>
         <div class="input-wrap">
-            {{ form.inch.label }}
-            {{ form.inch(class_="form-control") }}
+            {{ form.inch(class_="form-control", placeholder=form.inch.label.text) }}
         </div>
         <div class="input-wrap">
-            {{ form.ply_rating.label }}
-            {{ form.ply_rating(class_="form-control") }}
+            {{ form.ply_rating(class_="form-control", placeholder=form.ply_rating.label.text) }}
         </div>
     </div>
     <!-- タイヤ情報全体を1つの枠で包む -->
@@ -35,28 +31,23 @@
         <!-- グループ1: manufacturer, manufacturing_year -->
         <div class="form-group group-1 group-1-style">
             <div class="input-wrap manufacturer-wrap">
-                {{ form.manufacturer.label }}
-                {{ form.manufacturer(class_="form-control") }}
+                {{ form.manufacturer(class_="form-control", placeholder=form.manufacturer.label.text) }}
             </div>
             <div class="input-wrap manufacturing-year-wrap">
-                {{ form.manufacturing_year.label }}
-                {{ form.manufacturing_year(class_="form-control") }}
+                {{ form.manufacturing_year(class_="form-control", placeholder=form.manufacturing_year.label.text) }}
             </div>
         </div>
 
         <!-- グループ2: tread_depth, uneven_wear, other_details -->
         <div class="form-group group-2 group-2-style">
             <div class="input-wrap small-input" id="tread-depth">
-                {{ form.tread_depth.label }}
-                {{ form.tread_depth(class_="form-control") }}
+                {{ form.tread_depth(class_="form-control", placeholder=form.tread_depth.label.text) }}
             </div>
             <div class="input-wrap small-input" id="uneven-wear">
-                {{ form.uneven_wear.label }}
-                {{ form.uneven_wear(class_="form-control") }}
+                {{ form.uneven_wear(class_="form-control", placeholder=form.uneven_wear.label.text) }}
             </div>
             <div class="input-wrap large-input" id="other-details">
-                {{ form.other_details.label }}
-                {{ form.other_details(class_="form-control") }}
+                {{ form.other_details(class_="form-control", placeholder=form.other_details.label.text) }}
             </div>
             <button type="button" id="copy-button" class="btn copy-btn-group-2">コピー</button>
         </div>

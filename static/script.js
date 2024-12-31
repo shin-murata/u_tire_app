@@ -2,11 +2,9 @@
 // ユーティリティ関数
 // ==============================
 
-// 動的な選択肢を生成する関数
-function generateOptions(options, formatter = value => value) {
-    return options
-        .map(option => `<option value="${option}">${formatter(option)}</option>`)
-        .join('');
+// 選択肢を動的に生成する関数
+function generateOptions(values, formatFn) {
+    return values.map(value => `<option value="${value}">${formatFn(value)}</option>`).join('');
 }
 
 // ==============================
@@ -60,12 +58,15 @@ function addTireForm(targetContainerId) {
             <!-- グループ1: manufacturer, manufacturing_year -->
             <div class="form-group group-1 group-1-style">
                 <div class="input-wrap manufacturer-wrap">
-                    <label for="manufacturer-${formCount}">メーカー:</label>
-                    <select name="manufacturer[]" id="manufacturer-${formCount}" class="form-control"></select>
+                    <select name="manufacturer[]" id="manufacturer-${formCount}" class="form-control">
+                    {% for value, label in form.manufacturer.choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                    </select>
                 </div>
                 <div class="input-wrap manufacturing-year-wrap">
-                <label for="manufacturing_year-${formCount}">製造年:</label>
                 <select name="manufacturing_year[]" id="manufacturing_year-${formCount}" class="form-control">
+                    <option value="0" disabled selected>製造年</option>
                     ${generateOptions([2022, 2023, 2024, 2025], year => `${year}年`)}
                 </select>
             </div>
@@ -74,20 +75,19 @@ function addTireForm(targetContainerId) {
         <!-- グループ2: tread_depth, uneven_wear, other_details -->
         <div class="form-group group-2 group-2-style">
             <div class="input-wrap small-input" id="tread-depth">
-                <label for="tread_depth-${formCount}">残り溝:</label>
                 <select name="tread_depth[]" id="tread_depth-${formCount}" class="form-control">
+                <option value="0" disabled selected>残り溝</option>
                     ${generateOptions([10, 9, 8, 7, 6, 5, 4, 3], depth => `${depth} 分山`)} <!-- 降順 -->
                 </select>
             </div>
             <div class="input-wrap small-input" id="uneven-wear">
-                <label for="uneven_wear-${formCount}">片減り:</label>
                 <select name="uneven_wear[]" id="uneven_wear-${formCount}" class="form-control">
+                <option value="0" disabled selected>片減り</option>
                     ${generateOptions([0, 1, 2, 3], wear => `${wear}段階`)}
                 </select>
             </div>
             <div class="input-wrap large-input" id="other-details">
-                <label for="other_details-${formCount}">その他:</label>
-                <input type="text" name="other_details[]" id="other_details-${formCount}" class="form-control">
+                <input type="text" name="other_details[]" id="other_details-${formCount}" class="form-control" placeholder="その他">
             </div>
             <button type="button" class="btn copy-btn-group-2">コピー</button>
         </div>
@@ -122,9 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", () => {
+    console.log("Filters:", typeof filters, filters);
+
     if (typeof filters === "undefined") {
         console.error("Filters data is not available!");
-        return;
+        console.log("Filters value:", filters);
+        console.error("Filters data is not defined! Please ensure it is properly set.");
+        var filters = {}; // 仮のデータを設定
     }
 
     const filterColumn = document.getElementById("filter_column");
@@ -150,8 +154,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // filters 変数を利用してプルダウンを更新
     function updateFilterValuesFromFilters() {
+        console.log("Before updateFilterValuesFromFilters:", filterValue.innerHTML);
         filterValue.innerHTML = '<option value="">選択してください</option>';
         const selectedColumn = filterColumn.value;
+        console.log("After reset innerHTML:", filterValue.innerHTML);
 
         if (filters[selectedColumn]) {
             const blankOption = document.createElement("option");
@@ -165,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 option.textContent = value || "空欄";
                 filterValue.appendChild(option);
             });
+            console.log("After appending options:", filterValue.innerHTML);
         }
     }
 
@@ -185,12 +192,46 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => console.error('Error fetching filter values:', error));
     }
-});
 
-// スライダーのリアルタイム値表示
-//document.querySelectorAll('input[type="range"]').forEach(slider => {
-    //slider.addEventListener('input', function () {
-        //const spanId = `${this.id}_value`;
-        //document.getElementById(spanId).textContent = this.value;
-    //});
-//});
+    // メーカー関連の初期化
+    (async () => {
+        try {
+            const response = await fetch('/api/manufacturers'); // エンドポイントからデータを取得
+            const result = await response.json(); // データをJSONとしてパース
+            const manufacturers = result.data; // 'data'キーからリストを取得
+            const formCount = 1;
+
+            const manufacturerSelect = document.getElementById(`manufacturer-${formCount}`);
+            if (manufacturerSelect) {
+
+                console.log("Before appending defaultOption:", manufacturerSelect.innerHTML);
+                // 初期値の設定
+                const defaultOption = document.createElement('option');
+                defaultOption.value = 0;
+                defaultOption.textContent = "メーカー";
+                defaultOption.disabled = true; // 選択不可に設定
+                defaultOption.selected = true; // 初期選択状態に設定
+                manufacturerSelect.appendChild(defaultOption);
+
+                console.log("After appending defaultOption:", manufacturerSelect.innerHTML);
+
+                // 動的に選択肢を追加
+                manufacturers.forEach(manufacturer => {
+                    const option = document.createElement('option');
+                    option.value = manufacturer.id;
+                    option.textContent = manufacturer.name;
+                    manufacturerSelect.appendChild(option);
+                });
+
+                console.log("After appending manufacturers:", manufacturerSelect.innerHTML);
+
+                // 初期選択を明示的に設定（冗長チェック）
+                manufacturerSelect.value = "0";
+                // デバッグ: 最終HTMLの確認
+                console.log(manufacturerSelect.innerHTML);
+            }
+        } catch (error) {
+            console.error('Error fetching manufacturers:', error);
+        }
+    })();
+});

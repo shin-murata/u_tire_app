@@ -91,6 +91,7 @@ def input_page():
 
     return render_template('input_page.html', form=form)
 
+
 @app.route('/register_success')
 def register_success():
     ids = request.args.get('ids').split(',')
@@ -265,8 +266,8 @@ def dispatch():
         db.session.rollback()
         flash(f"エラーが発生しました: {e}", "danger")
 
-    # 処理完了後、検索画面にリダイレクト
-    return redirect(url_for('search_page'))
+    # 処理完了後、出庫履歴画面にリダイレクト
+    return redirect(url_for('dispatch_page'))
 
 @app.route('/dispatch_page', methods=['GET'])
 def dispatch_page():
