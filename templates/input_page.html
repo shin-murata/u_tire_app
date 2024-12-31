@@ -39,8 +39,8 @@
                 {{ form.manufacturer(class_="form-control") }}
             </div>
             <div class="input-wrap manufacturing-year-wrap">
-            {{ form.manufacturing_year.label }}
-            {{ form.manufacturing_year(class_="form-control") }}
+                {{ form.manufacturing_year.label }}
+                {{ form.manufacturing_year(class_="form-control") }}
             </div>
         </div>
 
@@ -70,5 +70,8 @@
         <button type="submit" class="btn submit-btn">登録</button>
     </div>
 </form>
+
+<!-- スクリプトを読み込む -->
+<!-- <script src="{{ url_for('static', filename='script.js') }}"></script> -->
 
 {% endblock %}

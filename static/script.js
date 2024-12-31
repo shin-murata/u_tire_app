@@ -1,3 +1,18 @@
+// ==============================
+// ユーティリティ関数
+// ==============================
+
+// 動的な選択肢を生成する関数
+function generateOptions(options, formatter = value => value) {
+    return options
+        .map(option => `<option value="${option}">${formatter(option)}</option>`)
+        .join('');
+}
+
+// ==============================
+// フォーム操作
+// ==============================
+
 let formCount = 0; // フォーム数カウンター
 
 async function loadOptions(selectElement, apiUrl) {
@@ -49,20 +64,26 @@ function addTireForm(targetContainerId) {
                     <select name="manufacturer[]" id="manufacturer-${formCount}" class="form-control"></select>
                 </div>
                 <div class="input-wrap manufacturing-year-wrap">
-                    <label for="manufacturing_year-${formCount}">製造年:</label>
-                    <input type="text" name="manufacturing_year[]" id="manufacturing_year-${formCount}" class="form-control">
-                </div>
+                <label for="manufacturing_year-${formCount}">製造年:</label>
+                <select name="manufacturing_year[]" id="manufacturing_year-${formCount}" class="form-control">
+                    ${generateOptions([2022, 2023, 2024, 2025], year => `${year}年`)}
+                </select>
+            </div>
         </div>
 
         <!-- グループ2: tread_depth, uneven_wear, other_details -->
         <div class="form-group group-2 group-2-style">
             <div class="input-wrap small-input" id="tread-depth">
                 <label for="tread_depth-${formCount}">残り溝:</label>
-                <input type="number" name="tread_depth[]" id="tread_depth-${formCount}" class="form-control">
+                <select name="tread_depth[]" id="tread_depth-${formCount}" class="form-control">
+                    ${generateOptions([10, 9, 8, 7, 6, 5, 4, 3], depth => `${depth} 分山`)} <!-- 降順 -->
+                </select>
             </div>
             <div class="input-wrap small-input" id="uneven-wear">
                 <label for="uneven_wear-${formCount}">片減り:</label>
-                <input type="text" name="uneven_wear[]" id="uneven_wear-${formCount}" class="form-control">
+                <select name="uneven_wear[]" id="uneven_wear-${formCount}" class="form-control">
+                    ${generateOptions([0, 1, 2, 3], wear => `${wear}段階`)}
+                </select>
             </div>
             <div class="input-wrap large-input" id="other-details">
                 <label for="other_details-${formCount}">その他:</label>
@@ -165,3 +186,11 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(error => console.error('Error fetching filter values:', error));
     }
 });
+
+// スライダーのリアルタイム値表示
+//document.querySelectorAll('input[type="range"]').forEach(slider => {
+    //slider.addEventListener('input', function () {
+        //const spanId = `${this.id}_value`;
+        //document.getElementById(spanId).textContent = this.value;
+    //});
+//});

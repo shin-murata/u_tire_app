@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash, session
 from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
-from forms import InputForm, SearchForm, EditForm
+from forms import SearchForm, EditForm, CombinedForm
 from datetime import date
 
 app = Flask(__name__)
@@ -30,7 +30,7 @@ def get_ply_ratings():
 
 @app.route('/input', methods=['GET', 'POST'])
 def input_page():
-    form = InputForm()
+    form = CombinedForm()
 
     if request.method == 'GET':
         # フォームを表示
@@ -267,6 +267,20 @@ def dispatch():
 
     # 処理完了後、検索画面にリダイレクト
     return redirect(url_for('search_page'))
+
+@app.route('/dispatch_page', methods=['GET'])
+def dispatch_page():
+    # デバッグログ
+    print("Accessing dispatch page")
+    try:
+        # 出庫履歴を全て取得
+        dispatch_history = DispatchHistory.query.all()
+        return render_template('dispatch_page.html', dispatch_history=dispatch_history)
+    except Exception as e:
+        flash(f"エラーが発生しました: {e}", "danger")
+        return redirect(url_for('home'))
+
+
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):

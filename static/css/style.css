@@ -84,18 +84,21 @@
 /* グループ2のスタイル */
 .group-2-style {
     display: flex; /* フレックスで横並び */
-    flex-wrap: wrap; /* 狭い画面で要素を折り返し可能に */
+    flex-wrap: nowrap; /* 狭い画面で要素を折り返し可能に */
     background-color: #eef;
     padding: 10px;
     /* border: 1px solid #aac; */
-    gap: 1rem; /* フィールド間の余白を設定 */
+    gap: 0.5rem; /* フィールド間の余白を設定 */
     align-items: center; /* 縦方向中央揃え */
+    overflow-x: auto; /* 必要に応じてスクロールを許可 */
+    width: 100%; /* 親要素を画面幅にフィット */
+    box-sizing: border-box; /* パディングを含めた幅計算 */
 }
 
 .group-2-style .small-input { /* tread_depth と uneven_wear に適用 */
-    flex: 1 1 10%;
-    max-width: 10%; /* 最大幅を10%に制限 */
-    min-width: 50px; /* 最小幅を設定して適切に縮小 */
+    flex: 1 1 25%;
+    max-width: 25%; /* 最大幅を10%に制限 */
+    min-width: 70px; /* 最小幅を設定して適切に縮小 */
     box-sizing: border-box; /* パディングとボーダーを含む幅計算 */
     text-align: center; /* テキストを中央揃え */
 }
