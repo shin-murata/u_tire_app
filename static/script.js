@@ -7,12 +7,7 @@ function generateOptions(values, formatFn) {
     return values.map(value => `<option value="${value}">${formatFn(value)}</option>`).join('');
 }
 
-// ==============================
-// フォーム操作
-// ==============================
-
-let formCount = 0; // フォーム数カウンター
-
+// 選択肢を動的にロードする関数
 async function loadOptions(selectElement, apiUrl) {
     try {
         const response = await fetch(apiUrl);
@@ -21,36 +16,46 @@ async function loadOptions(selectElement, apiUrl) {
         
         // 選択肢をリセット
         selectElement.innerHTML = ''; // 初期化
+
+        // デフォルトオプションを追加
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 0;
+        defaultOption.textContent = "メーカー";
+        defaultOption.disabled = true; // 選択不可に設定
+        defaultOption.selected = true; // 初期選択状態に設定
+        selectElement.appendChild(defaultOption);
+
+        // APIから取得した選択肢を追加
         data.forEach(item => {
             const option = document.createElement('option');
             option.value = item.id;
             option.textContent = item.name || item.value;
             selectElement.appendChild(option);
         });
+
+        console.log(`Options loaded for ${selectElement.id}:`, selectElement.innerHTML);
     } catch (error) {
-    console.error(`Error loading options for ${selectElement.name}:`, error);
+        console.error(`Error loading options for ${selectElement.name || selectElement.id}:`, error);
     }
 }
 
-// 初期化: 共通フォームのロード
-function initializeForm(selectors) {
-    selectors.forEach(({ selector, api }) => {
-        const element = document.querySelector(selector);
-        if (element) {
-            loadOptions(element, api);
-        }
-    });
-}
+// ==============================
+// フォーム操作
+// ==============================
+
+let formCount = 0; // フォーム数カウンター
 
 // フォームを追加する関数
 function addTireForm(targetContainerId) {
+    console.log(`addTireForm called with targetContainerId: ${targetContainerId}`); // ログ追加
     const container = document.querySelector(`#${targetContainerId}`);
     if (!container) {
         console.error(`Container with ID '${targetContainerId}' not found.`);
         return;
     }
-
+    console.log("Container found:", container); // ログ追加
     formCount++; // フォームカウントをインクリメント
+    console.log("Form count incremented. Current formCount:", formCount); // ログ追加
 
     // 個別データフォームを生成
     const formHTML = `
@@ -59,9 +64,10 @@ function addTireForm(targetContainerId) {
             <div class="form-group group-1 group-1-style">
                 <div class="input-wrap manufacturer-wrap">
                     <select name="manufacturer[]" id="manufacturer-${formCount}" class="form-control">
-                    {% for value, label in form.manufacturer.choices %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
+                        <option value="0" disabled selected>メーカー</option>
+                        {% for value, label in form.manufacturer.choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="input-wrap manufacturing-year-wrap">
@@ -94,15 +100,29 @@ function addTireForm(targetContainerId) {
     </div>
     `;
 
+    // フォームを挿入
     container.insertAdjacentHTML("beforeend", formHTML);
+    console.log("HTML after inserting form:", container.innerHTML);
 
     // 新しいフォームのオプションをロード
     const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
-    loadOptions(manufacturerSelect, '/api/manufacturers');
+    if (manufacturerSelect) {
+        console.log(`Manufacturer select element for formCount=${formCount}:`, manufacturerSelect);
+        loadOptions(manufacturerSelect, '/api/manufacturers');
+    } else {
+        console.error(`Manufacturer select element for formCount=${formCount} not found.`);
+    }
 }
 
+// ==============================
+// 初期化処理
+// ==============================
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded event fired.");
+    
     const copiedListContainer = document.getElementById('copied-list');
+    console.log("Copied list container:", copiedListContainer);
 
     // 初期化：コピー元ボタンのリスナー
     document.getElementById('copy-button').addEventListener('click', () => {
@@ -117,121 +137,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 }); // ここで閉じる
 
-// ==========================================
-// フィルタープルダウン更新のスクリプト
-// ==========================================
-
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("Filters:", typeof filters, filters);
-
-    if (typeof filters === "undefined") {
-        console.error("Filters data is not available!");
-        console.log("Filters value:", filters);
-        console.error("Filters data is not defined! Please ensure it is properly set.");
-        var filters = {}; // 仮のデータを設定
-    }
-
-    const filterColumn = document.getElementById("filter_column");
-    const filterValue = document.getElementById("filter_value");
-
-    if (!filterColumn || !filterValue) {
-        console.error("Filter elements are not available in the DOM!");
-        return;
-    }
-
-    // 初期ロード時にフィルターデータを更新
-    updateFilterValuesFromFilters();
-
-    // フィルターカラム変更時にフィルターデータを更新
-    filterColumn.addEventListener("change", () => {
-        const selectedColumn = filterColumn.value;
-        if (filters[selectedColumn]) {
-            updateFilterValuesFromFilters();
-        } else {
-            updateFilterValuesFromAPI(selectedColumn);
-        }
-    });
-
-    // filters 変数を利用してプルダウンを更新
-    function updateFilterValuesFromFilters() {
-        console.log("Before updateFilterValuesFromFilters:", filterValue.innerHTML);
-        filterValue.innerHTML = '<option value="">選択してください</option>';
-        const selectedColumn = filterColumn.value;
-        console.log("After reset innerHTML:", filterValue.innerHTML);
-
-        if (filters[selectedColumn]) {
-            const blankOption = document.createElement("option");
-            blankOption.value = "NULL";
-            blankOption.textContent = "空欄";
-            filterValue.appendChild(blankOption);
-
-            filters[selectedColumn].forEach(value => {
-                const option = document.createElement("option");
-                option.value = value || "NULL";
-                option.textContent = value || "空欄";
-                filterValue.appendChild(option);
-            });
-            console.log("After appending options:", filterValue.innerHTML);
-        }
-    }
-
-    // API から値を取得してプルダウンを更新
-    function updateFilterValuesFromAPI(columnName) {
-        filterValue.innerHTML = '<option value="">選択してください</option>';
-        if (!columnName) return;
-
-        fetch(`/api/unique_values/${columnName}`)
-            .then(response => response.json())
-            .then(data => {
-                data.data.forEach(value => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = value;
-                    filterValue.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error fetching filter values:', error));
-    }
-
-    // メーカー関連の初期化
-    (async () => {
-        try {
-            const response = await fetch('/api/manufacturers'); // エンドポイントからデータを取得
-            const result = await response.json(); // データをJSONとしてパース
-            const manufacturers = result.data; // 'data'キーからリストを取得
-            const formCount = 1;
-
-            const manufacturerSelect = document.getElementById(`manufacturer-${formCount}`);
-            if (manufacturerSelect) {
-
-                console.log("Before appending defaultOption:", manufacturerSelect.innerHTML);
-                // 初期値の設定
-                const defaultOption = document.createElement('option');
-                defaultOption.value = 0;
-                defaultOption.textContent = "メーカー";
-                defaultOption.disabled = true; // 選択不可に設定
-                defaultOption.selected = true; // 初期選択状態に設定
-                manufacturerSelect.appendChild(defaultOption);
-
-                console.log("After appending defaultOption:", manufacturerSelect.innerHTML);
-
-                // 動的に選択肢を追加
-                manufacturers.forEach(manufacturer => {
-                    const option = document.createElement('option');
-                    option.value = manufacturer.id;
-                    option.textContent = manufacturer.name;
-                    manufacturerSelect.appendChild(option);
-                });
-
-                console.log("After appending manufacturers:", manufacturerSelect.innerHTML);
-
-                // 初期選択を明示的に設定（冗長チェック）
-                manufacturerSelect.value = "0";
-                // デバッグ: 最終HTMLの確認
-                console.log(manufacturerSelect.innerHTML);
-            }
-        } catch (error) {
-            console.error('Error fetching manufacturers:', error);
-        }
-    })();
-});
