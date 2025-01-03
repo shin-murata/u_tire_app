@@ -1,22 +1,93 @@
-from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash, session
+from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash, session, Response, g
 from flask_migrate import Migrate  # Flask-Migrate をインポート
 from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
 from forms import SearchForm, EditForm, CombinedForm
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required, AnonymousUserMixin
+from config import Config
 from datetime import date
+import pdfkit
 
 app = Flask(__name__)
-app.config.from_object('config.Config')
+app.config.from_object(Config)  # Config クラスを読み込む
+
 
 # データベースを初期化
 db.init_app(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+# カスタム AnonymousUserMixin クラスを設定
+class CustomAnonymousUser(AnonymousUserMixin):
+    id = None  # デフォルトの id 属性を追加
+
+login_manager.anonymous_user = CustomAnonymousUser  # ログイン管理にカスタムクラスを登録
 
 # Flask-Migrate を初期化
 migrate = Migrate(app, db)
 
-# アプリケーションのルート設定
+# ユーザーローダー関数
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# ログインルート
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password.', 'danger')
+    return render_template('login.html')
+
+@app.context_processor
+def inject_user():
+    from flask_login import current_user
+    return dict(user=current_user)
+
+# ログアウトルート
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
+
+from flask_login import login_required
+
+@app.route('/protected')
+@login_required
+def protected_route():
+    # current_user.id はログインが保証されているため安全に使用可能
+    return f"Welcome, user {current_user.id}"
+
+# ホームルート
 @app.route('/')
+@login_required
 def index():
-    return render_template('base.html')
+    return render_template('base.html', user=current_user)
+
+# ユーザー登録ルート
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.', 'danger')
+        else:
+            new_user = User(username=username)
+            new_user.set_password(password)
+            db.session.add(new_user)
+            db.session.commit()
+            flash('User registered successfully.', 'success')
+            return redirect(url_for('login'))
+    return render_template('register.html')
 
 @app.route('/api/manufacturers', methods=['GET'])
 def get_manufacturers():
@@ -276,11 +347,66 @@ def dispatch_page():
     try:
         # 出庫履歴を全て取得
         dispatch_history = DispatchHistory.query.all()
-        return render_template('dispatch_page.html', dispatch_history=dispatch_history)
+
+        # セッションから選択されたタイヤIDを取得
+        selected_tires_ids = session.get('selected_tires', [])
+        selected_tires = [
+            InputPage.query.get(tire_id) for tire_id in selected_tires_ids if tire_id is not None
+        ]
+
+        # 合計本数と金額合計を計算
+        total_tires = len(selected_tires)
+        total_price = sum(tire.price for tire in selected_tires if tire.price)
+
+        # デバッグ情報を出力
+        print(f"Selected tires IDs: {selected_tires_ids}")
+        print(f"Selected tires objects: {[tire.id for tire in selected_tires if tire]}")
+        print(f"Total tires: {total_tires}, Total price: {total_price}")
+
+        return render_template(
+            'dispatch_page.html',
+            dispatch_history=dispatch_history,
+            selected_tires=selected_tires,
+            total_tires=total_tires,
+            total_price=total_price
+        )
     except Exception as e:
         flash(f"エラーが発生しました: {e}", "danger")
         return redirect(url_for('home'))
 
+
+@app.route('/generate_dispatch_pdf', methods=['POST'])
+def generate_dispatch_pdf():
+    try:
+        # 今回の出庫タイヤを取得（仮定: session['selected_tires'] に保存）
+        selected_tire = session.get('selected_tire', [])
+
+        if not selected_tire_ids:
+            flash("出庫対象のタイヤが見つかりません。", "warning")
+            return redirect(url_for('dispatch_page'))
+
+        # 合計本数と金額計算
+        total_tires = len(selected_tire_ids)
+        total_price = sum(tire.price for tire in selected_tire_ids if tire.price)
+
+        # PDF生成用HTMLテンプレートをレンダリング
+        rendered_html = render_template(
+            'dispatch_pdf.html', 
+            selected_tire_ids=selected_tire_ids,
+            total_tires=total_tires,
+            total_price=total_price
+        )
+
+        # PDF生成
+        pdf = pdfkit.from_string(rendered_html, False)
+
+        # PDFをレスポンスとして返す
+        response = Response(pdf, content_type='application/pdf')
+        response.headers['Content-Disposition'] = 'inline; filename=dispatch_instructions.pdf'
+        return response
+    except Exception as e:
+        flash(f"PDF生成中にエラーが発生しました: {e}", "danger")
+        return redirect(url_for('dispatch_page'))
 
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -316,9 +442,11 @@ def inventory_list():
         # 全ての条件を解除して初期状態を表示
         tires = query.all()
     elif form.validate_on_submit():
-        # 登録日でのみフィルタリング
+       # フィルタリング条件を適用
         if form.registration_date.data:
             query = query.filter(InputPage.registration_date == form.registration_date.data)
+        if 'filter_unpriced' in request.form:
+            query = query.filter(InputPage.price.is_(None))
         # 結果を取得
         tires = query.all()
     else:
@@ -341,6 +469,11 @@ def inventory_list():
                     print(f"Invalid price value for tire ID {tire.id}, skipping update.")
             if other_details_key in request.form and request.form[other_details_key]:
                 tire.other_details = request.form[other_details_key]
+
+            # 編集者と日時を更新
+            tire.last_edited_by = current_user.id  # Assuming `current_user` contains the logged-in user
+            tire.last_edited_at = datetime.utcnow()
+
 
         # 変更をデータベースに保存
         db.session.commit()

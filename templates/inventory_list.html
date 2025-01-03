@@ -8,6 +8,7 @@
         {{ form.registration_date.label }} {{ form.registration_date(size=10) }}
         <button type="submit" name="search">検索</button>
         <button type="submit" name="reset">条件リセット</button>
+        <button type="submit" name="filter_unpriced">価格未入力</button>
     </div>
 </form>
     <!-- 絞り込み後のデータ表示 -->
@@ -16,19 +17,19 @@
     <table>
         <thead>
             <tr>
-                <th>ID</th>
+                <th>在庫番号</th>
                 <th>登録日</th>
-                <th>Width</th>
-                <th>Aspect Ratio</th>
-                <th>Inch</th>
-                <th>Ply Rating</th>
-                <th>Manufacturer</th>
-                <th>manufacturing_year</th>
-                <th>Price</th>
-                <th>Tread Depth</th>
-                <th>Uneven Wear</th>
-                <th>Is Dispatched</th>
-                <th>Other Details</th>
+                <th>幅</th>
+                <th>扁平率</th>
+                <th>インチ</th>
+                <th>プライ</th>
+                <th>メーカー</th>
+                <th>製造年</th>
+                <th>価格</th>
+                <th>残り溝</th>
+                <th>片減り</th>
+                <th>在庫</th>
+                <th>その他</th>
             </tr>
         </thead>
         <tbody>
@@ -51,6 +52,8 @@
                 <td>
                     <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" size="20">
                 </td>
+                <td>{{ tire.last_edited_by }}</td>
+                <td>{{ tire.last_edited_at }}</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -13,6 +13,47 @@
 {% endif %}
 {% endwith %}
 
+<h1>出庫指示書</h1>
+<!-- 今回の出庫タイヤ表示 -->
+<table>
+    <thead>
+        <tr>
+            <th>在庫番号</th>
+            <th>幅</th>
+            <th>扁平率</th>
+            <th>インチ</th>
+            <th>プライ</th>
+            <th>メーカー</th>
+            <th>金額</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tire in selected_tire %}
+        <tr>
+            <td>{{ tire.id }}</td>
+            <td>{{ tire.width }}</td>
+            <td>{{ tire.aspect_ratio }}</td>
+            <td>{{ tire.inch }}</td>
+            <td>{{ tire.ply_rating }}</td>
+            <td>{{ tire.manufacturer }}</td>
+            <td>{{ tire.price }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="6" style="text-align: right;"><strong>合計本数:</strong></td>
+            <td>{{ total_tires }}</td>
+        </tr>
+        <tr>
+            <td colspan="6" style="text-align: right;"><strong>金額合計:</strong></td>
+            <td>{{ total_price }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<form method="POST" action="{{ url_for('generate_dispatch_pdf') }}">
+    <button type="submit">指示書をPDFで印刷</button>
+</form>
+
 <h1>出庫履歴</h1>
 <!-- 出庫履歴表示のテーブルなど -->
 <table>

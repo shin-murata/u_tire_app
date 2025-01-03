@@ -16,6 +16,14 @@
             <a href="{{ url_for('dispatch_page') }}">出庫管理</a>
             <a href="{{ url_for('alert_page') }}">アラート</a>
         </nav>
+        {% if user.is_authenticated %}
+            <h1>Welcome, {{ user.username }}!</h1>
+            <p>You are logged in as: {{ user.username }}</p>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+            <h1>Welcome, Guest!</h1>
+            <p>Please <a href="{{ url_for('login') }}">log in</a>.</p>
+        {% endif %}
     </header>
     <main>
         {% block content %}

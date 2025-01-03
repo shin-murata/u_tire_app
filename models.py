@@ -1,4 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 db = SQLAlchemy()
 
@@ -72,12 +75,6 @@ class AlertPage(db.Model):
     inventory_count = db.Column(db.Integer, nullable=False)
     search_count = db.Column(db.Integer, nullable=False)
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    email = db.Column(db.String, nullable=False)
-    role = db.Column(db.String, nullable=False)
-
 class SearchPage(db.Model):
     __tablename__ = 'search_page'
     id = db.Column(db.Integer, primary_key=True)
@@ -94,3 +91,28 @@ class EditPage(db.Model):
     action = db.Column(db.String, nullable=False)
     edit_date = db.Column(db.Date, nullable=False)
     details = db.Column(db.String)
+
+# Userモデルの定義
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(150), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
+    role = db.relationship('Role', backref=db.backref('users', lazy=True))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def has_role(self, role_name):
+        return self.role and self.role.name == role_name
+    
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+
+    

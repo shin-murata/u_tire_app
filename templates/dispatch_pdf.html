@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>出庫指示書</h1>
+<table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr>
+            <th>在庫番号</th>
+            <th>幅</th>
+            <th>扁平率</th>
+            <th>インチ</th>
+            <th>プライ</th>
+            <th>メーカー</th>
+            <th>金額</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tire in selected_tires %}
+        <tr>
+            <td>{{ tire.id }}</td>
+            <td>{{ tire.width }}</td>
+            <td>{{ tire.aspect_ratio }}</td>
+            <td>{{ tire.inch }}</td>
+            <td>{{ tire.ply_rating }}</td>
+            <td>{{ tire.manufacturer }}</td>
+            <td>{{ tire.price }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="6" style="text-align: right;"><strong>合計本数:</strong></td>
+            <td>{{ total_tires }}</td>
+        </tr>
+        <tr>
+            <td colspan="6" style="text-align: right;"><strong>金額合計:</strong></td>
+            <td>{{ total_price }}</td>
+        </tr>
+    </tbody>
+</table>
+<p>発行日: {{ current_date }}</p>
+{% endblock %}
