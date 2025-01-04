@@ -312,8 +312,8 @@ def dispatch():
     print(f"Request method: {request.method}")
     print(f"Session selected tires before processing: {session.get('selected_tires')}")
 
-    # 確認画面から送信された確認済みタイヤIDリストを取得
-    selected_tires = session.pop('selected_tires', [])
+    selected_tires = session.get('selected_tires', [])
+    processed_tire_ids = []  # 処理済みタイヤIDのリスト
     try:
         # データベース処理: 確認済みタイヤを出庫処理
         for tire_id in selected_tires:
@@ -328,9 +328,13 @@ def dispatch():
                     dispatch_date=date.today()
                 )
                 db.session.add(new_dispatch)
-
+                processed_tire_ids.append(tire_id)
         # データベースの変更を保存
         db.session.commit()
+
+        # セッションに保存
+        session['processed_tires'] = processed_tire_ids
+
         flash("出庫処理が完了しました。", "success")
     except Exception as e:
         # エラー発生時はロールバック
@@ -345,28 +349,26 @@ def dispatch_page():
     # デバッグログ
     print("Accessing dispatch page")
     try:
-        # 出庫履歴を全て取得
-        dispatch_history = DispatchHistory.query.all()
+        # 出庫履歴から今回の出庫データを取得
+        processed_tire_ids = session.get('processed_tires', [])  # セッションから取得
+        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
 
-        # セッションから選択されたタイヤIDを取得
-        selected_tires_ids = session.get('selected_tires', [])
-        selected_tires = [
-            InputPage.query.get(tire_id) for tire_id in selected_tires_ids if tire_id is not None
+        # 出庫対象タイヤを再取得
+        tires_to_dispatch = [
+            InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history
         ]
 
-        # 合計本数と金額合計を計算
-        total_tires = len(selected_tires)
-        total_price = sum(tire.price for tire in selected_tires if tire.price)
+        # 合計数と合計金額を計算
+        total_tires = len(tires_to_dispatch)
+        total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
 
-        # デバッグ情報を出力
-        print(f"Selected tires IDs: {selected_tires_ids}")
-        print(f"Selected tires objects: {[tire.id for tire in selected_tires if tire]}")
-        print(f"Total tires: {total_tires}, Total price: {total_price}")
+        # デバッグログ
+        print(f"Processed tire IDs: {processed_tire_ids}")
+        print(f"Tires to dispatch: {[tire.id for tire in tires_to_dispatch if tire]}")
 
         return render_template(
             'dispatch_page.html',
-            dispatch_history=dispatch_history,
-            selected_tires=selected_tires,
+            tires_to_dispatch=tires_to_dispatch,
             total_tires=total_tires,
             total_price=total_price
         )
@@ -378,21 +380,33 @@ def dispatch_page():
 @app.route('/generate_dispatch_pdf', methods=['POST'])
 def generate_dispatch_pdf():
     try:
-        # 今回の出庫タイヤを取得（仮定: session['selected_tires'] に保存）
-        selected_tire = session.get('selected_tire', [])
+        # 今回の出庫タイヤを取得
+        processed_tire_ids = session.get('processed_tires', [])
 
-        if not selected_tire_ids:
+        if not processed_tire_ids:
             flash("出庫対象のタイヤが見つかりません。", "warning")
             return redirect(url_for('dispatch_page'))
 
-        # 合計本数と金額計算
-        total_tires = len(selected_tire_ids)
-        total_price = sum(tire.price for tire in selected_tire_ids if tire.price)
+        # 出庫履歴から対象データを取得
+        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
 
+        # 出庫対象タイヤを再取得
+        tires_to_dispatch = [
+            InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history
+        ]
+
+        # 合計本数と金額計算
+        total_tires = len(tires_to_dispatch)
+        total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
+
+        # デバッグログ
+        print(f"Processed tire IDs: {processed_tire_ids}")
+        print(f"Tires to dispatch for PDF: {[tire.id for tire in tires_to_dispatch if tire]}")
+        
         # PDF生成用HTMLテンプレートをレンダリング
         rendered_html = render_template(
             'dispatch_pdf.html', 
-            selected_tire_ids=selected_tire_ids,
+            tires_to_dispatch=tires_to_dispatch,
             total_tires=total_tires,
             total_price=total_price
         )

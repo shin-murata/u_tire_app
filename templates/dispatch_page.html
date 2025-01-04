@@ -18,25 +18,58 @@
 <table>
     <thead>
         <tr>
-            <th>在庫番号</th>
             <th>幅</th>
-            <th>扁平率</th>
+            <th>アスペクト比</th>
             <th>インチ</th>
-            <th>プライ</th>
+            <th>プライレーティング</th>
+        </tr>
+    </thead> 
+    <tbody>
+        <!-- 共通データの行 -->
+        {% if tires_to_dispatch|length > 0 %}
+        <tr>
+            <td>
+                <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
+                {{ tires_to_dispatch[0].width_ref.value }}
+            </td>
+            <td>
+                <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
+                {{ tires_to_dispatch[0].aspect_ratio_ref.value }}
+            </td>
+            <td>
+                <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
+                {{ tires_to_dispatch[0].inch_ref.value }}
+            </td>
+            <td>
+                <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
+                {{ tires_to_dispatch[0].ply_rating_ref.value }}
+            </td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>   
+<!-- 個別データの一覧表示 -->
+<h4>個別データ</h4>
+<table>
+    <thead>
+        <tr>
+            <th>在庫番号</th>
             <th>メーカー</th>
-            <th>金額</th>
+            <th>製造年</th>
+            <th>溝</th>
+            <th>片減り</th>
+            <th>その他の詳細</th>
         </tr>
     </thead>
     <tbody>
-        {% for tire in selected_tire %}
+        {% for tire in tires_to_dispatch %}
         <tr>
             <td>{{ tire.id }}</td>
-            <td>{{ tire.width }}</td>
-            <td>{{ tire.aspect_ratio }}</td>
-            <td>{{ tire.inch }}</td>
-            <td>{{ tire.ply_rating }}</td>
-            <td>{{ tire.manufacturer }}</td>
-            <td>{{ tire.price }}</td>
+            <td>{{ tire.manufacturer_ref.name }}</td>
+            <td>{{ tire.manufacturing_year }}</td>
+            <td>{{ tire.tread_depth }}</td>
+            <td>{{ tire.uneven_wear }}</td>
+            <td>{{ tire.other_details }}</td>
         </tr>
         {% endfor %}
         <tr>
