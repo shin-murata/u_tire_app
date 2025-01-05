@@ -15,6 +15,10 @@
             <a href="{{ url_for('history_page') }}">履歴</a>
             <a href="{{ url_for('dispatch_page') }}">出庫管理</a>
             <a href="{{ url_for('alert_page') }}">アラート</a>
+            <!-- 管理者向けリンク -->
+            {% if user.is_authenticated and user.has_role('admin') %}
+                <a href="{{ url_for('admin.manage') }}">管理画面</a>
+            {% endif %}
         </nav>
         {% if user.is_authenticated %}
             <h1>Welcome, {{ user.username }}!</h1>

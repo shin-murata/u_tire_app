@@ -225,12 +225,12 @@
         padding: 10px 20px; /* ボタンの余白を調整 */
     }
 
-    button {
-        width: auto !important; /* ボタンの幅を自動に戻す */
-        max-width: fit-content; /* コンテンツに合わせた最大幅 */
-        padding: 1rem; /* 余白の調整 */
-        font-size: 1rem; /* フォントサイズの調整 */
-    }
+    /* button { */
+        /* width: auto !important; ボタンの幅を自動に戻す */
+        /* max-width: fit-content; コンテンツに合わせた最大幅 */
+        /* padding: 1rem; 余白の調整 */
+        /* font-size: 1rem; フォントサイズの調整 */
+    /* } */
 
     .copy-button {
         width: auto !important; /* コピーボタンの幅を固定 */

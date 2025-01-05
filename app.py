@@ -1,15 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for,  jsonify, flash, session, Response, g
+from flask import Blueprint, Flask, render_template, request, redirect, url_for,  jsonify, flash, session, Response, g
 from flask_migrate import Migrate  # Flask-Migrate をインポート
-from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User
+from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User, Role
 from forms import SearchForm, EditForm, CombinedForm
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required, AnonymousUserMixin
+from utils import role_required # role_requiredをインポート
+from routes.admin import admin_bp
 from config import Config
-from datetime import date
+from datetime import datetime, date
 import pdfkit
 
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
 
+# 必要な設定
+app.config['SECRET_KEY'] = 'your_secret_key'
 
 # データベースを初期化
 db.init_app(app)
@@ -24,6 +28,14 @@ login_manager.anonymous_user = CustomAnonymousUser  # ログイン管理にカ�
 
 # Flask-Migrate を初期化
 migrate = Migrate(app, db)
+
+# ホームルート
+@app.route('/')
+@login_required
+def index():
+    # 管理画面のリンクを生成
+    admin_url = url_for('admin.manage')
+    return render_template('base.html', user=current_user, admin_url=admin_url)
 
 # ユーザーローダー関数
 @login_manager.user_loader
@@ -65,12 +77,6 @@ from flask_login import login_required
 def protected_route():
     # current_user.id はログインが保証されているため安全に使用可能
     return f"Welcome, user {current_user.id}"
-
-# ホームルート
-@app.route('/')
-@login_required
-def index():
-    return render_template('base.html', user=current_user)
 
 # ユーザー登録ルート
 @app.route('/register', methods=['GET', 'POST'])
@@ -495,5 +501,9 @@ def inventory_list():
 
     return render_template('inventory_list.html', form=form, tires=tires)
 
+# Blueprintの登録
+app.register_blueprint(admin_bp)
+
 if __name__ == '__main__':
+    print(app.url_map)  # 登録済みルートを確認
     app.run(debug=True)

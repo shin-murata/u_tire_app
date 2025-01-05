@@ -88,8 +88,15 @@ class SearchForm(FlaskForm):
         self.aspect_ratio.choices = [(0, f"{self.aspect_ratio.label.text}")] + [(ar.id, ar.value) for ar in AspectRatio.query.all()]
         self.inch.choices = [(0, f"{self.inch.label.text}")] + [(i.id, i.value) for i in Inch.query.all()]
         self.ply_rating.choices = [(0, f"{self.ply_rating.label.text}")] + [(p.id, p.value) for p in PlyRating.query.all()]
+
 class EditForm(CombinedForm):
     price = FloatField('価格', validators=[Optional()])
     other_details = StringField('その他', validators=[Optional()])
     submit = SubmitField('登録')
     pass
+
+# 共通のフォーム
+class EditForm(FlaskForm):
+    id = IntegerField('ID')  # 編集対象のID
+    value = StringField('Value', validators=[DataRequired()])
+    submit = SubmitField('Update')

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>管理画面</title>
+</head>
+<body>
+    <h1>管理画面</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+            {% for category, message in messages %}
+                <li class="flash-{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <!-- モデルごとのデータ管理 -->
+    {% for model_name, model_data in data.items() %}
+        <div>
+            <h2>{{ model_name | capitalize }}</h2>
+            <!-- 新しいデータを追加 -->
+            <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}">
+                <input type="text" name="value" placeholder="新しい {{ model_name }} を追加">
+                <button type="submit">追加</button>
+            </form>
+            <ul>
+                {% for entry in model_data.entries %}
+                    <li>
+                        <!-- <p>Model Name: {{ model_name }}</p> デバッグ -->
+                        <!-- <p>Entry ID: {{ entry.id }}</p> デバッグ -->
+                        <!-- <p>Generated URL: {{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}</p> -->
+                        <!-- データの更新 -->
+                        <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" style="display:inline;">
+                            <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}">
+                            <button type="submit">更新</button>
+                        </form>
+                        <!-- データの削除 -->
+                        <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}" style="display:inline;">
+                            <button type="submit">削除</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+
+    <!-- ユーザー管理 -->
+    <h2>ユーザー管理</h2>
+    <!-- 新しいユーザーを追加 -->
+    <form method="POST" action="{{ url_for('admin.add_user') }}">
+        <input type="text" name="username" placeholder="ユーザー名">
+        <input type="password" name="password" placeholder="パスワード">
+        <select name="role_id">
+            {% for role in roles %}
+                <option value="{{ role.id }}">{{ role.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">ユーザーを追加</button>
+    </form>
+    <ul>
+        {% for user in users %}
+            <li>
+                {{ user.username }} (権限: {{ user.role.name }})
+                <!-- ユーザーを削除 -->
+                <form method="POST" action="{{ url_for('admin.delete_user', id=user.id) }}" style="display:inline;">
+                    <button type="submit">削除</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+{% endblock %}
