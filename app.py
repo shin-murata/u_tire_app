@@ -504,6 +504,18 @@ def inventory_list():
 # Blueprintの登録
 app.register_blueprint(admin_bp)
 
+# 金額を3桁区切りでフォーマットするカスタムフィルタ
+@app.template_filter('currency')
+def format_currency(value):
+    if value is None:
+        return ""  # 値がない場合は空文字を返す
+    try:
+        # 金額を3桁区切りの整数形式でフォーマット
+        return "{:,.0f}".format(value)
+    except ValueError:
+        return value  # フォーマットに失敗した場合は元の値を返す
+
+
 if __name__ == '__main__':
-    print(app.url_map)  # 登録済みルートを確認
+    # print(app.url_map)  # 登録済みルートを確認
     app.run(debug=True)
