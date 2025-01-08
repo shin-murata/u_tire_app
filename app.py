@@ -457,19 +457,30 @@ def inventory_list():
     query = InputPage.query.order_by(InputPage.id.desc())
     tires = None
 
-    # リセットボタンの処理
-    if request.method == 'POST' and 'reset' in request.form:
-        # 全ての条件を解除して初期状態を表示
-        tires = query.all()
-    elif form.validate_on_submit():
-       # フィルタリング条件を適用
-        if form.registration_date.data:
-            query = query.filter(InputPage.registration_date == form.registration_date.data)
-        if 'filter_unpriced' in request.form:
-            query = query.filter(InputPage.price.is_(None))
-        # 結果を取得
-        tires = query.all()
+    # POSTリクエスト処理
+    if request.method == 'POST':
+        if 'reset' in request.form:
+            # 全ての条件を解除して全在庫を表示
+            tires = query.all()
+        elif 'filter_in_stock' in request.form:
+            # 在庫があるものだけを取得
+            query = query.filter(InputPage.is_dispatched == False)
+            tires = query.all()
+        elif 'filter_dispatched' in request.form:
+            # 出庫済みのものだけを取得
+            query = query.filter(InputPage.is_dispatched == True)
+            tires = query.all()
+        else:
+            # その他の条件はフォームから取得して適用
+            if form.validate_on_submit():
+                if form.registration_date.data:
+                    query = query.filter(InputPage.registration_date == form.registration_date.data)
+                if 'filter_unpriced' in request.form:
+                    query = query.filter(InputPage.price.is_(None))
+            tires = query.all()
     else:
+        # GETリクエスト時：デフォルトで在庫があるものだけを取得
+        query = query.filter(InputPage.is_dispatched == False)
         tires = query.all()
 
     # 一括更新処理
@@ -483,7 +494,8 @@ def inventory_list():
             if price_key in request.form and request.form[price_key]:
                 try:
                     # 空白や無効な値を弾く
-                    tire.price = float(request.form[price_key])
+                    # 金額を整数として保存
+                    tire.price = int(request.form[price_key].replace(',', '').strip())
                 except ValueError:
                     # 無効な値の場合はスキップ
                     print(f"Invalid price value for tire ID {tire.id}, skipping update.")

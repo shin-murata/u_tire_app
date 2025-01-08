@@ -30,8 +30,13 @@
 </div>
 
 <div class="container form-container mt-4">
-    <h5 class="mb-3">検索結果</h5>
     <form method="POST" action="{{ url_for('dispatch_confirm') }}">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">検索結果</h5>
+            {% if tires %}
+            <button type="submit" class="btn btn-primary">出庫</button>
+            {% endif %}
+        </div>
         {% if tires %}
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
@@ -70,10 +75,10 @@
                 </tbody>
             </table>
         </div>
-        <button type="submit" class="btn btn-primary mt-3">出庫</button>
         {% else %}
         <p class="alert alert-warning">該当するタイヤが見つかりません。</p>
         {% endif %}
     </form>
 </div>
+
 {% endblock %}

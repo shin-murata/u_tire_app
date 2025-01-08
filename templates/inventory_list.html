@@ -7,8 +7,10 @@
     <div>
         {{ form.registration_date.label }} {{ form.registration_date(size=10) }}
         <button type="submit" name="search">検索</button>
-        <button type="submit" name="reset">条件リセット</button>
         <button type="submit" name="filter_unpriced">価格未入力</button>
+        <button type="submit" name="filter_in_stock">在庫があるもの</button>
+        <button type="submit" name="filter_dispatched">出庫済み</button>
+        <button type="submit" name="reset">全て表示</button>
     </div>
 </form>
     <!-- 絞り込み後のデータ表示 -->
@@ -44,7 +46,7 @@
                 <td>{{ tire.manufacturer_ref.name }}</td>
                 <td>{{ tire.manufacturing_year }}</td>
                 <td>
-                    <input type="text" name="price_{{ tire.id }}" value="{{ tire.price }}" size="10">
+                    <input type="text" name="price_{{ tire.id }}" value="{{ tire.price|currency }}" size="10">
                 </td>
                 <td>{{ tire.tread_depth }}</td>
                 <td>{{ tire.uneven_wear }}</td>
