@@ -138,6 +138,12 @@ def input_page():
         uneven_wears.insert(0, request.form.get('uneven_wear'))
         other_details.insert(0, request.form.get('other_details'))
 
+        # バリデーション: 必須項目が選択されていない場合エラーを返す
+        if not width or not aspect_ratio or not inch or not manufacturers:
+            flash("必須項目をすべて正しく選択してください。", "danger")
+            return render_template('input_page.html', form=form)
+
+
         # データ登録
         try:
             ids = []
@@ -160,9 +166,11 @@ def input_page():
                 ids.append(new_tire.id)
             
             # 登録完了画面にリダイレクト
+            flash("登録が完了しました。", "success")
             return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
         except Exception as e:
             db.session.rollback()
+            flash("登録中にエラーが発生しました。", "danger")
             print(f"Error: {e}")
             return jsonify({'error': '登録中にエラーが発生しました！'})
 
