@@ -3,30 +3,53 @@
 {% block content %}
 <div class="container form-container">
     <h5>タイヤ登録</h5>
+
+    <!-- Flashメッセージの表示 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %} <!-- ← 正しく閉じる -->
+    
     <form method="POST" class="tire-form">
         {{ form.hidden_tag() }}
 
         <!-- 1段目: width, /, aspect_ratio -->
+        <!-- 1段目: 幅と扁平率 -->
         <div class="form-group first-row">
             <div class="input-wrap">
-                {{ form.width(class_="form-control", placeholder=form.width.label.text) }}
+                <!-- プルダウンメニュー: 幅 -->
+                <label for="width">幅</label>
+                {{ form.width(class_="form-control", id="width", placeholder="選択してください") }}
             </div>
             <span>/</span>
             <div class="input-wrap">
-                {{ form.aspect_ratio(class_="form-control", placeholder=form.aspect_ratio.label.text) }}
+                <!-- プルダウンメニュー: 扁平率 -->
+                <label for="aspect_ratio">扁平率</label>
+                {{ form.aspect_ratio(class_="form-control", id="aspect_ratio", placeholder="選択してください") }}
             </div>
         </div>
 
         <!-- 2段目: R, inch, ply_rating -->
+        <!-- 2段目: インチとプライレーティング -->
         <div class="form-group second-row">
             <span>R</span>
             <div class="input-wrap">
-                {{ form.inch(class_="form-control", placeholder=form.inch.label.text) }}
+                <!-- プルダウンメニュー: インチ -->
+                <label for="inch">インチ</label>
+                {{ form.inch(class_="form-control", id="inch", placeholder="選択してください") }}
             </div>
             <div class="input-wrap">
-                {{ form.ply_rating(class_="form-control", placeholder=form.ply_rating.label.text) }}
+                <!-- プルダウンメニュー: プライレーティング（任意入力） -->
+                <label for="ply_rating">プライレーティング</label>
+                {{ form.ply_rating(class_="form-control", id="ply_rating", placeholder="選択してください") }}
             </div>
         </div>
+
         <!-- タイヤ情報全体を1つの枠で包む -->
         <div class="copied-tire-form">
             <!-- グループ1: manufacturer, manufacturing_year -->
@@ -63,6 +86,10 @@
         </div>
     </form>
 </div>
+{% for error in form.ply_rating.errors %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endfor %}
+
 
 <!-- スクリプトを読み込む -->
 <!-- <script src="{{ url_for('static', filename='script.js') }}"></script> -->

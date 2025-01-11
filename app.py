@@ -114,6 +114,12 @@ def input_page():
         return render_template('input_page.html', form=form)
 
     elif request.method == 'POST':
+        # デバッグ用: 送信されたフォームデータを確認
+        print(f"Received POST data: {request.form}")
+        print(f"tread_depths raw value: {request.form.get('tread_depths')}")
+        print(f"uneven_wear raw value: {request.form.get('uneven_wear')}")
+        print(f"uneven_wears list: {request.form.getlist('uneven_wear[]')}")
+        print(f"tread_depths list: {request.form.getlist('tread_depths[]')}")
         # 共通データの取得
         registration_date = request.form.get('registration_date')
         if not registration_date:
@@ -129,7 +135,28 @@ def input_page():
         manufacturing_years = request.form.getlist('manufacturing_year[]')
         tread_depths = request.form.getlist('tread_depth[]')
         uneven_wears = request.form.getlist('uneven_wear[]')
+        uneven_wears = request.form.getlist('uneven_wear[]')
         other_details = request.form.getlist('other_details[]')
+
+        # 個別データの初期化とデフォルト値設定を統一
+        tread_depths = [
+            int(value) if value and value.isdigit() else None for value in tread_depths
+        ]
+        uneven_wears = [
+            int(value) if value and value.isdigit() else None for value in uneven_wears
+        ]
+
+        # デバッグ用: 修正後のリストを確認
+        print(f"Processed tread_depths: {tread_depths}")
+        print(f"Processed uneven_wears: {uneven_wears}")
+
+        # デバッグ用: uneven_wears の値を確認
+        print(f"uneven_wears (raw): {uneven_wears}")
+
+        # バリデーション: 必須項目が選択されていない場合エラーを返す
+        if not width or not aspect_ratio or not inch or not manufacturers:
+            flash("必須項目をすべて正しく選択してください。", "danger")
+            return render_template('input_page.html', form=form)
 
         # コピー元フォームのデータを動的リストの先頭に追加
         manufacturers.insert(0, request.form.get('manufacturer'))
@@ -137,12 +164,6 @@ def input_page():
         tread_depths.insert(0, request.form.get('tread_depth'))
         uneven_wears.insert(0, request.form.get('uneven_wear'))
         other_details.insert(0, request.form.get('other_details'))
-
-        # バリデーション: 必須項目が選択されていない場合エラーを返す
-        if not width or not aspect_ratio or not inch or not manufacturers:
-            flash("必須項目をすべて正しく選択してください。", "danger")
-            return render_template('input_page.html', form=form)
-
 
         # データ登録
         try:
@@ -166,11 +187,9 @@ def input_page():
                 ids.append(new_tire.id)
             
             # 登録完了画面にリダイレクト
-            flash("登録が完了しました。", "success")
             return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
         except Exception as e:
             db.session.rollback()
-            flash("登録中にエラーが発生しました。", "danger")
             print(f"Error: {e}")
             return jsonify({'error': '登録中にエラーが発生しました！'})
 

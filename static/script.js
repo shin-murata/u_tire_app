@@ -88,7 +88,7 @@ function addTireForm(targetContainerId) {
             </div>
             <div class="input-wrap small-input" id="uneven-wear">
                 <select name="uneven_wear[]" id="uneven_wear-${formCount}" class="form-control">
-                <option value="0" disabled selected>片減り</option>
+                <option value="" disabled selected>片減り</option>
                     ${generateOptions([0, 1, 2, 3], wear => `${wear}段階`)}
                 </select>
             </div>
@@ -103,6 +103,13 @@ function addTireForm(targetContainerId) {
     // フォームを挿入
     container.insertAdjacentHTML("beforeend", formHTML);
     console.log("HTML after inserting form:", container.innerHTML);
+    // デバッグ: 生成されたHTMLを確認
+    console.log(`Generated HTML for tread_depth: ${document.getElementById(`tread_depth-${formCount}`).outerHTML}`);
+    console.log(`Generated HTML for uneven_wear: ${document.getElementById(`uneven_wear-${formCount}`).outerHTML}`);
+
+    // 新しく生成されたセレクトボックスを取得してデバッグ
+    const newUnevenWearSelect = document.getElementById(`uneven_wear-${formCount}`);
+    console.log(`Generated select element: ${newUnevenWearSelect.outerHTML}`);
 
     // 新しいフォームのオプションをロード
     const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
@@ -120,6 +127,23 @@ function addTireForm(targetContainerId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded event fired.");
+    console.log("Page fully loaded. Checking initial select elements...");
+
+    // 初期フォームのセレクトボックスを取得してログに出力
+    const initialTreadDepth = document.getElementById('tread_depth-0');
+    const initialUnevenWear = document.getElementById('uneven_wear-0');
+
+    if (initialTreadDepth) {
+        console.log(`Initial HTML for tread_depth: ${initialTreadDepth.outerHTML}`);
+    } else {
+        console.error("tread_depth select element not found!");
+    }
+
+    if (initialUnevenWear) {
+        console.log(`Initial HTML for uneven_wear: ${initialUnevenWear.outerHTML}`);
+    } else {
+        console.error("uneven_wear select element not found!");
+    }
     
     const copiedListContainer = document.getElementById('copied-list');
     console.log("Copied list container:", copiedListContainer);
@@ -137,3 +161,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 }); // ここで閉じる
 
+// デバッグコードをここに追加
+console.log(`Generated select element: ${document.getElementById(`uneven_wear-${formCount}`).outerHTML}`);

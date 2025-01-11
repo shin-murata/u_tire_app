@@ -56,7 +56,7 @@ class CombinedForm(FlaskForm):
     uneven_wear = SelectField(
         '片減り',
         coerce=int,
-        validators=[Optional()],
+        validators=[DataRequired()],
         choices=[(0, "片減り")] + [(wear, f"{wear}段階") for wear in range(0, 3)]  # 0〜3段階
     )
 
