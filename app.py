@@ -120,6 +120,30 @@ def input_page():
         print(f"uneven_wear raw value: {request.form.get('uneven_wear')}")
         print(f"uneven_wears list: {request.form.getlist('uneven_wear[]')}")
         print(f"tread_depths list: {request.form.getlist('tread_depths[]')}")
+        print(f"Received uneven_wear list: {request.form.getlist('uneven_wear[]')}")
+        print(f"Received tread_depth list: {request.form.getlist('tread_depth[]')}")
+        print(f"Single tread_depth: {request.form.get('tread_depth')}")
+        print(f"List of tread_depths: {request.form.getlist('tread_depth[]')}")
+        print(f"Single uneven_wear: {request.form.get('uneven_wear')}")
+        print(f"List of uneven_wears: {request.form.getlist('uneven_wear[]')}")
+
+        uneven_wear = request.form.get("uneven_wear")
+
+        # 空文字やNoneの場合をチェック
+        if not uneven_wear or uneven_wear.strip() == "":  # None または空文字チェック
+            flash("片減りを選択してください", "danger")
+            return render_template('input_page.html', form=form)
+
+        try:
+            uneven_wear = int(uneven_wear)  # 正しい値が選択されていれば変換
+        except ValueError:
+            flash("片減りの値が不正です", "danger")
+            return render_template('input_page.html', form=form)
+
+        
+        # 他の処理を続ける
+        print(f"Processed uneven_wear value: {uneven_wear}")
+
         # 共通データの取得
         registration_date = request.form.get('registration_date')
         if not registration_date:
@@ -131,21 +155,36 @@ def input_page():
         ply_rating = request.form.get('ply_rating')
 
         # 動的フォームの個別データ取得
-        manufacturers = request.form.getlist('manufacturer[]')
-        manufacturing_years = request.form.getlist('manufacturing_year[]')
-        tread_depths = request.form.getlist('tread_depth[]')
-        uneven_wears = request.form.getlist('uneven_wear[]')
-        uneven_wears = request.form.getlist('uneven_wear[]')
-        other_details = request.form.getlist('other_details[]')
+        manufacturers = request.form.getlist('manufacturer[]') or []  # 空リストをデフォルト値として設定
+        manufacturing_years = request.form.getlist('manufacturing_year[]') or []
+        tread_depths = request.form.getlist('tread_depth[]') or []
+        uneven_wears = request.form.getlist('uneven_wear[]') or []
+        other_details = request.form.getlist('other_details[]') or []
 
         # 個別データの初期化とデフォルト値設定を統一
         tread_depths = [
-            int(value) if value and value.isdigit() else None for value in tread_depths
+            int(value) for value in request.form.getlist('tread_depth[]') if value.isdigit()
         ]
         uneven_wears = [
-            int(value) if value and value.isdigit() else None for value in uneven_wears
+            int(value) for value in request.form.getlist('uneven_wear[]') if value and value.isdigit()
         ]
 
+        # リストが空の場合、デフォルト値を適用
+        tread_depths = tread_depths if tread_depths else [0]
+        uneven_wears = uneven_wears if uneven_wears else [0]
+
+        # フォームの単一値として取得する必要がある場合
+        tread_depth = request.form.get('tread_depth')
+        if tread_depth and tread_depth.isdigit():
+            tread_depths.insert(0, int(tread_depth))
+        else:
+            tread_depths.insert(0, 0)  # 必要ならデフォルト値を挿入
+
+        uneven_wears_single = request.form.get('uneven_wears')  # 新しい変数名を使用
+        if uneven_wears_single and uneven_wears_single.isdigit():
+            uneven_wears.insert(0, int(uneven_wears_single))
+        else:
+            uneven_wears.insert(0, 0)  # 必要ならデフォルト値を挿入
         # デバッグ用: 修正後のリストを確認
         print(f"Processed tread_depths: {tread_depths}")
         print(f"Processed uneven_wears: {uneven_wears}")
