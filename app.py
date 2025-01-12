@@ -109,10 +109,6 @@ def get_ply_ratings():
 def input_page():
     form = CombinedForm()
 
-    # 必ず初期化する（空リストで初期化）
-    tread_depths = []
-    uneven_wears = []
-
     if request.method == 'GET':
         # フォームを表示
         return render_template('input_page.html', form=form)
@@ -131,95 +127,64 @@ def input_page():
         print(f"Single uneven_wear: {request.form.get('uneven_wear')}")
         print(f"List of uneven_wears: {request.form.getlist('uneven_wear[]')}")
 
-        # 入力データの取得
+        # 必須項目の取得
         width = request.form.get('width')
         aspect_ratio = request.form.get('aspect_ratio')
         inch = request.form.get('inch')
         ply_rating = request.form.get('ply_rating')
+        registration_date = request.form.get('registration_date', date.today())
+
+        # 動的フォームのデータ取得
         manufacturers = request.form.getlist('manufacturer[]') or []
-
-        # 必須項目のバリデーション
-        if not width or width == "0" or not aspect_ratio or aspect_ratio == "0" or not inch or inch == "0" or not manufacturers:
-            flash("必須項目をすべて正しく選択してください。", "danger")
-            # フォームをリクエストデータで再構築
-            form = CombinedForm(data=request.form)
-            # 動的データをテンプレートに渡す
-            return render_template(
-                'input_page.html',
-                form=form,
-                manufacturers=manufacturers,
-                tread_depths=tread_depths,
-                uneven_wears=uneven_wears,
-            )
-        
-        # 空文字やNoneの場合をチェック
-        if not uneven_wear or uneven_wear.strip() == "":  # None または空文字チェック
-            flash("片減りを選択してください", "danger")
-            return render_template('input_page.html', form=form)
-
-        try:
-            uneven_wear = int(uneven_wear)  # 正しい値が選択されていれば変換
-        except ValueError:
-            flash("片減りの値が不正です", "danger")
-            return render_template('input_page.html', form=form)
-        
-        # 他の処理を続ける
-        print(f"Processed uneven_wear value: {uneven_wear}")
-
-        # 共通データの取得
-        registration_date = request.form.get('registration_date')
-        if not registration_date:
-            # registration_dateが指定されていない場合、現在日付を自動設定
-            registration_date = date.today()
-        width = request.form.get('width')
-        aspect_ratio = request.form.get('aspect_ratio')
-        inch = request.form.get('inch')
-        ply_rating = request.form.get('ply_rating')
-
-        # 動的フォームの個別データ取得
-        manufacturers = request.form.getlist('manufacturer[]') or []  # 空リストをデフォルト値として設定
         manufacturing_years = request.form.getlist('manufacturing_year[]') or []
-        tread_depths = request.form.getlist('tread_depth[]') or []
-        uneven_wears = request.form.getlist('uneven_wear[]') or []
-        other_details = request.form.getlist('other_details[]') or []
-
-        # 個別データの初期化とデフォルト値設定を統一
         tread_depths = [
             int(value) for value in request.form.getlist('tread_depth[]') if value.isdigit()
         ]
         uneven_wears = [
-            int(value) for value in request.form.getlist('uneven_wear[]') if value and value.isdigit()
+            int(value) for value in request.form.getlist('uneven_wear[]') if value.isdigit()
         ]
+        other_details = request.form.getlist('other_details[]') or []
 
-        # リストが空の場合、デフォルト値を適用
-        tread_depths = tread_depths if tread_depths else [0]
-        uneven_wears = uneven_wears if uneven_wears else [0]
+        # 単一値のデータをリストに追加（重複防止）
+        single_manufacturer = request.form.get('manufacturer')
+        single_manufacturing_year = request.form.get('manufacturing_year')
+        single_tread_depth = request.form.get('tread_depth')
+        single_uneven_wear = request.form.get('uneven_wear')
+        single_other_detail = request.form.get('other_details', '')
 
-        # フォームの単一値として取得する必要がある場合
-        tread_depth = request.form.get('tread_depth')
-        if tread_depth and tread_depth.isdigit():
-            tread_depths.insert(0, int(tread_depth))
-        else:
-            tread_depths.insert(0, 0)  # 必要ならデフォルト値を挿入
+        if single_manufacturer and single_manufacturer != "0" :
+            manufacturers.insert(0, single_manufacturer)
+        if single_manufacturing_year and single_manufacturing_year != "0" :
+            manufacturing_years.insert(0, single_manufacturing_year)
+        if single_tread_depth and single_tread_depth.isdigit() and int(single_tread_depth) > 0 :
+            tread_depths.insert(0, int(single_tread_depth))
+        if single_uneven_wear and single_uneven_wear.isdigit() and int(single_uneven_wear) >= 0 :
+            uneven_wears.insert(0, int(single_uneven_wear))
+        if single_other_detail:
+            other_details.append(single_other_detail)
 
-        uneven_wears_single = request.form.get('uneven_wears')  # 新しい変数名を使用
-        if uneven_wears_single and uneven_wears_single.isdigit():
-            uneven_wears.insert(0, int(uneven_wears_single))
-        else:
-            uneven_wears.insert(0, 0)  # 必要ならデフォルト値を挿入
-        # デバッグ用: 修正後のリストを確認
+        # リストが空の場合のデフォルト値
+        if not manufacturers:
+            flash("メーカーを選択してください。", "danger")
+            return render_template('input_page.html', form=form)
+        if not tread_depths:
+            tread_depths = [0]  # CombinedForm の初期値に合わせる
+        if not uneven_wears:
+            uneven_wears = [-1]  # CombinedForm の初期値に合わせる
+        if len(other_details) < len(manufacturers):
+            other_details.extend([''] * (len(manufacturers) - len(other_details)))
+
+        # デバッグ情報を出力
+        print(f"Processed manufacturers: {manufacturers}")
+        print(f"Processed manufacturing_years: {manufacturing_years}")
         print(f"Processed tread_depths: {tread_depths}")
         print(f"Processed uneven_wears: {uneven_wears}")
 
-        # デバッグ用: uneven_wears の値を確認
-        print(f"uneven_wears (raw): {uneven_wears}")
+        # 必須項目のバリデーション
+        if not width or width == "0" or not aspect_ratio or aspect_ratio == "0" or not inch or inch == "0" or not manufacturers:
+            flash("必須項目をすべて正しく選択してください。", "danger")
+            return render_template('input_page.html', form=form)
 
-        # コピー元フォームのデータを動的リストの先頭に追加
-        manufacturers.insert(0, request.form.get('manufacturer'))
-        manufacturing_years.insert(0, request.form.get('manufacturing_year'))
-        tread_depths.insert(0, request.form.get('tread_depth'))
-        uneven_wears.insert(0, request.form.get('uneven_wear'))
-        other_details.insert(0, request.form.get('other_details'))
 
         # データ登録
         try:
