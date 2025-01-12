@@ -109,6 +109,10 @@ def get_ply_ratings():
 def input_page():
     form = CombinedForm()
 
+    # 必ず初期化する（空リストで初期化）
+    tread_depths = []
+    uneven_wears = []
+
     if request.method == 'GET':
         # フォームを表示
         return render_template('input_page.html', form=form)
@@ -127,8 +131,27 @@ def input_page():
         print(f"Single uneven_wear: {request.form.get('uneven_wear')}")
         print(f"List of uneven_wears: {request.form.getlist('uneven_wear[]')}")
 
-        uneven_wear = request.form.get("uneven_wear")
+        # 入力データの取得
+        width = request.form.get('width')
+        aspect_ratio = request.form.get('aspect_ratio')
+        inch = request.form.get('inch')
+        ply_rating = request.form.get('ply_rating')
+        manufacturers = request.form.getlist('manufacturer[]') or []
 
+        # 必須項目のバリデーション
+        if not width or width == "0" or not aspect_ratio or aspect_ratio == "0" or not inch or inch == "0" or not manufacturers:
+            flash("必須項目をすべて正しく選択してください。", "danger")
+            # フォームをリクエストデータで再構築
+            form = CombinedForm(data=request.form)
+            # 動的データをテンプレートに渡す
+            return render_template(
+                'input_page.html',
+                form=form,
+                manufacturers=manufacturers,
+                tread_depths=tread_depths,
+                uneven_wears=uneven_wears,
+            )
+        
         # 空文字やNoneの場合をチェック
         if not uneven_wear or uneven_wear.strip() == "":  # None または空文字チェック
             flash("片減りを選択してください", "danger")
@@ -139,7 +162,6 @@ def input_page():
         except ValueError:
             flash("片減りの値が不正です", "danger")
             return render_template('input_page.html', form=form)
-
         
         # 他の処理を続ける
         print(f"Processed uneven_wear value: {uneven_wear}")
@@ -191,11 +213,6 @@ def input_page():
 
         # デバッグ用: uneven_wears の値を確認
         print(f"uneven_wears (raw): {uneven_wears}")
-
-        # バリデーション: 必須項目が選択されていない場合エラーを返す
-        if not width or not aspect_ratio or not inch or not manufacturers:
-            flash("必須項目をすべて正しく選択してください。", "danger")
-            return render_template('input_page.html', form=form)
 
         # コピー元フォームのデータを動的リストの先頭に追加
         manufacturers.insert(0, request.form.get('manufacturer'))

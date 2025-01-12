@@ -60,7 +60,7 @@ class CombinedForm(FlaskForm):
         coerce=int,
         validators=[DataRequired()],
         default=-1,  # 明示的に初期値を指定
-        choices=[(-1, "片減り")] + [(wear, f"{wear}段階") for wear in range(0, 3)]  # 0〜3段階
+        choices=[(-1, "片減り")] + [(wear, f"{wear}段階") for wear in range(0, 4)]  # 0〜3段階
     )
 
     def __init__(self, *args, **kwargs):
