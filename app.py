@@ -8,6 +8,7 @@ from routes.admin import admin_bp
 from config import Config
 from datetime import datetime, date
 import pdfkit
+import uuid
 
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
@@ -111,7 +112,7 @@ def input_page():
 
     if request.method == 'GET':
         # フォームを表示
-        return render_template('input_page.html', form=form)
+        return render_template('input_page.html', form=form, invalid_entries=[])
 
     elif request.method == 'POST':
         # デバッグ用: 送信されたフォームデータを確認
@@ -145,32 +146,31 @@ def input_page():
         ]
         other_details = request.form.getlist('other_details[]') or []
 
-        # 単一値のデータをリストに追加（重複防止）
+        # 単一値のデータをリストに追加
         single_manufacturer = request.form.get('manufacturer')
         single_manufacturing_year = request.form.get('manufacturing_year')
         single_tread_depth = request.form.get('tread_depth')
         single_uneven_wear = request.form.get('uneven_wear')
         single_other_detail = request.form.get('other_details', '')
 
-        if single_manufacturer and single_manufacturer != "0" :
+        if single_manufacturer:
             manufacturers.insert(0, single_manufacturer)
-        if single_manufacturing_year and single_manufacturing_year != "0" :
+        if single_manufacturing_year:
             manufacturing_years.insert(0, single_manufacturing_year)
-        if single_tread_depth and single_tread_depth.isdigit() and int(single_tread_depth) > 0 :
+        if single_tread_depth and single_tread_depth.isdigit():
             tread_depths.insert(0, int(single_tread_depth))
-        if single_uneven_wear and single_uneven_wear.isdigit() and int(single_uneven_wear) >= 0 :
+        if single_uneven_wear and single_uneven_wear.isdigit():
             uneven_wears.insert(0, int(single_uneven_wear))
         if single_other_detail:
             other_details.append(single_other_detail)
 
-        # リストが空の場合のデフォルト値
-        if not manufacturers:
-            flash("メーカーを選択してください。", "danger")
-            return render_template('input_page.html', form=form)
-        if not tread_depths:
-            tread_depths = [0]  # CombinedForm の初期値に合わせる
-        if not uneven_wears:
-            uneven_wears = [-1]  # CombinedForm の初期値に合わせる
+        # リストが空の場合のデフォルト値を補填
+        if len(uneven_wears) < len(manufacturers):
+            uneven_wears.extend([-1] * (len(manufacturers) - len(uneven_wears)))
+
+        if len(tread_depths) < len(manufacturers):
+            tread_depths.extend([0] * (len(manufacturers) - len(tread_depths)))
+
         if len(other_details) < len(manufacturers):
             other_details.extend([''] * (len(manufacturers) - len(other_details)))
 
@@ -179,43 +179,84 @@ def input_page():
         print(f"Processed manufacturing_years: {manufacturing_years}")
         print(f"Processed tread_depths: {tread_depths}")
         print(f"Processed uneven_wears: {uneven_wears}")
+        print(f"Processed other_details: {other_details}")
 
-        # 必須項目のバリデーション
-        if not width or width == "0" or not aspect_ratio or aspect_ratio == "0" or not inch or inch == "0" or not manufacturers:
-            flash("必須項目をすべて正しく選択してください。", "danger")
-            return render_template('input_page.html', form=form)
+        # 有効なデータと無効なデータを分離
+        valid_entries = []
+        invalid_entries = []
 
+        for i in range(len(manufacturers)):
+            errors = []
+            if not manufacturers[i] or manufacturers[i] == "0":
+                errors.append("メーカーを選択してください。")
+            if tread_depths[i] <= 0:
+                errors.append("残り溝を正しく入力してください。")
+            if uneven_wears[i] < 0:
+                errors.append("片減りを正しく入力してください。")
+
+            if errors:
+                # 無効データの処理
+                invalid_entries.append({
+                    'id': str(uuid.uuid4()),  # ユニークIDを生成
+                    'index': i + 1,
+                    'errors': errors,
+                    'manufacturer': manufacturers[i],
+                    'manufacturing_year': manufacturing_years[i] if i < len(manufacturing_years) else '',
+                    'tread_depth': tread_depths[i] if i < len(tread_depths) else '',
+                    'uneven_wear': uneven_wears[i] if i < len(uneven_wears) else '',
+                    'other_details': other_details[i] if i < len(other_details) else ''
+                })
+            else:
+                # 有効データの処理
+                valid_entries.append({
+                    'manufacturer': manufacturers[i],
+                    'manufacturing_year': manufacturing_years[i] if i < len(manufacturing_years) else None,
+                    'tread_depth': tread_depths[i],
+                    'uneven_wear': uneven_wears[i],
+                    'other_details': other_details[i]
+                })
+        
+        # 無効データがある場合はエラー画面に戻る
+        if invalid_entries:
+            flash("一部のデータが無効です。エラー内容をご確認ください。", "warning")
+            return render_template('input_page.html', form=form, invalid_entries=invalid_entries)
 
         # データ登録
         try:
             ids = []
-            for i in range(len(manufacturers)):
+            for entry in valid_entries:
                 new_tire = InputPage(
                     registration_date=registration_date,
                     width=width,
                     aspect_ratio=aspect_ratio,
                     inch=inch,
                     ply_rating=ply_rating,
-                    manufacturer=manufacturers[i],
-                    manufacturing_year=manufacturing_years[i] if i < len(manufacturing_years) else None,
-                    tread_depth=tread_depths[i] if i < len(tread_depths) else None,
-                    uneven_wear=uneven_wears[i] if i < len(uneven_wears) else None,
-                    other_details=other_details[i] if i < len(other_details) else None,
+                    manufacturer=entry['manufacturer'],
+                    manufacturing_year=entry['manufacturing_year'],
+                    tread_depth=entry['tread_depth'],
+                    uneven_wear=entry['uneven_wear'],
+                    other_details=entry['other_details'],
                     is_dispatched=False
                 )
                 db.session.add(new_tire)
                 db.session.commit()
                 ids.append(new_tire.id)
-            
-            # 登録完了画面にリダイレクト
+            print(f"Valid entries registered with IDs: {ids}")
+            # 無効なエントリがある場合は画面に戻す
+            # if invalid_entries:
+                # flash("一部のタイヤが登録されませんでした。エラー内容をご確認ください。", "warning")
+                # return render_template('input_page.html', form=form, invalid_entries=invalid_entries)
+
+            # 登録成功
             return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
+
         except Exception as e:
             db.session.rollback()
-            print(f"Error: {e}")
-            return jsonify({'error': '登録中にエラーが発生しました！'})
+            print(f"Error during registration: {e}")
+            flash("登録中にエラーが発生しました。", "danger")
+            return render_template('input_page.html', form=form)
 
     return render_template('input_page.html', form=form)
-
 
 @app.route('/register_success')
 def register_success():
