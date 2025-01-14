@@ -4,42 +4,80 @@
     <h1>登録が完了しました！</h1>
     <p>以下のタイヤが登録されました。</p>
 
-    <!-- 共通フォームデータの表示 -->
-    <h2>共通データ</h2>
-    <ul>
-        <li>登録日: {{ registration_date }}</li>
-        <li>幅: {{ tires[0].width_ref.value }}</li>
-        <li>アスペクト比: {{ tires[0].aspect_ratio_ref.value }}</li>
-        <li>インチ: {{ tires[0].inch_ref.value }}</li>
-        <li>プライレーティング: {{ tires[0].ply_rating_ref.value }}</li>
-    </ul>
+    <!-- タイヤデータが存在するか確認 -->
+    {% if tires %}
+        <h2>共通データ</h2>
+        <ul>
+            <li>登録日: {{ registration_date }}</li>
+            <li>幅: {{ tires[0].width_ref.value }}</li>
+            <li>アスペクト比: {{ tires[0].aspect_ratio_ref.value }}</li>
+            <li>インチ: {{ tires[0].inch_ref.value }}</li>
+            <li>プライレーティング: {{ tires[0].ply_rating_ref.value }}</li>
+        </ul>
 
-    <!-- タイヤ個別データのリスト表示 -->
-    <h2>登録されたタイヤ一覧</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>メーカー</th>
-                <th>製造年</th>
-                <th>溝深さ</th>
-                <th>偏摩耗</th>
-                <th>その他の詳細</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tire in tires %}
-            <tr>
-                <td>{{ tire.id }}</td>
-                <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
-                <td>{{ tire.manufacturing_year }}</td>
-                <td>{{ tire.tread_depth }}</td>
-                <td>{{ tire.uneven_wear }}</td>
-                <td>{{ tire.other_details }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
+        <h2>登録されたタイヤ一覧</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>メーカー</th>
+                    <th>製造年</th>
+                    <th>溝深さ</th>
+                    <th>偏摩耗</th>
+                    <th>その他の詳細</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tire in tires %}
+                <tr>
+                    <td>{{ tire.id }}</td>
+                    <td>{{ tire.manufacturer_ref.name }}</td>
+                    <td>{{ tire.manufacturing_year }}</td>
+                    <td>{{ tire.tread_depth }}</td>
+                    <td>{{ tire.uneven_wear }}</td>
+                    <td>{{ tire.other_details }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>登録済みのタイヤはありません。</p>
+    {% endif %}
+
+    <!-- リスト形式のエラー情報表示 -->
+    <h2>エラーがあるデータ（簡易リスト）</h2>
+    <ul>
+        {% for entry in invalid_entries %}
+        <li>{{ entry.index }} 番目: {{ entry.errors | join(', ') }}</li>
+        {% endfor %}
+    </ul>
+    {% if invalid_entries %}
+    <!-- テーブル形式のエラー情報表示 -->
+    <h2>エラーがあるデータ（詳細テーブル）</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>インデックス</th>
+                    <th>エラー内容</th>
+                    <th>メーカー</th>
+                    <th>製造年</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in invalid_entries %}
+                <tr>
+                    <td>{{ entry.index }}</td>
+                    <td>{{ entry.errors | join(', ') }}</td>
+                    <td>{{ entry.manufacturer }}</td>
+                    <td>{{ entry.manufacturing_year }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>エラーのあるデータはありません。</p>
+    {% endif %}
+
+    <a href="{{ url_for('input_page') }}" class="btn btn-primary">未入力データを修正</a>
 
 {% endblock %}

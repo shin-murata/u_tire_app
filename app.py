@@ -111,6 +111,8 @@ def input_page():
     form = CombinedForm()
 
     if request.method == 'GET':
+        # セッションから無効データを取得してフォームに反映
+        invalid_entries = session.pop('invalid_entries', [])
         # フォームを表示
         return render_template('input_page.html', form=form, invalid_entries=[])
 
@@ -215,13 +217,19 @@ def input_page():
                     'uneven_wear': uneven_wears[i],
                     'other_details': other_details[i]
                 })
+
+        # デバッグコードをここに挿入
+        print(f"Valid entries: {valid_entries}")
+        print(f"Invalid entries: {invalid_entries}")
         
         # 無効データがある場合はエラー画面に戻る
         if invalid_entries:
+            # 無効データをセッションに保存
+            session['invalid_entries'] = invalid_entries
             flash("一部のデータが無効です。エラー内容をご確認ください。", "warning")
-            return render_template('input_page.html', form=form, invalid_entries=invalid_entries)
-
-        # データ登録
+            
+       # データ登録 (有効データがあれば処理)
+    if valid_entries:
         try:
             ids = []
             for entry in valid_entries:
@@ -240,37 +248,66 @@ def input_page():
                 )
                 db.session.add(new_tire)
                 db.session.commit()
+                print(f"New tire registered: {new_tire.id}")  # 新規登録の確認
                 ids.append(new_tire.id)
-            print(f"Valid entries registered with IDs: {ids}")
-            # 無効なエントリがある場合は画面に戻す
-            # if invalid_entries:
-                # flash("一部のタイヤが登録されませんでした。エラー内容をご確認ください。", "warning")
-                # return render_template('input_page.html', form=form, invalid_entries=invalid_entries)
-
-            # 登録成功
-            return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
-
+            print(f"Valid entries registered with IDs: {ids}")            
         except Exception as e:
             db.session.rollback()
             print(f"Error during registration: {e}")
             flash("登録中にエラーが発生しました。", "danger")
-            return render_template('input_page.html', form=form)
+            return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
+        
+        # 無効データがある場合、エラーメッセージを表示
+        if invalid_entries:
+            session['invalid_entries'] = invalid_entries
+            flash("一部のデータが無効です。エラー内容をご確認ください。", "warning")
 
-    return render_template('input_page.html', form=form)
-
+        # 登録確認ページへ遷移
+        return redirect(url_for(
+            'register_success',
+            ids=','.join(map(str, ids)),
+            width=width,
+            aspect_ratio=aspect_ratio,
+            inch=inch,
+            ply_rating=ply_rating,
+            registration_date=registration_date
+        ))
+    
+    # 有効データがない場合は無効データのみ確認画面に渡す
+    return redirect(url_for('register_success', ids=''))
+        
 @app.route('/register_success')
 def register_success():
-    ids = request.args.get('ids').split(',')
-    width = request.args.get('width')
-    aspect_ratio = request.args.get('aspect_ratio')
-    inch = request.args.get('inch')
-    ply_rating = request.args.get('ply_rating')
-    registration_date = request.args.get('registration_date')
+    # URL引数から `ids` を取得
+    ids = request.args.get('ids', '')  # デフォルト値を空文字列に設定
+    ids = ids.split(',') if isinstance(ids, str) and ids else []
+    
+    print(f"IDs for query: {ids}")  # デバッグ用
+        
+    # 無効データをセッションから取得
+    invalid_entries = session.get('invalid_entries', [])
 
-    # 登録されたタイヤのデータを取得
-    tires = InputPage.query.filter(InputPage.id.in_(ids)).all()
-
-    return render_template('register_success.html', tires=tires, width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date)
+    # クエリが空の場合のデバッグ出力
+    if not ids:
+        print("No IDs provided for query.")
+    
+    # データベースから有効データを取得
+    valid_tires = InputPage.query.filter(InputPage.id.in_(ids)).all() if ids else []
+    
+    # デバッグ用: tires の内容を確認
+    print(f"Register success: IDs={ids}, Tires={valid_tires}")
+    print(f"Tires retrieved: {valid_tires}")  # デバッグ用
+    return render_template(
+        'register_success.html',
+        tires=valid_tires,
+        invalid_entries=invalid_entries,
+        width=request.args.get('width'),
+        aspect_ratio=request.args.get('aspect_ratio'),
+        inch=request.args.get('inch'),
+        ply_rating=request.args.get('ply_rating'),
+        registration_date=request.args.get('registration_date')
+        )
+    
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_page():
