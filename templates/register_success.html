@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>登録が完了しました！</h1>
+    <h5>登録が完了しました！</h5>
     <p>以下のタイヤが登録されました。</p>
 
     <!-- タイヤデータが存在するか確認 -->
     {% if tires %}
-        <h2>共通データ</h2>
+        <h5>共通データ</h5>
         <ul>
             <li>登録日: {{ registration_date }}</li>
             <li>幅: {{ tires[0].width_ref.value }}</li>
@@ -15,7 +15,7 @@
             <li>プライレーティング: {{ tires[0].ply_rating_ref.value }}</li>
         </ul>
 
-        <h2>登録されたタイヤ一覧</h2>
+        <h5>登録されたタイヤ一覧</h5>
         <table border="1">
             <thead>
                 <tr>
@@ -45,7 +45,7 @@
     {% endif %}
 
     <!-- リスト形式のエラー情報表示 -->
-    <h2>エラーがあるデータ（簡易リスト）</h2>
+    <h5>エラーがあるデータ（簡易リスト）</h5>
     <ul>
         {% for entry in invalid_entries %}
         <li>{{ entry.index }} 番目: {{ entry.errors | join(', ') }}</li>
@@ -53,7 +53,7 @@
     </ul>
     {% if invalid_entries %}
     <!-- テーブル形式のエラー情報表示 -->
-    <h2>エラーがあるデータ（詳細テーブル）</h2>
+    <h5>エラーがあるデータ（詳細テーブル）</h5>
         <table border="1">
             <thead>
                 <tr>

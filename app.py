@@ -109,13 +109,18 @@ def get_ply_ratings():
 @app.route('/input', methods=['GET', 'POST'])
 def input_page():
     form = CombinedForm()
+    mode = request.args.get('mode', 'new')  # デフォルトは新規登録
 
     if request.method == 'GET':
-        # セッションから無効データを取得してフォームに反映
-        invalid_entries = session.pop('invalid_entries', [])
-        # フォームを表示
-        return render_template('input_page.html', form=form, invalid_entries=[])
-
+        if mode == 'edit':
+            # セッションから無効データを取得
+            invalid_entries = session.pop('invalid_entries', [])
+            # 編集モード用のフォームを表示
+            return render_template('input_page.html', form=form, invalid_entries=invalid_entries, mode=mode)
+        else:
+            # 新規登録モード用のフォームを表示
+            return render_template('input_page.html', form=form, invalid_entries=[], mode=mode)
+        
     elif request.method == 'POST':
         # デバッグ用: 送信されたフォームデータを確認
         print(f"Received POST data: {request.form}")
