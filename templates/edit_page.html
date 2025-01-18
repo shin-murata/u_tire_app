@@ -21,16 +21,21 @@
         {{ form.inch() }}
     </div>
     <div>
-        {{ form.other_details.label }}
-        {{ form.other_details() }}
+        {{ form.ply_rating.label }}
+        {{ form.ply_rating() }}
+    </div>
+    <div>
+        {{ form.manufacturer.label }}
+        {{ form.manufacturer() }}
     </div>
     <div>
         {{ form.manufacturing_year.label }}
         {{ form.manufacturing_year() }}
     </div>
+    
     <div>
-        {{ form.manufacturer.label }}
-        {{ form.manufacturer() }}
+        {{ form.other_details.label }}
+        {{ form.other_details() }}
     </div>
     <div>
         {{ form.tread_depth.label }}
@@ -39,10 +44,6 @@
     <div>
         {{ form.uneven_wear.label }}
         {{ form.uneven_wear() }}
-    </div>
-    <div>
-        {{ form.ply_rating.label }}
-        {{ form.ply_rating() }}
     </div>
     <div>
         {{ form.price.label }}

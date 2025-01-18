@@ -1,4 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 db = SQLAlchemy()
 
@@ -39,13 +42,15 @@ class InputPage(db.Model):
     tread_depth = db.Column(db.Integer)
     uneven_wear = db.Column(db.Integer)
     ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=False)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=True)  # nullable=Trueに変更
+    is_dispatched = db.Column(db.Boolean, default=False, nullable=False)
 
     # リレーションを定義
     width_ref = db.relationship('Width', backref='input_pages', lazy=True)
     aspect_ratio_ref = db.relationship('AspectRatio', backref='input_pages', lazy=True)
     inch_ref = db.relationship('Inch', backref='input_pages', lazy=True)
     manufacturer_ref = db.relationship('Manufacturer', backref='input_pages', lazy=True)
+    ply_rating_ref = db.relationship('PlyRating', backref='input_pages', lazy=True)  # 新たに追加
 
 class HistoryPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -70,12 +75,6 @@ class AlertPage(db.Model):
     inventory_count = db.Column(db.Integer, nullable=False)
     search_count = db.Column(db.Integer, nullable=False)
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    email = db.Column(db.String, nullable=False)
-    role = db.Column(db.String, nullable=False)
-
 class SearchPage(db.Model):
     __tablename__ = 'search_page'
     id = db.Column(db.Integer, primary_key=True)
@@ -92,3 +91,28 @@ class EditPage(db.Model):
     action = db.Column(db.String, nullable=False)
     edit_date = db.Column(db.Date, nullable=False)
     details = db.Column(db.String)
+
+# Userモデルの定義
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(150), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    role = db.relationship('Role', backref=db.backref('users', lazy=True))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def has_role(self, role_name):
+        return self.role and self.role.name == role_name
+    
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+
+    

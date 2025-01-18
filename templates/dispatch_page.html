@@ -1,7 +1,94 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>出庫管理</h1>
+
+<!-- フラッシュメッセージの表示 -->
+{% with messages = get_flashed_messages(with_categories=True) %}
+{% if messages %}
+    <ul>
+    {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endwith %}
+
+<h1>出庫指示書</h1>
+<!-- 今回の出庫タイヤ表示 -->
+<table>
+    <thead>
+        <tr>
+            <th>幅</th>
+            <th>アスペクト比</th>
+            <th>インチ</th>
+            <th>プライレーティング</th>
+        </tr>
+    </thead> 
+    <tbody>
+        <!-- 共通データの行 -->
+        {% if tires_to_dispatch|length > 0 %}
+        <tr>
+            <td>
+                <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
+                {{ tires_to_dispatch[0].width_ref.value }}
+            </td>
+            <td>
+                <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
+                {{ tires_to_dispatch[0].aspect_ratio_ref.value }}
+            </td>
+            <td>
+                <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
+                {{ tires_to_dispatch[0].inch_ref.value }}
+            </td>
+            <td>
+                <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
+                {{ tires_to_dispatch[0].ply_rating_ref.value }}
+            </td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>   
+<!-- 個別データの一覧表示 -->
+<h4>個別データ</h4>
+<table>
+    <thead>
+        <tr>
+            <th>在庫番号</th>
+            <th>メーカー</th>
+            <th>製造年</th>
+            <th>溝</th>
+            <th>片減り</th>
+            <th>その他の詳細</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tire in tires_to_dispatch %}
+        <tr>
+            <td>{{ tire.id }}</td>
+            <td>{{ tire.manufacturer_ref.name }}</td>
+            <td>{{ tire.manufacturing_year }}</td>
+            <td>{{ tire.tread_depth }}</td>
+            <td>{{ tire.uneven_wear }}</td>
+            <td>{{ tire.other_details }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="6" style="text-align: right;"><strong>合計本数:</strong></td>
+            <td>{{ total_tires }}</td>
+        </tr>
+        <tr>
+            <td colspan="6" style="text-align: right;"><strong>金額合計:</strong></td>
+            <td>{{ total_price|currency }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<form method="POST" action="{{ url_for('generate_dispatch_pdf') }}">
+    <button type="submit">指示書をPDFで印刷</button>
+</form>
+
+<h1>出庫履歴</h1>
+<!-- 出庫履歴表示のテーブルなど -->
 <table>
     <thead>
         <tr>
@@ -13,15 +100,16 @@
         </tr>
     </thead>
     <tbody>
-        {% for record in dispatch_history %}
+        {% for history in dispatch_history %}
         <tr>
-            <td>{{ record.id }}</td>
-            <td>{{ record.tire_id }}</td>
-            <td>{{ record.user_id }}</td>
-            <td>{{ record.dispatch_date }}</td>
-            <td>{{ record.dispatch_note }}</td>
+            <td>{{ history.id }}</td>
+            <td>{{ history.tire_id }}</td>
+            <td>{{ history.user_id }}</td>
+            <td>{{ history.dispatch_date }}</td>
+            <td>{{ history.dispatch_note }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
 {% endblock %}

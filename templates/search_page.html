@@ -1,52 +1,84 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>タイヤ検索</h1>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <div>
-        {{ form.width.label }}
-        {{ form.width() }}
-    </div>
-    <div>
-        {{ form.aspect_ratio.label }}
-        {{ form.aspect_ratio() }}
-    </div>
-    <div>
-        {{ form.inch.label }}
-        {{ form.inch() }}
-    </div>
+<div class="container form-container">
+    <h5>タイヤ検索</h5>
+    <form method="POST" class="tire-form">
+        {{ form.hidden_tag() }}
+        <!-- 1段目: width, /, aspect_ratio -->
+        <div class="form-group first-row">
+            <div class="input-wrap">
+                {{ form.width(class_="form-control", placeholder=form.width.label.text) }}
+            </div>
+            <span>/</span>
+            <div class="input-wrap">
+                {{ form.aspect_ratio(class_="form-control", placeholder=form.aspect_ratio.label.text) }}
+            </div>
+        </div>
+        <!-- 2段目: R, inch, ply_rating -->
+        <div class="form-group second-row">
+            <span>R</span>
+            <div class="input-wrap">
+                {{ form.inch(class_="form-control", placeholder=form.inch.label.text) }}
+            </div>
+            <div class="input-wrap">
+                {{ form.ply_rating(class_="form-control", placeholder=form.ply_rating.label.text) }}
+            </div>
+        </div>
     <button type="submit">検索</button>
-</form>
+    </form>
+</div>
 
-{% if tires %}
-<h2>検索結果</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>幅</th>
-            <th>扁平率</th>
-            <th>インチ</th>
-            <th>製造年</th>
-            <th>メーカー</th>
-            <th>価格</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for tire in tires %}
-        <tr>
-            <td>{{ tire.registration_date }}</td>
-            <td>{{ tire.width_ref.value }}</td> <!-- 幅の値 -->
-            <td>{{ tire.aspect_ratio_ref.value }}</td> <!-- アスペクト比の値 -->
-            <td>{{ tire.inch_ref.value }}</td> <!-- インチの値 -->
-            <td>{{ tire.manufacturing_year }}</td>
-            <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
-            <td>{{ tire.price }}</td>
-            <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
+<div class="container form-container mt-4">
+    <form method="POST" action="{{ url_for('dispatch_confirm') }}">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">検索結果</h5>
+            {% if tires %}
+            <button type="submit" class="btn btn-primary">出庫</button>
+            {% endif %}
+        </div>
+        {% if tires %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>在庫番号</th>
+                        <th>メーカー</th>
+                        <th>製造年</th>
+                        <th>溝</th>
+                        <th>片減り</th>
+                        <th>その他</th>
+                        <th>価格</th>
+                        <th>登録日</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tire in tires %}
+                    <tr>
+                        <td>{{ tire.id }}</td>
+                        <td>{{ tire.manufacturer_ref.name }}</td>
+                        <td>{{ tire.manufacturing_year }}</td>
+                        <td>{{ tire.tread_depth }}</td>
+                        <td>{{ tire.uneven_wear }}</td>
+                        <td>{{ tire.other_details }}</td>
+                        <td>{{ tire.price }}</td>
+                        <td>{{ tire.registration_date }}</td>
+                        <td>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="tire_ids" value="{{ tire.id }}"
+                                {% if tire.id|string in selected_tires %}checked{% endif %}>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="alert alert-warning">該当するタイヤが見つかりません。</p>
+        {% endif %}
+    </form>
+</div>
+
 {% endblock %}

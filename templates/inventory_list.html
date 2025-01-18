@@ -1,41 +1,66 @@
-<!-- templates/inventory_list.html -->
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>タイヤ在庫一覧</title>
-</head>
-<body>
-    <h1>タイヤ在庫一覧</h1>
-    <a href="{{ url_for('input_page') }}">新しいタイヤを追加</a>
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <!-- 検索条件フォーム -->
+    <div>
+        {{ form.registration_date.label }} {{ form.registration_date(size=10) }}
+        <button type="submit" name="search">検索</button>
+        <button type="submit" name="filter_unpriced">価格未入力</button>
+        <button type="submit" name="filter_in_stock">在庫があるもの</button>
+        <button type="submit" name="filter_dispatched">出庫済み</button>
+        <button type="submit" name="reset">全て表示</button>
+    </div>
+</form>
+    <!-- 絞り込み後のデータ表示 -->
+<form method="POST">
+    {{ form.hidden_tag() }}
     <table>
         <thead>
             <tr>
+                <th>在庫番号</th>
                 <th>登録日</th>
                 <th>幅</th>
                 <th>扁平率</th>
                 <th>インチ</th>
-                <th>製造年</th>
+                <th>プライ</th>
                 <th>メーカー</th>
+                <th>製造年</th>
                 <th>価格</th>
-                <th>編集</th>
+                <th>残り溝</th>
+                <th>片減り</th>
+                <th>在庫</th>
+                <th>その他</th>
             </tr>
         </thead>
         <tbody>
             {% for tire in tires %}
             <tr>
+                <td>{{ tire.id }}</td>
                 <td>{{ tire.registration_date }}</td>
-                <td>{{ tire.width_ref.value }}</td> <!-- 幅の値 -->
-                <td>{{ tire.aspect_ratio_ref.value }}</td> <!-- アスペクト比の値 -->
-                <td>{{ tire.inch_ref.value }}</td> <!-- インチの値 -->
+                <td>{{ tire.width_ref.value }}</td>
+                <td>{{ tire.aspect_ratio_ref.value }}</td>
+                <td>{{ tire.inch_ref.value }}</td>
+                <td>{{ tire.ply_rating_ref.value }}</td>
+                <td>{{ tire.manufacturer_ref.name }}</td>
                 <td>{{ tire.manufacturing_year }}</td>
-                <td>{{ tire.manufacturer_ref.name }}</td> <!-- メーカー名 -->
-                <td>{{ tire.price }}</td>
-                <td><a href="{{ url_for('edit_page', id=tire.id) }}">編集</a></td>
+                <td>
+                    <input type="text" name="price_{{ tire.id }}" value="{{ tire.price|currency }}" size="10">
+                </td>
+                <td>{{ tire.tread_depth }}</td>
+                <td>{{ tire.uneven_wear }}</td>
+                <td>{{ tire.is_dispatched }}</td>
+                <td>
+                    <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" size="20">
+                </td>
+                <td>{{ tire.last_edited_by }}</td>
+                <td>{{ tire.last_edited_at }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-</body>
-</html>
+    <button type="submit" name="update_all">一括更新</button>
+</form>
+
+{% endblock %}

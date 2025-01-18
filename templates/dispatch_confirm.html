@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>以下のタイヤを出庫しますか？</h3>
+<form method="POST" action="{{ url_for('dispatch') }}">
+    <table>
+        <thead>
+            <tr>
+                <th>幅</th>
+                <th>アスペクト比</th>
+                <th>インチ</th>
+                <th>プライレーティング</th>
+            </tr>
+        </thead> 
+        <tbody>
+            <!-- 共通データの行 -->
+            {% if tires_to_dispatch|length > 0 %}
+            <tr>
+                <td>
+                    <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
+                    {{ tires_to_dispatch[0].width_ref.value }}
+                </td>
+                <td>
+                    <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
+                    {{ tires_to_dispatch[0].aspect_ratio_ref.value }}
+                </td>
+                <td>
+                    <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
+                    {{ tires_to_dispatch[0].inch_ref.value }}
+                </td>
+                <td>
+                    <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
+                    {{ tires_to_dispatch[0].ply_rating_ref.value }}
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>   
+    <!-- 個別データの一覧表示 -->
+    <h4>個別データ</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>在庫番号</th>
+                <th>メーカー</th>
+                <th>製造年</th>
+                <th>溝</th>
+                <th>片減り</th>
+                <th>その他の詳細</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tire in tires_to_dispatch %}
+            <tr>
+                <td>{{ tire.id }}</td>
+                <td>{{ tire.manufacturer_ref.name }}</td>
+                <td>{{ tire.manufacturing_year }}</td>
+                <td>{{ tire.tread_depth }}</td>
+                <td>{{ tire.uneven_wear }}</td>
+                <td>{{ tire.other_details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>    
+    <button type="submit" class="btn btn-success">確認</button>
+</form>
+<!-- 戻るボタン -->
+<form method="POST" action="{{ url_for('search_page') }}">
+    <input type="hidden" name="action" value="back">
+
+    <!-- 検索条件を隠しフィールドで送信 -->
+    <input type="hidden" name="width" value="{{ session.get('search_conditions', {}).get('width', '') }}">
+    <input type="hidden" name="aspect_ratio" value="{{ session.get('search_conditions', {}).get('aspect_ratio', '') }}">
+    <input type="hidden" name="inch" value="{{ session.get('search_conditions', {}).get('inch', '') }}">
+    <input type="hidden" name="ply_rating" value="{{ session.get('search_conditions', {}).get('ply_rating', '') }}">
+
+    <!-- 選択済みのタイヤIDを送信 -->
+    {% for tire in selected_tires %}
+        <input type="hidden" name="tire_ids" value="{{ tire.id }}">
+        <!-- デバッグ用 -->
+        <span>{{ tire.id }} {{ 'checked' if tire.id|string in selected_tires else '' }}</span>
+    {% endfor %}
+    <!-- 戻るボタン -->
+    <button type="button" onclick="window.location.href='{{ url_for('dispatch_confirm', action='back') }}';">
+        戻る
+    </button>
+</form>
+{% endblock %}
