@@ -113,8 +113,11 @@ def input_page():
     if request.method == 'GET':
         # セッションから無効データを取得してフォームに反映
         invalid_entries = session.pop('invalid_entries', [])
+        # デバッグ: 無効データを確認
+        print(f"Invalid entries from session: {invalid_entries}")
+
         # フォームを表示
-        return render_template('input_page.html', form=form, invalid_entries=[])
+        return render_template('input_page.html', form=form, invalid_entries=invalid_entries)
 
     elif request.method == 'POST':
         # デバッグ用: 送信されたフォームデータを確認
