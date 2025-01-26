@@ -48,6 +48,7 @@ let formCount = 0; // フォーム数カウンター
 // フォームを追加する関数
 function addTireForm(targetContainerId) {
     console.log(`addTireForm called with targetContainerId: ${targetContainerId}`); // ログ追加
+    console.log(`Stack trace:`, new Error().stack); // 呼び出し元を追跡
     const container = document.querySelector(`#${targetContainerId}`);
     if (!container) {
         console.error(`Container with ID '${targetContainerId}' not found.`);
@@ -107,18 +108,21 @@ function addTireForm(targetContainerId) {
     console.log(`Generated HTML for tread_depth: ${document.getElementById(`tread_depth-${formCount}`).outerHTML}`);
     console.log(`Generated HTML for uneven_wear: ${document.getElementById(`uneven_wear-${formCount}`).outerHTML}`);
 
-    // 新しく生成されたセレクトボックスを取得してデバッグ
-    const newUnevenWearSelect = document.getElementById(`uneven_wear-${formCount}`);
-    console.log(`Generated select element: ${newUnevenWearSelect.outerHTML}`);
+    // 遅延参照でエラーを防止
+    setTimeout(() => {
+        // 新しく生成されたセレクトボックスを取得してデバッグ
+        const newUnevenWearSelect = document.getElementById(`uneven_wear-${formCount}`);
+        console.log(`Generated select element: ${newUnevenWearSelect.outerHTML}`);
 
-    // 新しいフォームのオプションをロード
-    const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
-    if (manufacturerSelect) {
-        console.log(`Manufacturer select element for formCount=${formCount}:`, manufacturerSelect);
-        loadOptions(manufacturerSelect, '/api/manufacturers');
-    } else {
-        console.error(`Manufacturer select element for formCount=${formCount} not found.`);
-    }
+        // 新しいフォームのオプションをロード
+        const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
+        if (manufacturerSelect) {
+            console.log(`Manufacturer select element for formCount=${formCount}:`, manufacturerSelect);
+            loadOptions(manufacturerSelect, '/api/manufacturers');
+        } else {
+            console.error(`Manufacturer select element for formCount=${formCount} not found.`);
+        }
+    }, 0); // 非同期で直後に実行
 }
 
 // ==============================
@@ -132,7 +136,12 @@ function regenerateTireForm(containerId, invalidEntries) {
         return;
     }
 
-    invalidEntries.forEach((entry, index) => {
+    if (!Array.isArray(invalidEntries) || invalidEntries.length === 0) {
+        console.warn("Invalid entries are empty. Skipping regeneration.");
+        return;
+    }
+
+    invalidEntries.forEach((entry) => {
         formCount++; // フォームカウンターをインクリメント
 
         // フォームHTMLを生成
@@ -198,7 +207,6 @@ function regenerateTireForm(containerId, invalidEntries) {
 
 function initializeDefaultForms() {
     console.log("Initializing default forms...");
-
     // 初期の固定フォームや動的フォームをセットアップ
     const defaultContainer = document.getElementById('copied-list');
     if (!defaultContainer) {
@@ -206,9 +214,17 @@ function initializeDefaultForms() {
         return;
     }
 
-    // 最初の動的フォームを生成
-    addTireForm('copied-list');
-    console.log("Default forms initialized.");
+   // DOM内に既存のフォームがあるか確認
+   const existingForms = defaultContainer.querySelectorAll('.copied-tire-form');
+   if (existingForms.length > 0) {
+       console.log(`Found ${existingForms.length} existing form(s) in the template. Skipping default form generation.`);
+       return; // 既存フォームがある場合、追加しない
+   }
+
+   // 初期フォームを1つ生成 (テンプレートにフォームがない場合のみ)
+   addTireForm('copied-list');
+   console.log("Default form initialized.");
+   console.log('initializeDefaultForms invoked');
 }
 
 // ==============================
@@ -224,6 +240,12 @@ function initializeErrorForms(invalidEntries) {
         return;
     }
 
+    // invalidEntries が空の場合は処理を終了
+    if (!Array.isArray(invalidEntries) || invalidEntries.length === 0) {
+        console.warn("Invalid entries are empty. Skipping error form initialization.");
+        return;
+    }
+
     // エラー時に未入力データを基にフォームを再生成
     regenerateTireForm('copied-list', invalidEntries);
     console.log("Error forms initialized with invalid entries.");
@@ -234,6 +256,8 @@ function initializeErrorForms(invalidEntries) {
 // ==============================
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("Resetting formCount to 0.");
+    formCount = 0; // ページロード時にリセット
     console.log("DOMContentLoaded event fired.");
     console.log("Page fully loaded. Checking initial select elements...");
     console.log("DOMContentLoaded event fired. Initializing forms...");
@@ -265,10 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ページロード時に invalidEntries の有無を確認
     if (typeof invalidEntries !== 'undefined' && Array.isArray(invalidEntries) && invalidEntries.length > 0) {
         console.log("Invalid entries detected. Initializing error forms...");
-        initializeErrorForms(invalidEntries);
+        console.log("Invalid entries data:", invalidEntries);
+        initializeErrorForms(invalidEntries); // エラー時の初期化
     } else {
         console.log("No invalid entries detected. Initializing default forms...");
-        initializeDefaultForms();
+        initializeDefaultForms(); // 通常の初期化
     }
 
     // コピー機能のイベントリスナーをセットアップ
