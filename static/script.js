@@ -141,6 +141,10 @@ function regenerateTireForm(containerId, invalidEntries) {
         return;
     }
 
+    // 既存のフォームをクリアして二重化を防ぐ
+    container.innerHTML = '';
+
+    // invalidEntries に基づいてフォームを再生成
     invalidEntries.forEach((entry) => {
         formCount++; // フォームカウンターをインクリメント
 
@@ -197,6 +201,17 @@ function regenerateTireForm(containerId, invalidEntries) {
             </div>
         `;
 
+        // フォーム再生成後に必要な初期化処理を実行
+        setTimeout(() => {
+            const manufacturerSelect = document.getElementById(`manufacturer-${formCount}`);
+            if (manufacturerSelect) {
+                loadOptions(manufacturerSelect, '/api/manufacturers');
+            } else {
+                console.error(`Manufacturer select element for formCount=${formCount} not found.`);
+            }
+        }, 0);
+
+
         // コンテナに挿入
         container.insertAdjacentHTML("beforeend", formHTML);
     });
@@ -211,6 +226,12 @@ function initializeDefaultForms() {
     const defaultContainer = document.getElementById('copied-list');
     if (!defaultContainer) {
         console.error("Default container not found!");
+        return;
+    }
+
+    // 条件を満たさない場合はスキップ
+    if (!window.shouldInitializeForms) {
+        console.log("Skipping form initialization due to condition.");
         return;
     }
 
@@ -256,11 +277,17 @@ function initializeErrorForms(invalidEntries) {
 // ==============================
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded event fired. Initializing forms...");
     console.log("Resetting formCount to 0.");
     formCount = 0; // ページロード時にリセット
     console.log("DOMContentLoaded event fired.");
     console.log("Page fully loaded. Checking initial select elements...");
-    console.log("DOMContentLoaded event fired. Initializing forms...");
+    
+    // 通常時の初期化を条件付きで実行
+    window.shouldInitializeForms = false; // 必要に応じて true に変更
+    if (window.shouldInitializeForms) {
+        initializeDefaultForms();
+    }
 
     // 初期化対象のコンテナを確認
     const copiedListContainer = document.getElementById('copied-list');
