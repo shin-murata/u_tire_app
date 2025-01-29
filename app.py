@@ -113,11 +113,20 @@ def input_page():
     if request.method == 'GET':
         # セッションから無効データを取得してフォームに反映
         invalid_entries = session.pop('invalid_entries', [])
+        invalid_common_data = session.pop('invalid_common_data', {})  # 共通データ
         # デバッグ: 無効データを確認
         print(f"Invalid entries from session: {invalid_entries}")
+        # デバッグ: 無効データの確認
+        print(f"Invalid entries: {invalid_entries}")
+        print(f"Invalid common data: {invalid_common_data}")
 
         # フォームを表示
-        return render_template('input_page.html', form=form, invalid_entries=invalid_entries)
+        return render_template(
+            'input_page.html', 
+            form=form, 
+            invalid_entries=invalid_entries,
+            invalid_common_data=invalid_common_data
+            )
 
     elif request.method == 'POST':
         # デバッグ用: 送信されたフォームデータを確認
@@ -186,6 +195,24 @@ def input_page():
         print(f"Processed uneven_wears: {uneven_wears}")
         print(f"Processed other_details: {other_details}")
 
+        # 共通データの検証
+        common_errors = []
+        if not width:
+            common_errors.append("幅を選択してください。")
+        if not aspect_ratio:
+            common_errors.append("扁平率を選択してください。")
+        if not inch:
+            common_errors.append("インチを選択してください。")
+
+        invalid_common_data = {
+            'width': width,
+            'aspect_ratio': aspect_ratio,
+            'inch': inch,
+            'ply_rating': ply_rating,
+            'registration_date': registration_date,
+            'errors': common_errors
+        }
+
         # 有効なデータと無効なデータを分離
         valid_entries = []
         invalid_entries = []
@@ -224,14 +251,8 @@ def input_page():
         # デバッグコードをここに挿入
         print(f"Valid entries: {valid_entries}")
         print(f"Invalid entries: {invalid_entries}")
-        
-        # 無効データがある場合はエラー画面に戻る
-        if invalid_entries:
-            # 無効データをセッションに保存
-            session['invalid_entries'] = invalid_entries
-            flash("一部のデータが無効です。エラー内容をご確認ください。", "warning")
-            
-       # データ登録 (有効データがあれば処理)
+
+    # データ登録 (有効データがあれば処理)
     if valid_entries:
         try:
             ids = []
@@ -253,42 +274,78 @@ def input_page():
                 db.session.commit()
                 print(f"New tire registered: {new_tire.id}")  # 新規登録の確認
                 ids.append(new_tire.id)
-            print(f"Valid entries registered with IDs: {ids}")            
+            print(f"Valid entries registered with IDs: {ids}")
+            # ✅ デバッグで IDs を表示
+            print(f"Valid entries registered with IDs (before redirect): {ids}")
+            
+                      
         except Exception as e:
             db.session.rollback()
             print(f"Error during registration: {e}")
             flash("登録中にエラーが発生しました。", "danger")
             return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
+    
+    # ✅ 常に `invalid_common_data` を作成
+    session['invalid_common_data'] = {
+        'width': width,
+        'aspect_ratio': aspect_ratio,
+        'inch': inch,
+        'ply_rating': ply_rating,
+        'registration_date': registration_date,  # ← ここで常に保存
+        'errors': common_errors if common_errors else []  # エラーがなくても空リストを設定
+    }
         
-        # 無効データがある場合、エラーメッセージを表示
-        if invalid_entries:
-            session['invalid_entries'] = invalid_entries
-            flash("一部のデータが無効です。エラー内容をご確認ください。", "warning")
+    # ✅ 有効データがある場合、`session` に `ids` を保存
+    if valid_entries:
+        session['valid_entry_ids'] = ids
+    
+    if invalid_entries:
+        session['invalid_entries'] = invalid_entries
 
-        # 登録確認ページへ遷移
-        return redirect(url_for(
-            'register_success',
-            ids=','.join(map(str, ids)),
-            width=width,
-            aspect_ratio=aspect_ratio,
-            inch=inch,
-            ply_rating=ply_rating,
-            registration_date=registration_date
-        ))
+        flash("一部のデータが無効です。エラー内容をご確認ください。", "warning")
+        # **変更箇所**: 無効データがある場合は`register_success`にリダイレクト
+        return redirect(url_for('register_success'))
+
+    # ✅ デバッグで IDs を表示
+    print(f"Valid entries registered with IDs (before redirect): {ids}")
+
+    # 登録確認ページへ遷移
+    return redirect(url_for(
+        'register_success',
+        ids=','.join(map(str, ids)) if ids else '',
+        width=width,
+        aspect_ratio=aspect_ratio,
+        inch=inch,
+        ply_rating=ply_rating,
+        registration_date=registration_date or session.get('invalid_common_data', {}).get('registration_date')
+    ))
     
     # 有効データがない場合は無効データのみ確認画面に渡す
-    return redirect(url_for('register_success', ids=''))
+    #return redirect(url_for('register_success', ids=''))
         
 @app.route('/register_success')
 def register_success():
     # URL引数から `ids` を取得
     ids = request.args.get('ids', '')  # デフォルト値を空文字列に設定
-    ids = ids.split(',') if isinstance(ids, str) and ids else []
+    session_ids = session.pop('valid_entry_ids', [])  # `session` から取得
+    
+    # URLから取得した `ids` が空なら、セッションの `ids` を使用
+    if not ids and session_ids:
+        ids = session_ids
+    else:
+        ids = ids.split(',') if isinstance(ids, str) and ids else []
     
     print(f"IDs for query: {ids}")  # デバッグ用
         
     # 無効データをセッションから取得
     invalid_entries = session.get('invalid_entries', [])
+    invalid_common_data = session.get('invalid_common_data', {})
+
+    # ✅ `registration_date` を明示的に取得する
+    registration_date = request.args.get('registration_date') or invalid_common_data.get('registration_date')
+
+    # ✅ データベースから有効データを取得
+    valid_tires = InputPage.query.filter(InputPage.id.in_(ids)).all() if ids else []
 
     # クエリが空の場合のデバッグ出力
     if not ids:
@@ -297,6 +354,10 @@ def register_success():
     # データベースから有効データを取得
     valid_tires = InputPage.query.filter(InputPage.id.in_(ids)).all() if ids else []
     
+    # ✅ デバッグ出力
+    print(f"IDs for query: {ids}")
+    print(f"Registration Date from URL: {request.args.get('registration_date')}")
+    print(f"Registration Date from Session: {invalid_common_data.get('registration_date')}")
     # デバッグ用: tires の内容を確認
     print(f"Register success: IDs={ids}, Tires={valid_tires}")
     print(f"Tires retrieved: {valid_tires}")  # デバッグ用
@@ -304,14 +365,14 @@ def register_success():
         'register_success.html',
         tires=valid_tires,
         invalid_entries=invalid_entries,
+        invalid_common_data=invalid_common_data,
         width=request.args.get('width'),
         aspect_ratio=request.args.get('aspect_ratio'),
         inch=request.args.get('inch'),
         ply_rating=request.args.get('ply_rating'),
-        registration_date=request.args.get('registration_date')
+        registration_date=registration_date  # ✅ ここで反映
         )
-    
-
+ 
 @app.route('/search', methods=['GET', 'POST'])
 def search_page():
     form = SearchForm()

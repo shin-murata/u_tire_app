@@ -279,23 +279,7 @@ function initializeErrorForms(invalidEntries) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded event fired. Initializing forms...");
     console.log("Resetting formCount to 0.");
-    formCount = 0; // ページロード時にリセット
-    console.log("DOMContentLoaded event fired.");
-    console.log("Page fully loaded. Checking initial select elements...");
-    
-    // 通常時の初期化を条件付きで実行
-    window.shouldInitializeForms = false; // 必要に応じて true に変更
-    if (window.shouldInitializeForms) {
-        initializeDefaultForms();
-    }
-
-    // 初期化対象のコンテナを確認
-    const copiedListContainer = document.getElementById('copied-list');
-    console.log("Copied list container:", copiedListContainer);
-    if (!copiedListContainer) {
-        console.error("Copied list container not found!");
-        return;
-    }
+    formCount = 0; // フォームカウントをリセット
 
     // 初期フォームのセレクトボックスを取得してログに出力
     const initialTreadDepth = document.getElementById('tread_depth-0');
@@ -312,15 +296,75 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error("uneven_wear select element not found!");
     }
+
+    // 共通データの再表示
+    if (typeof invalidCommonData !== 'undefined' && invalidCommonData) {
+        console.log("Repopulating common data...");
+
+        // 共通データフィールドを取得
+        const widthField = document.querySelector('select[name="width"]');
+        const aspectRatioField = document.querySelector('select[name="aspect_ratio"]');
+        const inchField = document.querySelector('select[name="inch"]');
+        const plyRatingField = document.querySelector('select[name="ply_rating"]');
+
+        // 値を反映
+        if (widthField && invalidCommonData.width) {
+            widthField.value = invalidCommonData.width;
+        }
+        if (aspectRatioField && invalidCommonData.aspect_ratio) {
+            aspectRatioField.value = invalidCommonData.aspect_ratio;
+        }
+        if (inchField && invalidCommonData.inch) {
+            inchField.value = invalidCommonData.inch;
+        }
+        if (plyRatingField && invalidCommonData.ply_rating) {
+            plyRatingField.value = invalidCommonData.ply_rating;
+        }
+
+        console.log("Common data fields updated.");
+    }
     
     // ページロード時に invalidEntries の有無を確認
     if (typeof invalidEntries !== 'undefined' && Array.isArray(invalidEntries) && invalidEntries.length > 0) {
-        console.log("Invalid entries detected. Initializing error forms...");
-        console.log("Invalid entries data:", invalidEntries);
-        initializeErrorForms(invalidEntries); // エラー時の初期化
-    } else {
+        console.log("Invalid entries detected. Handling error forms...");
+
+        // 無効データが1本の場合、テンプレートフォームにデータを反映
+        if (invalidEntries.length === 1) {
+            console.log("Single invalid entry detected. Assigning to template form...");
+            const entry = invalidEntries[0];
+
+            // テンプレートのフォームに値をセット
+            document.querySelector('select[name="manufacturer"]').value = entry.manufacturer || "0";
+            document.querySelector('select[name="manufacturing_year"]').value = entry.manufacturing_year || "0";
+            document.querySelector('select[name="tread_depth"]').value = entry.tread_depth || "0";
+            document.querySelector('select[name="uneven_wear"]').value = entry.uneven_wear || "";
+            document.querySelector('input[name="other_details"]').value = entry.other_details || "";
+
+            console.log("Template form populated with invalid entry.");
+        } 
+        // 無効データが複数本の場合
+        else {
+            console.log(`Multiple invalid entries detected (${invalidEntries.length}). Initializing error forms...`);
+
+            // テンプレートフォームに最初のデータを反映
+            const firstEntry = invalidEntries[0];
+            document.querySelector('select[name="manufacturer"]').value = firstEntry.manufacturer || "0";
+            document.querySelector('select[name="manufacturing_year"]').value = firstEntry.manufacturing_year || "0";
+            document.querySelector('select[name="tread_depth"]').value = firstEntry.tread_depth || "0";
+            document.querySelector('select[name="uneven_wear"]').value = firstEntry.uneven_wear || "";
+            document.querySelector('input[name="other_details"]').value = firstEntry.other_details || "";
+
+            console.log("Template form populated with the first invalid entry.");
+
+            // 残りのデータを動的フォームで生成
+            const remainingEntries = invalidEntries.slice(1);
+            regenerateTireForm('copied-list', remainingEntries);
+        }
+    } 
+    // 無効データがない場合は通常の初期化を実行
+    else {
         console.log("No invalid entries detected. Initializing default forms...");
-        initializeDefaultForms(); // 通常の初期化
+        initializeDefaultForms();
     }
 
     // コピー機能のイベントリスナーをセットアップ
@@ -332,18 +376,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 動的ボタン用のイベント委譲
-    copiedListContainer.addEventListener('click', (event) => {
-        if (event.target && event.target.classList.contains('copy-btn-group-2')) {
-            addTireForm('copied-list');
+    const copiedListContainer = document.getElementById('copied-list');
+    if (copiedListContainer) {
+        copiedListContainer.addEventListener('click', (event) => {
+            if (event.target && event.target.classList.contains('copy-btn-group-2')) {
+                addTireForm('copied-list');
 
-            // 動的フォームのAPI呼び出しを確実に実行
-            const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
-            if (manufacturerSelect) {
-                loadOptions(manufacturerSelect, '/api/manufacturers');
+                // 動的フォームのAPI呼び出しを確実に実行
+                const manufacturerSelect = document.querySelector(`#manufacturer-${formCount}`);
+                if (manufacturerSelect) {
+                    loadOptions(manufacturerSelect, '/api/manufacturers');
+                }
             }
-        }
-    });
-}); // ここで閉じる
+        });
+    } else {
+        console.error("Copied list container not found!");
+    }
+});
 
 // デバッグコードをここに追加
 console.log(`Generated select element: ${document.getElementById(`uneven_wear-${formCount}`).outerHTML}`);
