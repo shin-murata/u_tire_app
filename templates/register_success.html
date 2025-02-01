@@ -6,7 +6,8 @@
 
     <!-- タイヤデータが存在するか確認 -->
     {% if tires %}
-        <h5>共通データ</h5>
+        <p>有効データ一覧: {{ tires }}</p>
+        <h2>共通データ</h2>
         <ul>
             <li>登録日: {{ registration_date }}</li>
             <li>幅: {{ tires[0].width_ref.value }}</li>

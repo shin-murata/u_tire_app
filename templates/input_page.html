@@ -90,9 +90,15 @@
 {% for error in form.ply_rating.errors %}
   <div class="alert alert-danger">{{ error }}</div>
 {% endfor %}
+<script>
+    // サーバーから渡された未入力データ
+    const invalidEntries = {{ invalid_entries|tojson }};
+    console.log("Invalid entries:", invalidEntries);
+</script>
+<script>
+    const invalidCommonData = {{ invalid_common_data|tojson }};
+    console.log("Invalid common data:", invalidCommonData);
+</script>
 
-
-<!-- スクリプトを読み込む -->
-<!-- <script src="{{ url_for('static', filename='script.js') }}"></script> -->
 
 {% endblock %}
