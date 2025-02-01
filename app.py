@@ -147,7 +147,14 @@ def input_page():
         aspect_ratio = request.form.get('aspect_ratio')
         inch = request.form.get('inch')
         ply_rating = request.form.get('ply_rating')
-        registration_date = request.form.get('registration_date', date.today())
+        registration_date_str = request.form.get('registration_date')
+        if registration_date_str:
+            try:
+                registration_date = datetime.strptime(registration_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                registration_date = date.today()
+        else:
+            registration_date = date.today()
 
         # 動的フォームのデータ取得
         manufacturers = request.form.getlist('manufacturer[]') or []
@@ -291,7 +298,7 @@ def input_page():
         'aspect_ratio': aspect_ratio,
         'inch': inch,
         'ply_rating': ply_rating,
-        'registration_date': registration_date,  # ← ここで常に保存
+        'registration_date': registration_date.strftime('%Y-%m-%d'),
         'errors': common_errors if common_errors else []  # エラーがなくても空リストを設定
     }
         
@@ -344,6 +351,10 @@ def register_success():
     # ✅ `registration_date` を明示的に取得する
     registration_date = request.args.get('registration_date') or invalid_common_data.get('registration_date')
 
+    # `registration_date` が `datetime.date` の場合は `str` に変換
+    if isinstance(registration_date, date):
+        registration_date = registration_date.strftime('%Y-%m-%d')
+    
     # ✅ データベースから有効データを取得
     valid_tires = InputPage.query.filter(InputPage.id.in_(ids)).all() if ids else []
 
