@@ -13,7 +13,7 @@
 {% endif %}
 {% endwith %}
 
-<h1>出庫指示書</h1>
+<h5>出庫指示書</h5>
 <!-- 今回の出庫タイヤ表示 -->
 <table>
     <thead>
@@ -49,7 +49,7 @@
     </tbody>
 </table>   
 <!-- 個別データの一覧表示 -->
-<h4>個別データ</h4>
+<h5>個別データ</h5>
 <table>
     <thead>
         <tr>
@@ -84,10 +84,10 @@
 </table>
 
 <form method="POST" action="{{ url_for('generate_dispatch_pdf') }}">
-    <button type="submit">指示書をPDFで印刷</button>
+    <button type="submit" class="btn btn-info">指示書をPDFで印刷</button>
 </form>
 
-<h1>出庫履歴</h1>
+<h5>出庫履歴</h5>
 <!-- 出庫履歴表示のテーブルなど -->
 <table>
     <thead>

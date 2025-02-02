@@ -80,7 +80,7 @@
             <span>{{ tire.id }} {{ 'checked' if tire.id|string in selected_tires else '' }}</span>
         {% endfor %}
         <!-- 戻るボタン -->
-        <button type="button" onclick="window.location.href='{{ url_for('dispatch_confirm', action='back') }}';">
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ url_for('dispatch_confirm', action='back') }}';">
             戻る
         </button>
     </form>

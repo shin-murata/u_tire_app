@@ -1,74 +1,113 @@
 {% extends "base.html" %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <title>管理画面</title>
-</head>
-<body>
-    <h1>管理画面</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
-            {% for category, message in messages %}
-                <li class="flash-{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-    <!-- モデルごとのデータ管理 -->
-    {% for model_name, model_data in data.items() %}
-        <div>
-            <h2>{{ model_name | capitalize }}</h2>
-            <!-- 新しいデータを追加 -->
-            <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}">
-                <input type="text" name="value" placeholder="新しい {{ model_name }} を追加">
-                <button type="submit">追加</button>
-            </form>
-            <ul>
-                {% for entry in model_data.entries %}
-                    <li>
-                        <!-- <p>Model Name: {{ model_name }}</p> デバッグ -->
-                        <!-- <p>Entry ID: {{ entry.id }}</p> デバッグ -->
-                        <!-- <p>Generated URL: {{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}</p> -->
-                        <!-- データの更新 -->
-                        <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" style="display:inline;">
-                            <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}">
-                            <button type="submit">更新</button>
-                        </form>
-                        <!-- データの削除 -->
-                        <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}" style="display:inline;">
-                            <button type="submit">削除</button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endfor %}
+<div class="container mt-4">
+  <h5 class="mb-4">管理画面</h5>
 
-    <!-- ユーザー管理 -->
-    <h2>ユーザー管理</h2>
-    <!-- 新しいユーザーを追加 -->
-    <form method="POST" action="{{ url_for('admin.add_user') }}">
-        <input type="text" name="username" placeholder="ユーザー名">
-        <input type="password" name="password" placeholder="パスワード">
-        <select name="role_id">
-            {% for role in roles %}
+  {# Flashメッセージ（Bootstrapのalertで表示） #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {# モデルごとのデータ管理（横並びレイアウト） #}
+  <div class="row">
+    {% for model_name, model_data in data.items() %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h2 class="h5 mb-0">{{ model_name | capitalize }}</h2>
+          </div>
+          <div class="card-body">
+            {# 新しいデータを追加するフォーム #}
+            <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}" class="mb-3">
+              <div class="input-group mb-2">
+                <input type="text" name="value" class="form-control" placeholder="新しい {{ model_name }} を追加">
+              </div>
+              <button type="submit" class="btn btn-primary w-100">追加</button>
+            </form>
+
+            {# 登録済みの各エントリを横並びに配置（デフォルト）し、レスポンシブで折り返し #}
+            <div class="d-flex flex-column gap-3">
+              {% for entry in model_data.entries %}
+                <div class="border rounded p-3 d-flex flex-nowrap align-items-center gap-2 flex-wrap">
+                  {# 更新フォーム（デフォルトで横並び、狭い画面で折り返し） #}
+                  <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" class="flex-grow-1">
+                    <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}" 
+                        class="form-control text-nowrap" style="min-width: 80px; max-width: 200px;">
+                  </form>
+
+                  {# ボタンコンテナ #}
+                  <div class="d-flex gap-2">
+                    <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}">
+                        <button type="submit" class="btn btn-success text-nowrap px-3">更新</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}">
+                        <button type="submit" class="btn btn-danger text-nowrap px-3">削除</button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+</div>
+
+{# ユーザー管理セクション #}
+<div class="card mt-4">
+    <div class="card-header">
+      <h2 class="h5 mb-0">ユーザー管理</h2>
+    </div>
+    <div class="card-body">
+      {# 新しいユーザーを追加するフォーム（グリッドレイアウト） #}
+      <form method="POST" action="{{ url_for('admin.add_user') }}" class="mb-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-4">
+            <input type="text" name="username" placeholder="ユーザー名" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <input type="password" name="password" placeholder="パスワード" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <select name="role_id" class="form-select">
+              {% for role in roles %}
                 <option value="{{ role.id }}">{{ role.name }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">ユーザーを追加</button>
-    </form>
-    <ul>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary w-100">追加</button>
+          </div>
+        </div>
+      </form>
+
+      {# 既存ユーザーの一覧（list-group） #}
+      <div class="list-group">
         {% for user in users %}
-            <li>
-                {{ user.username }} (権限: {{ user.role.name }})
-                <!-- ユーザーを削除 -->
-                <form method="POST" action="{{ url_for('admin.delete_user', id=user.id) }}" style="display:inline;">
-                    <button type="submit">削除</button>
-                </form>
-            </li>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              {{ user.username }} (権限: {{ user.role.name }})
+            </div>
+            <div>
+              <form method="POST" action="{{ url_for('admin.delete_user', id=user.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-danger">削除</button>
+              </form>
+            </div>
+          </div>
         {% endfor %}
-    </ul>
-</body>
+      </div>
+    </div>
+</div>
+
+
+</div>
 {% endblock %}
