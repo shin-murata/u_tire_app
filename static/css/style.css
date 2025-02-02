@@ -236,6 +236,122 @@ h5 {
     background-color: #0056b3;
 }
 
+/* 確認画面用のラッパー（登録フォームと同じ container を使っても良い） */
+.tire-confirmation {
+    padding: 20px;
+    background-color: #fff;
+    margin: 20px auto;
+    max-width: 600px;
+    font-family: Arial, sans-serif;
+}
+
+/* 登録日など単独で表示する部分 */
+.registration-date {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* 1段目と2段目を横並びにする */
+.data-rows {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+}
+
+/* 各データグループ内は横並び */
+/* 各グループに均等な幅を与える */
+.data-group {
+    flex: 1;  /* 各グループが同じ幅を持つ */
+    display: flex;
+    justify-content: space-evenly;  /* グループ内の子要素を均等に配置 */
+    align-items: center;
+}
+
+/* 1段目グループ（幅／扁平率） */
+.data-group-1 .value {
+    font-size: 1.6rem;
+    margin: 0 5px;
+}
+
+/* 2段目グループ（R, インチ, プライレーティング） */
+.data-group-2 .prefix {
+    font-size: 1.6rem;
+    margin-right: 5px;
+    font-weight: bold;
+}
+.data-group-2 .value {
+    font-size: 1.6rem;
+    margin: 0 5px;
+}
+
+/* セパレーター（例: "/" の表示） */
+.separator {
+    font-size: 1.6rem;
+    margin: 0 5px;
+}
+
+/* フォーム要素の間隔を調整 */
+.d-flex.flex-wrap.gap-2 {
+    gap: 10px; /* 各要素間の余白を設定 */
+}
+
+/* ラベルと入力フォームの間の余白 */
+.d-flex.align-items-center label {
+    margin-right: 5px;
+}
+
+/* ラベルを折り返さないようにする */
+.nowrap label {
+    white-space: nowrap; /* ラベルの改行を防ぐ */
+}
+
+/* フォームの余白調整 */
+.d-flex.flex-wrap.gap-2 {
+    gap: 10px; /* 各要素間の余白 */
+}
+
+/* ラベルと入力欄の間隔調整 */
+.d-flex.align-items-center label {
+    margin-right: 10px; /* ラベルと入力フォームの間に余白 */
+}
+
+/* テーブル内の全てのセルをセンター配置 */
+.table td, 
+.table th {
+    text-align: center;     /* 水平方向の中央揃え */
+    vertical-align: middle; /* 垂直方向の中央揃え */
+}
+
+/* 価格や入力欄があるセルにも適用 */
+.table input {
+    text-align: center; /* 入力欄内のテキストも中央寄せ */
+}
+
+.dispatch-confirmation .data-rows {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.dispatch-confirmation .data-group {
+    display: flex;
+    align-items: center;
+}
+
+.dispatch-confirmation .separator {
+    font-weight: bold;
+    font-size: 1.4rem;
+    margin: 0 10px;
+}
+
+.dispatch-confirmation .prefix {
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+
 /* スマホ表示用の調整 */
 @media (max-width: 350px) {
     /* 1段目 */

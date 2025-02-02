@@ -1,46 +1,63 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="container">
     <h5>登録が完了しました！</h5>
     <p>以下のタイヤが登録されました。</p>
 
     <!-- タイヤデータが存在するか確認 -->
     {% if tires %}
-        <p>有効データ一覧: {{ tires }}</p>
-        <h2>共通データ</h2>
-        <ul>
-            <li>登録日: {{ registration_date }}</li>
-            <li>幅: {{ tires[0].width_ref.value }}</li>
-            <li>アスペクト比: {{ tires[0].aspect_ratio_ref.value }}</li>
-            <li>インチ: {{ tires[0].inch_ref.value }}</li>
-            <li>プライレーティング: {{ tires[0].ply_rating_ref.value }}</li>
-        </ul>
-
-        <h5>登録されたタイヤ一覧</h5>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>メーカー</th>
-                    <th>製造年</th>
-                    <th>溝深さ</th>
-                    <th>偏摩耗</th>
-                    <th>その他の詳細</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tire in tires %}
-                <tr>
-                    <td>{{ tire.id }}</td>
-                    <td>{{ tire.manufacturer_ref.name }}</td>
-                    <td>{{ tire.manufacturing_year }}</td>
-                    <td>{{ tire.tread_depth }}</td>
-                    <td>{{ tire.uneven_wear }}</td>
-                    <td>{{ tire.other_details }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="tire-confirmation">
+        <h5>共通データ</h5>
+        <form class="tire-form">
+            <!-- 登録日（単独表示） -->
+            <div class="form-group registration-date">
+                <p id="registration_date" class="value">{{ registration_date }}</p>
+            </div>
+    
+            <!-- 1段目と2段目を横並びに表示 -->
+            <div class="form-group data-rows">
+                <!-- 1段目: 幅と扁平率 -->
+                <div class="data-group data-group-1">
+                    <p id="width" class="value">{{ tires[0].width_ref.value }}</p>
+                    <span class="separator">/</span>
+                    <p id="aspect_ratio" class="value">{{ tires[0].aspect_ratio_ref.value }}</p>
+                </div>
+                <!-- 2段目: R, インチとプライレーティング -->
+                <div class="data-group data-group-2">
+                    <span class="prefix">R</span>
+                    <p id="inch" class="value">{{ tires[0].inch_ref.value }}</p>
+                    <p id="ply_rating" class="value">{{ tires[0].ply_rating_ref.value }}</p>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- 登録されたタイヤ一覧のテーブルなど他の表示部分 -->    
+    <h5>登録されたタイヤ一覧</h5>
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="thead-light">
+            <tr>
+                <th>ID</th>
+                <th>メーカー</th>
+                <th>製造年</th>
+                <th>溝深さ</th>
+                <th>偏摩耗</th>
+                <th>その他の詳細</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tire in tires %}
+            <tr>
+                <td>{{ tire.id }}</td>
+                <td>{{ tire.manufacturer_ref.name }}</td>
+                <td>{{ tire.manufacturing_year }}</td>
+                <td>{{ tire.tread_depth }}</td>
+                <td>{{ tire.uneven_wear }}</td>
+                <td>{{ tire.other_details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
         <p>登録済みのタイヤはありません。</p>
     {% endif %}
@@ -55,8 +72,8 @@
     {% if invalid_entries %}
     <!-- テーブル形式のエラー情報表示 -->
     <h5>エラーがあるデータ（詳細テーブル）</h5>
-        <table border="1">
-            <thead>
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="thead-light">
                 <tr>
                     <th>インデックス</th>
                     <th>エラー内容</th>
@@ -80,5 +97,5 @@
     {% endif %}
 
     <a href="{{ url_for('input_page') }}" class="btn btn-primary">未入力データを修正</a>
-
+</div>
 {% endblock %}

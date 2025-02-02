@@ -1,66 +1,82 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="POST">
-    {{ form.hidden_tag() }}
+<div class="container my-4">
     <!-- 検索条件フォーム -->
-    <div>
-        {{ form.registration_date.label }} {{ form.registration_date(size=10) }}
-        <button type="submit" name="search">検索</button>
-        <button type="submit" name="filter_unpriced">価格未入力</button>
-        <button type="submit" name="filter_in_stock">在庫があるもの</button>
-        <button type="submit" name="filter_dispatched">出庫済み</button>
-        <button type="submit" name="reset">全て表示</button>
-    </div>
-</form>
+    <form method="POST" class="mb-4">
+        {{ form.hidden_tag() }}
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="d-flex align-items-center nowrap">
+                <label class="mr-2 mb-0">{{ form.registration_date.label }}</label>
+                {{ form.registration_date(class="form-control", size=10) }}
+            </div>
+            <button type="submit" name="search" class="btn btn-primary">検索</button>
+            <button type="submit" name="filter_unpriced" class="btn btn-secondary">価格未入力</button>
+            <button type="submit" name="filter_in_stock" class="btn btn-secondary">在庫があるもの</button>
+            <button type="submit" name="filter_dispatched" class="btn btn-secondary">出庫済み</button>
+            <button type="submit" name="reset" class="btn btn-secondary">全て表示</button>
+        </div>
+    </form>
     <!-- 絞り込み後のデータ表示 -->
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <table>
-        <thead>
-            <tr>
-                <th>在庫番号</th>
-                <th>登録日</th>
-                <th>幅</th>
-                <th>扁平率</th>
-                <th>インチ</th>
-                <th>プライ</th>
-                <th>メーカー</th>
-                <th>製造年</th>
-                <th>価格</th>
-                <th>残り溝</th>
-                <th>片減り</th>
-                <th>在庫</th>
-                <th>その他</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tire in tires %}
-            <tr>
-                <td>{{ tire.id }}</td>
-                <td>{{ tire.registration_date }}</td>
-                <td>{{ tire.width_ref.value }}</td>
-                <td>{{ tire.aspect_ratio_ref.value }}</td>
-                <td>{{ tire.inch_ref.value }}</td>
-                <td>{{ tire.ply_rating_ref.value }}</td>
-                <td>{{ tire.manufacturer_ref.name }}</td>
-                <td>{{ tire.manufacturing_year }}</td>
-                <td>
-                    <input type="text" name="price_{{ tire.id }}" value="{{ tire.price|currency }}" size="10">
-                </td>
-                <td>{{ tire.tread_depth }}</td>
-                <td>{{ tire.uneven_wear }}</td>
-                <td>{{ tire.is_dispatched }}</td>
-                <td>
-                    <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" size="20">
-                </td>
-                <td>{{ tire.last_edited_by }}</td>
-                <td>{{ tire.last_edited_at }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <button type="submit" name="update_all">一括更新</button>
-</form>
+    <!-- スクロール可能なテーブル -->
+    <div class="table-responsive">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="min-width: 100px;">在庫番号</th>
+                        <th style="min-width: 120px;">登録日</th>
+                        <th style="min-width: 80px;">幅</th>
+                        <th style="min-width: 100px;">扁平率</th>
+                        <th style="min-width: 80px;">インチ</th>
+                        <th style="min-width: 80px;">プライ</th>
+                        <th style="min-width: 150px;">メーカー</th>
+                        <th style="min-width: 100px;">製造年</th>
+                        <th style="min-width: 120px;">価格</th>
+                        <th style="min-width: 100px;">残り溝</th>
+                        <th style="min-width: 100px;">片減り</th>
+                        <th style="min-width: 100px;">在庫</th>
+                        <th style="min-width: 150px;">その他</th>
+                        <th style="min-width: 150px;">最終更新者</th>
+                        <th style="min-width: 200px;">最終更新日時</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tire in tires %}
+                    <tr>
+                        <td>{{ tire.id }}</td>
+                        <td>{{ tire.registration_date }}</td>
+                        <td>{{ tire.width_ref.value }}</td>
+                        <td>{{ tire.aspect_ratio_ref.value }}</td>
+                        <td>{{ tire.inch_ref.value }}</td>
+                        <td>{{ tire.ply_rating_ref.value }}</td>
+                        <td>{{ tire.manufacturer_ref.name }}</td>
+                        <td>{{ tire.manufacturing_year }}</td>
+                        <td>
+                            <input type="text" name="price_{{ tire.id }}" value="{{ tire.price|currency }}" class="form-control" size="10">
+                        </td>
+                        <td>{{ tire.tread_depth }}</td>
+                        <td>{{ tire.uneven_wear }}</td>
+                        <td>
+                            {% if tire.is_dispatched %}
+                                なし
+                            {% else %}
+                                あり
+                            {% endif %}
+                        </td>
+                        <td>
+                            <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" class="form-control" size="20">
+                        </td>
+                        <td>{{ tire.last_edited_by }}</td>
+                        <td>{{ tire.last_edited_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit" name="update_all" class="btn btn-primary">一括更新</button>
+        </form>
+    </div>
+</div>
 
 {% endblock %}
