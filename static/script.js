@@ -357,6 +357,17 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Resetting formCount to 0.");
     formCount = 0; // フォームカウントをリセット
 
+    // 🔹 戻るボタンの処理を追加
+    const backButton = document.getElementById("backButton");
+    if (backButton) {
+        backButton.addEventListener("click", function () {
+            window.location.href = this.getAttribute("data-url");
+        });
+        console.log("Back button initialized.");
+    } else {
+        console.warn("Back button not found.");
+    }
+
     // 初期フォームのセレクトボックスを取得してログに出力
     const initialTreadDepth = document.getElementById('tread_depth-0');
     const initialUnevenWear = document.getElementById('uneven_wear-0');

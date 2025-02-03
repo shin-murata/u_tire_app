@@ -480,7 +480,7 @@ def search_page():
         search_conditions=search_conditions  # 検索条件を渡す
     )
 
-@app.route('/dispatch/confirm', methods=['GET', 'POST'])
+@app.route('/dispatch/confirm', methods=['GET', 'POST'], endpoint='dispatch_confirm')
 def dispatch_confirm():
     # POSTリクエスト（出庫ボタンが押された場合）
     if request.method == 'POST':

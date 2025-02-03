@@ -92,11 +92,11 @@
 {% endfor %}
 <script>
     // サーバーから渡された未入力データ
-    const invalidEntries = {{ invalid_entries|tojson }};
+    const invalidEntries = JSON.parse('{{ invalid_entries|tojson }}');
     console.log("Invalid entries:", invalidEntries);
 </script>
 <script>
-    const invalidCommonData = {{ invalid_common_data|tojson }};
+    const invalidCommonData = JSON.parse('{{ invalid_common_data|tojson }}');
     console.log("Invalid common data:", invalidCommonData);
 </script>
 
