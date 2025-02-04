@@ -509,10 +509,14 @@ def dispatch_confirm():
     selected_tires = session.get('selected_tires', [])
     tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
 
+    # 確定前なので `date.today()` を仮の出庫日として使用
+    dispatch_date = date.today()
+    print(f"仮の出庫日: {dispatch_date}")
+    
     # デバッグログ
     print(f"GET action - Tires to dispatch: {[tire.id for tire in tires_to_dispatch]} -> Count: {len(tires_to_dispatch)}")
     
-    return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch)
+    return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch, dispatch_date=dispatch_date)
 
 @app.route('/dispatch', methods=['GET', 'POST'])
 def dispatch():
@@ -568,6 +572,10 @@ def dispatch_page():
             InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history
         ]
 
+        # ここで dispatch_date を取得（最初のデータのみを使用）
+        dispatch_date = dispatch_history[0].dispatch_date if dispatch_history else None
+        print(f"Dispatch Date: {dispatch_date}")
+
         # 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)
         total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
@@ -580,9 +588,11 @@ def dispatch_page():
             'dispatch_page.html',
             tires_to_dispatch=tires_to_dispatch,
             total_tires=total_tires,
-            total_price=total_price
+            total_price=total_price,
+            dispatch_date=dispatch_date  # dispatch_date をテンプレートに渡す
         )
     except Exception as e:
+        print(f"Error fetching dispatch history: {e}")
         flash(f"エラーが発生しました: {e}", "danger")
         return redirect(url_for('home'))
 
