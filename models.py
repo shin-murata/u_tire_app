@@ -61,6 +61,8 @@ class HistoryPage(db.Model):
     details = db.Column(db.String)
 
 class DispatchHistory(db.Model):
+    __tablename__ = "dispatch_history"  # 正しいテーブル名を指定
+    
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

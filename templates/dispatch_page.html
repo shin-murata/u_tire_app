@@ -1,115 +1,72 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-<!-- フラッシュメッセージの表示 -->
-{% with messages = get_flashed_messages(with_categories=True) %}
-{% if messages %}
-    <ul>
-    {% for category, message in messages %}
-        <li class="{{ category }}">{{ message }}</li>
-    {% endfor %}
-    </ul>
-{% endif %}
-{% endwith %}
-
-<h5>出庫指示書</h5>
-<!-- 今回の出庫タイヤ表示 -->
-<table>
-    <thead>
-        <tr>
-            <th>幅</th>
-            <th>アスペクト比</th>
-            <th>インチ</th>
-            <th>プライレーティング</th>
-        </tr>
-    </thead> 
-    <tbody>
-        <!-- 共通データの行 -->
-        {% if tires_to_dispatch|length > 0 %}
-        <tr>
-            <td>
-                <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
-                {{ tires_to_dispatch[0].width_ref.value }}
-            </td>
-            <td>
-                <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
-                {{ tires_to_dispatch[0].aspect_ratio_ref.value }}
-            </td>
-            <td>
-                <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
-                {{ tires_to_dispatch[0].inch_ref.value }}
-            </td>
-            <td>
-                <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
-                {{ tires_to_dispatch[0].ply_rating_ref.value }}
-            </td>
-        </tr>
-        {% endif %}
-    </tbody>
-</table>   
-<!-- 個別データの一覧表示 -->
-<h5>個別データ</h5>
-<table>
-    <thead>
-        <tr>
-            <th>在庫番号</th>
-            <th>メーカー</th>
-            <th>製造年</th>
-            <th>溝</th>
-            <th>片減り</th>
-            <th>その他の詳細</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for tire in tires_to_dispatch %}
-        <tr>
-            <td>{{ tire.id }}</td>
-            <td>{{ tire.manufacturer_ref.name }}</td>
-            <td>{{ tire.manufacturing_year }}</td>
-            <td>{{ tire.tread_depth }}</td>
-            <td>{{ tire.uneven_wear }}</td>
-            <td>{{ tire.other_details }}</td>
-        </tr>
-        {% endfor %}
-        <tr>
-            <td colspan="6" style="text-align: right;"><strong>合計本数:</strong></td>
-            <td>{{ total_tires }}</td>
-        </tr>
-        <tr>
-            <td colspan="6" style="text-align: right;"><strong>金額合計:</strong></td>
-            <td>{{ total_price|currency }}</td>
-        </tr>
-    </tbody>
-</table>
-
-<form method="POST" action="{{ url_for('generate_dispatch_pdf') }}">
-    <button type="submit" class="btn btn-info">指示書をPDFで印刷</button>
-</form>
-
-<h5>出庫履歴</h5>
-<!-- 出庫履歴表示のテーブルなど -->
-<table>
-    <thead>
-        <tr>
-            <th>出庫ID</th>
-            <th>タイヤID</th>
-            <th>ユーザーID</th>
-            <th>出庫日</th>
-            <th>メモ</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for history in dispatch_history %}
-        <tr>
-            <td>{{ history.id }}</td>
-            <td>{{ history.tire_id }}</td>
-            <td>{{ history.user_id }}</td>
-            <td>{{ history.dispatch_date }}</td>
-            <td>{{ history.dispatch_note }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+<div class="container my-4">
+    <h5>出庫指示書</h5>
+    <div class="tire-confirmation">
+        <h5>共通データ</h5>
+        <div class="tire-form">
+            <div class="form-group registration-date">
+                <label for="dispatch_date">出庫日:</label>
+                <p id="dispatch_date" class="value">{{ dispatch_date }}</p>
+            </div>
+            <div class="form-group data-rows">
+                <div class="data-group data-group-1">
+                    <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
+                    <p id="width" class="value">{{ tires_to_dispatch[0].width_ref.value }}</p>
+                    <span class="separator">/</span>
+                    <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
+                    <p id="aspect_ratio" class="value">{{ tires_to_dispatch[0].aspect_ratio_ref.value }}</p>
+                </div>
+                <div class="data-group data-group-2">
+                    <span class="prefix">R</span>
+                    <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
+                    <p id="inch" class="value">{{ tires_to_dispatch[0].inch_ref.value }}</p>
+                    <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
+                    <p id="ply_rating" class="value">{{ tires_to_dispatch[0].ply_rating_ref.value }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h5>個別データ</h5>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>在庫番号</th>
+                    <th>メーカー</th>
+                    <th>製造年</th>
+                    <th>溝</th>
+                    <th>片減り</th>
+                    <th>その他の詳細</th>
+                    <th>価格</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tire in tires_to_dispatch %}
+                <tr>
+                    <td>{{ tire.id }}</td>
+                    <td>{{ tire.manufacturer_ref.name }}</td>
+                    <td>{{ tire.manufacturing_year }}</td>
+                    <td>{{ tire.tread_depth }}</td>
+                    <td>{{ tire.uneven_wear }}</td>
+                    <td>{{ tire.other_details }}</td>
+                    <td>{{ tire.price }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="6" style="text-align: right;"><strong>合計本数:</strong></td>
+                    <td>{{ total_tires }}</td>
+                </tr>
+                <tr>
+                    <td colspan="6" style="text-align: right;"><strong>金額合計:</strong></td>
+                    <td>{{ total_price|currency }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <form method="POST" action="{{ url_for('generate_dispatch_pdf') }}">
+        <button type="submit" class="btn btn-info">指示書をPDFで印刷</button>
+    </form>
+</div>
 {% endblock %}

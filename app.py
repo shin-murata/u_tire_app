@@ -537,9 +537,10 @@ def dispatch():
                 )
                 db.session.add(new_dispatch)
                 processed_tire_ids.append(tire_id)
+        print("Committing changes to the database...")
         # データベースの変更を保存
         db.session.commit()
-
+        print(f"Processed tire IDs: {processed_tire_ids}")
         # セッションに保存
         session['processed_tires'] = processed_tire_ids
 
@@ -547,6 +548,7 @@ def dispatch():
     except Exception as e:
         # エラー発生時はロールバック
         db.session.rollback()
+        print(f"Database error: {e}")  # デバッグログを強化
         flash(f"エラーが発生しました: {e}", "danger")
 
     # 処理完了後、出庫履歴画面にリダイレクト
