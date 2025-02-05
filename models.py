@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -117,4 +117,12 @@ class Role(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     description = db.Column(db.String(255))
 
-    
+class EditHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    edit_date = db.Column(db.DateTime, default=datetime.utcnow)
+    edit_details = db.Column(db.Text)
+
+    def __repr__(self):
+        return f"<EditHistory tire_id={self.tire_id} user_id={self.user_id} edit_date={self.edit_date}>"

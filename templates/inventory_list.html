@@ -70,6 +70,7 @@
                         </td>
                         <td>{{ tire.last_edited_by }}</td>
                         <td>{{ tire.last_edited_at }}</td>
+                        <td><a href="{{ url_for('edit_page', id=tire.id) }}" class="btn btn-warning">編集</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>

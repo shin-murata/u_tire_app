@@ -1,6 +1,6 @@
 from flask import Blueprint, Flask, render_template, request, redirect, url_for,  jsonify, flash, session, Response, g
 from flask_migrate import Migrate  # Flask-Migrate をインポート
-from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User, Role
+from models import db, Width, AspectRatio, Inch, Manufacturer, PlyRating, InputPage, SearchPage, EditPage, HistoryPage, DispatchHistory, AlertPage, User, Role, EditHistory
 from forms import SearchForm, EditForm, CombinedForm
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required, AnonymousUserMixin
 from utils import role_required # role_requiredをインポート
@@ -647,17 +647,47 @@ def generate_dispatch_pdf():
 def edit_page(id):
     tire = InputPage.query.get_or_404(id)
     form = EditForm(obj=tire)
+
     if form.validate_on_submit():
+        old_data = {
+            'price': tire.price,
+            'other_details': tire.other_details
+        }
         # フォームの内容でタイヤ情報を更新
         form.populate_obj(tire)
+
+        edit_details = []
+        if old_data['price'] != tire.price:
+            edit_details.append(f"価格: {old_data['price']} → {tire.price}")
+        if old_data['other_details'] != tire.other_details:
+            edit_details.append(f"詳細: {old_data['other_details']} → {tire.other_details}")
+
+        if edit_details:
+            new_edit = HistoryPage(
+                tire_id=id,
+                user_id=1,  # 仮のユーザーID（実際には current_user.id）
+                action="編集",
+                edit_date=datetime.utcnow(),
+                details=", ".join(edit_details)
+            )
+            db.session.add(new_edit)
+
         db.session.commit()
-        return redirect(url_for('index'))
+        flash("編集が完了しました。", "success")
+        return redirect(url_for('history_page'))
+    
     return render_template('edit_page.html', form=form, tire=tire)
 
 @app.route('/history')
 def history_page():
-    history = HistoryPage.query.all()
-    return render_template('history_page.html', history=history)
+    # 出庫履歴を取得（新しい順）
+    dispatch_history = DispatchHistory.query.order_by(DispatchHistory.dispatch_date.desc()).all()
+
+    # 編集履歴を取得（新しい順）
+    edit_history = HistoryPage.query.order_by(HistoryPage.edit_date.desc()).all()
+
+    return render_template('history_page.html', dispatch_history=dispatch_history, edit_history=edit_history)
+
 
 @app.route('/alerts')
 def alert_page():

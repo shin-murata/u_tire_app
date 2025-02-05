@@ -1,27 +1,52 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>履歴</h1>
-<table>
+<h1>履歴一覧</h1>
+
+<h2>出庫履歴</h2>
+<table class="table">
     <thead>
         <tr>
             <th>タイヤID</th>
-            <th>ユーザーID</th>
+            <th>出庫日</th>
+            <th>出庫者</th>
+            <th>備考</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in dispatch_history %}
+        <tr>
+            <td>{{ record.tire_id }}</td>
+            <td>{{ record.dispatch_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ record.user_id }}</td>
+            <td>{{ record.dispatch_note }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>編集履歴</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>タイヤID</th>
+            <th>編集者</th>
             <th>アクション</th>
             <th>編集日</th>
             <th>詳細</th>
         </tr>
     </thead>
     <tbody>
-        {% for record in history %}
+        {% for record in edit_history %}
         <tr>
             <td>{{ record.tire_id }}</td>
             <td>{{ record.user_id }}</td>
             <td>{{ record.action }}</td>
-            <td>{{ record.edit_date }}</td>
+            <td>{{ record.edit_date.strftime('%Y-%m-%d') }}</td>
             <td>{{ record.details }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
 {% endblock %}
