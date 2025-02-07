@@ -1,7 +1,8 @@
 # forms.py
 from flask_wtf import FlaskForm
+from flask import current_app as app  # ✅ 修正: `current_app` を使う
 from wtforms import StringField, IntegerField, FloatField, SelectField, DateField, SubmitField
-from wtforms.validators import DataRequired, Optional  # Optional をインポート
+from wtforms.validators import DataRequired, Optional, InputRequired  # Optional をインポート
 from models import Width, AspectRatio, Inch, Manufacturer, PlyRating
 from datetime import date
 from wtforms.widgets import Input
@@ -113,6 +114,50 @@ class EditForm(CombinedForm):
 
 # 共通のフォーム
 class EditForm(FlaskForm):
-    id = IntegerField('ID')  # 編集対象のID
-    value = StringField('Value', validators=[DataRequired()])
-    submit = SubmitField('Update')
+    id = IntegerField('ID')  # 編集対象のID（編集対象を識別）
+    width = SelectField('幅', coerce=int, validators=[DataRequired()])
+    aspect_ratio = SelectField('扁平率', coerce=int, validators=[DataRequired()])
+    inch = SelectField('インチ', coerce=int, validators=[DataRequired()])
+    ply_rating = SelectField(
+        'プライ',
+        coerce=int,
+        validators=[InputRequired()],  # DataRequired() → InputRequired() に変更
+        choices=[]
+    )
+    manufacturer = SelectField('メーカー', coerce=int, validators=[DataRequired()])
+    manufacturing_year = SelectField(
+        '製造年',
+        coerce=int,
+        validators=[DataRequired()],
+        choices=[(0, "製造年")] + [(year, f"{year}年") for year in range(2022, 2026)]
+    )
+    tread_depth = SelectField(
+        '残り溝',
+        coerce=int,
+        validators=[DataRequired()],
+        choices=[(0, "残り溝")] + [(depth, f"{depth} 分山") for depth in reversed(range(3, 11))]
+    )
+    uneven_wear = SelectField(
+        '片減り',
+        coerce=int,
+        validators=[InputRequired()],  # ✅ `InputRequired()` に変更
+        choices=[(-1, "片減り")] + [(wear, f"{wear}段階") for wear in range(0, 4)]
+    )
+    other_details = StringField('その他', validators=[Optional()])
+    price = FloatField('価格', validators=[Optional()])
+    value = StringField('Value', validators=[Optional()])  # ✅ Optional に変更してエラーを防ぐ
+    submit = SubmitField('更新')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        with app.app_context():
+                    self.width.choices = [(0, "幅を選択")] + [(w.id, w.value) for w in Width.query.all()]
+                    self.aspect_ratio.choices = [(0, "扁平率を選択")] + [(ar.id, ar.value) for ar in AspectRatio.query.all()]
+                    self.inch.choices = [(0, "インチを選択")] + [(i.id, i.value) for i in Inch.query.all()]
+                    self.manufacturer.choices = [(0, "メーカーを選択")] + [(m.id, m.name) for m in Manufacturer.query.all()]
+                    self.ply_rating.choices = [(0, "プライを選択")] + [(p.id, p.value) for p in PlyRating.query.all()]
+                    if self.ply_rating.data is None:
+                        self.ply_rating.data = 0  # ✅ 初期値を 0 にセット
+                    self.uneven_wear.choices = [(-1, "片減り")] + [(wear, f"{wear}段階") for wear in range(0, 4)]
+                    if self.uneven_wear.data is None:
+                        self.uneven_wear.data = 0  # ✅ 初期値を0にセット

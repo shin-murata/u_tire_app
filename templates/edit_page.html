@@ -5,8 +5,8 @@
 <form method="POST">
     {{ form.hidden_tag() }}
     <div>
-        {{ form.registration_date.label }}
-        {{ form.registration_date() }}
+        <label>登録日</label>
+        <input type="text" value="{{ tire.registration_date }}" readonly class="form-control">
     </div>
     <div>
         {{ form.width.label }}
@@ -22,8 +22,15 @@
     </div>
     <div>
         {{ form.ply_rating.label }}
-        {{ form.ply_rating() }}
+        <select name="ply_rating" class="form-control" >
+            {% for value, label in form.ply_rating.choices %}
+                <option value="{{ value }}" {% if form.ply_rating.data == value or tire.ply_rating == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
     </div>
+    
     <div>
         {{ form.manufacturer.label }}
         {{ form.manufacturer() }}

@@ -648,46 +648,104 @@ def edit_page(id):
     tire = InputPage.query.get_or_404(id)
     form = EditForm(obj=tire)
 
+    print(f"✅ 初期 ply_rating: {tire.ply_rating}")  # ✅ これでデータが渡っているか確認
+
+    if request.method == "POST":
+        print(f"🔍 送信データ: {request.form}")  # ✅ フォーム送信データの確認
+        print(f"🔍 ply_rating (フォームデータ): {request.form.get('ply_rating')}")
+
+
     if form.validate_on_submit():
+        print(f"✅ フォームバリデーション成功 - 編集を開始 (ID: {id})")
         old_data = {
             'price': tire.price,
-            'other_details': tire.other_details
+            'other_details': tire.other_details,
+            'ply_rating': tire.ply_rating
         }
         # フォームの内容でタイヤ情報を更新
         form.populate_obj(tire)
 
         edit_details = []
+        updated = False  # 変更があったかどうかのフラグ
+
         if old_data['price'] != tire.price:
-            edit_details.append(f"価格: {old_data['price']} → {tire.price}")
+            new_price = int(tire.price) if tire.price is not None else None  # 🔹 小数を整数に変換
+            edit_details.append(f"価格: {old_data['price']} → {new_price}")
+            tire.price = new_price
+            updated = True
+
         if old_data['other_details'] != tire.other_details:
             edit_details.append(f"詳細: {old_data['other_details']} → {tire.other_details}")
 
-        if edit_details:
+        if old_data['ply_rating'] != tire.ply_rating:
+            print(f"✅ ply_rating 更新: {old_data['ply_rating']} → {tire.ply_rating}")
+
+
+        if updated:
+            print(f"編集履歴追加: {edit_details}")  # ✅ ここで履歴の内容を確認
             new_edit = HistoryPage(
                 tire_id=id,
-                user_id=1,  # 仮のユーザーID（実際には current_user.id）
+                user_id=current_user.id if current_user.is_authenticated else 1,  # ログインユーザーのIDを記録
                 action="編集",
                 edit_date=datetime.utcnow(),
                 details=", ".join(edit_details)
             )
             db.session.add(new_edit)
 
-        db.session.commit()
-        flash("編集が完了しました。", "success")
+        # ✅ 変更をデータベースに保存
+        try:
+            db.session.commit()
+            print("✅ データベースに変更を保存しました")
+            flash("編集が完了しました。", "success")
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ データベース保存エラー: {e}")
+            flash("データの保存に失敗しました。", "danger")
+
+        # ✅ 確実にリダイレクトする
         return redirect(url_for('history_page'))
+    
+    else:
+        print(f"❌ フォームバリデーションエラー: {form.errors}")
     
     return render_template('edit_page.html', form=form, tire=tire)
 
 @app.route('/history')
 def history_page():
     # 出庫履歴を取得（新しい順）
-    dispatch_history = DispatchHistory.query.order_by(DispatchHistory.dispatch_date.desc()).all()
+    dispatch_history = DispatchHistory.query.all()
 
     # 編集履歴を取得（新しい順）
-    edit_history = HistoryPage.query.order_by(HistoryPage.edit_date.desc()).all()
+    edit_history = HistoryPage.query.all()
 
-    return render_template('history_page.html', dispatch_history=dispatch_history, edit_history=edit_history)
+    # 出庫履歴を共通フォーマットに変換
+    dispatch_records = [
+        {
+            "tire_id": record.tire_id,
+            "date": record.dispatch_date,
+            "user_id": record.user_id,
+            "action": "出庫",
+            "details": record.dispatch_note or "出庫処理"
+        }
+        for record in dispatch_history
+    ]
 
+    # 編集履歴を共通フォーマットに変換
+    edit_records = [
+        {
+            "tire_id": record.tire_id,
+            "date": record.edit_date,
+            "user_id": record.user_id,
+            "action": record.action,
+            "details": record.details
+        }
+        for record in edit_history
+    ]
+
+    # 履歴を統合し、日付順にソート（新しい順）
+    combined_history = sorted(dispatch_records + edit_records, key=lambda x: x["date"], reverse=True)
+
+    return render_template('history_page.html', history=combined_history)
 
 @app.route('/alerts')
 def alert_page():
@@ -696,63 +754,84 @@ def alert_page():
 
 @app.route('/inventory_list', methods=['GET', 'POST'])
 def inventory_list():
-    form = SearchForm()  # SearchForm をそのまま利用
-    edit_forms = {}  # 各アイテムごとにフォームを保持
+    form = SearchForm()
+    edit_forms = {}
     query = InputPage.query.order_by(InputPage.id.desc())
-    tires = None
 
-    # POSTリクエスト処理
+    # GETリクエスト時：デフォルトで在庫があるものだけを取得
+    query = query.filter(InputPage.is_dispatched == False)
+    tires = query.all()
+
+    # POSTリクエスト処理（フィルタリング）
     if request.method == 'POST':
         if 'reset' in request.form:
-            # 全ての条件を解除して全在庫を表示
             tires = query.all()
         elif 'filter_in_stock' in request.form:
-            # 在庫があるものだけを取得
             query = query.filter(InputPage.is_dispatched == False)
             tires = query.all()
         elif 'filter_dispatched' in request.form:
-            # 出庫済みのものだけを取得
             query = query.filter(InputPage.is_dispatched == True)
             tires = query.all()
         else:
-            # その他の条件はフォームから取得して適用
             if form.validate_on_submit():
                 if form.registration_date.data:
                     query = query.filter(InputPage.registration_date == form.registration_date.data)
                 if 'filter_unpriced' in request.form:
                     query = query.filter(InputPage.price.is_(None))
             tires = query.all()
-    else:
-        # GETリクエスト時：デフォルトで在庫があるものだけを取得
-        query = query.filter(InputPage.is_dispatched == False)
-        tires = query.all()
 
-    # 一括更新処理
+    # 🔹 一括更新処理（履歴記録を追加）
     if request.method == 'POST' and 'update_all' in request.form:
         for tire in tires:
-            # フィールド名にIDを含めてユニークにする
             price_key = f"price_{tire.id}"
             other_details_key = f"other_details_{tire.id}"
 
-            # 入力データがある場合に更新
+            old_price = tire.price
+            old_details = tire.other_details
+
+            updated = False  # 変更があったか判定
+            edit_details = []
+
+            # 価格を更新
             if price_key in request.form and request.form[price_key]:
                 try:
-                    # 空白や無効な値を弾く
-                    # 金額を整数として保存
-                    tire.price = int(request.form[price_key].replace(',', '').strip())
+                    new_price = int(request.form[price_key].replace(',', '').strip())
+                    if old_price != new_price:
+                        tire.price = new_price
+                        edit_details.append(f"価格: {old_price} → {new_price}")
+                        updated = True
                 except ValueError:
-                    # 無効な値の場合はスキップ
                     print(f"Invalid price value for tire ID {tire.id}, skipping update.")
+
+            # その他の詳細を更新
             if other_details_key in request.form and request.form[other_details_key]:
-                tire.other_details = request.form[other_details_key]
+                new_details = request.form[other_details_key].strip()
+                if old_details != new_details:
+                    tire.other_details = new_details
+                    edit_details.append(f"詳細: {old_details} → {new_details}")
+                    updated = True
+
+            # 変更があった場合のみ履歴に追加
+            if updated:
+                if current_user.is_authenticated:  # ✅ ログインしているか確認
+                    new_edit = HistoryPage(
+                        tire_id=tire.id,
+                        user_id=current_user.id,  # ユーザーIDを記録
+                        action="一括更新",
+                        edit_date=datetime.utcnow(),
+                        details=", ".join(edit_details)
+                    )
+                    db.session.add(new_edit)
+                else:
+                    print(f"Skipping history log for tire ID {tire.id} because user is not logged in.")
 
             # 編集者と日時を更新
-            tire.last_edited_by = current_user.id  # Assuming `current_user` contains the logged-in user
+            tire.last_edited_by = current_user.id if current_user.is_authenticated else None
             tire.last_edited_at = datetime.utcnow()
-
 
         # 変更をデータベースに保存
         db.session.commit()
+        flash("在庫データが更新されました。", "success")
         return redirect(url_for('inventory_list'))
 
     return render_template('inventory_list.html', form=form, tires=tires)
