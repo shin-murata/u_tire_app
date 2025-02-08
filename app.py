@@ -35,11 +35,9 @@ migrate = Migrate(app, db)
 
 # ホームルート
 @app.route('/')
-@login_required
 def index():
-    # 管理画面のリンクを生成
-    admin_url = url_for('admin.manage')
-    return render_template('base.html', user=current_user, admin_url=admin_url)
+    admin_url = url_for('admin.manage') if current_user.is_authenticated and current_user.has_role('admin') else None
+    return render_template('index.html', user=current_user, admin_url=admin_url)
 
 # ユーザーローダー関数
 @login_manager.user_loader

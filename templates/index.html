@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <img src="{{ url_for('static', filename='images/tire_icon.png') }}" alt="タイヤアイコン" class="img-fluid" style="max-width: 200px;">
+    <h1 class="mt-4">中古タイヤ在庫管理システム</h1>
+    
+    {% if user.is_authenticated %}
+        <p class="lead">ようこそ, {{ user.username }} さん</p>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">タイヤ登録</h5>
+                        <p class="card-text">新しいタイヤのデータを登録できます。</p>
+                        <a href="{{ url_for('input_page') }}" class="btn btn-success">登録する</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">タイヤ検索</h5>
+                        <p class="card-text">登録済みのタイヤを検索できます。</p>
+                        <a href="{{ url_for('search_page') }}" class="btn btn-info">検索する</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="lead">在庫の管理を簡単に行えます</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg mt-3">ログイン</a>
+    {% endif %}
+</div>
+{% endblock %}
