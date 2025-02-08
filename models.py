@@ -32,7 +32,7 @@ class InputPage(db.Model):
     __tablename__ = 'input_page'  # テーブル名を明示的に指定
     
     id = db.Column(db.Integer, primary_key=True)
-    registration_date = db.Column(db.Date, nullable=False)
+    registration_date = db.Column(db.DateTime, nullable=False)
     width = db.Column(db.Integer, db.ForeignKey('width.id'), nullable=False)
     aspect_ratio = db.Column(db.Integer, db.ForeignKey('aspect_ratio.id'), nullable=False)
     inch = db.Column(db.Integer, db.ForeignKey('inch.id'), nullable=False)
@@ -57,7 +57,7 @@ class HistoryPage(db.Model):
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     action = db.Column(db.String, nullable=False)
-    edit_date = db.Column(db.Date, nullable=False)
+    edit_date = db.Column(db.DateTime, nullable=False)
     details = db.Column(db.String)
 
 class DispatchHistory(db.Model):
@@ -66,7 +66,7 @@ class DispatchHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    dispatch_date = db.Column(db.Date, nullable=False)
+    dispatch_date = db.Column(db.DateTime, nullable=False)
     dispatch_note = db.Column(db.String)
 
 class AlertPage(db.Model):
@@ -91,7 +91,7 @@ class EditPage(db.Model):
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     action = db.Column(db.String, nullable=False)
-    edit_date = db.Column(db.Date, nullable=False)
+    edit_date = db.Column(db.DateTime, nullable=False)
     details = db.Column(db.String)
 
 # Userモデルの定義

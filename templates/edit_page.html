@@ -1,61 +1,37 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>タイヤ編集</h1>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <div>
-        <label>登録日</label>
-        <input type="text" value="{{ tire.registration_date }}" readonly class="form-control">
-    </div>
-    <div>
-        {{ form.width.label }}
-        {{ form.width() }}
-    </div>
-    <div>
-        {{ form.aspect_ratio.label }}
-        {{ form.aspect_ratio() }}
-    </div>
-    <div>
-        {{ form.inch.label }}
-        {{ form.inch() }}
-    </div>
-    <div>
-        {{ form.ply_rating.label }}
-        <select name="ply_rating" class="form-control" >
-            {% for value, label in form.ply_rating.choices %}
-                <option value="{{ value }}" {% if form.ply_rating.data == value or tire.ply_rating == value %}selected{% endif %}>
-                    {{ label }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-    
-    <div>
-        {{ form.manufacturer.label }}
-        {{ form.manufacturer() }}
-    </div>
-    <div>
-        {{ form.manufacturing_year.label }}
-        {{ form.manufacturing_year() }}
-    </div>
-    
-    <div>
-        {{ form.other_details.label }}
-        {{ form.other_details() }}
-    </div>
-    <div>
-        {{ form.tread_depth.label }}
-        {{ form.tread_depth() }}
-    </div>
-    <div>
-        {{ form.uneven_wear.label }}
-        {{ form.uneven_wear() }}
-    </div>
-    <div>
-        {{ form.price.label }}
-        {{ form.price() }}
-    </div>
-    <button type="submit">保存</button>
-</form>
+<div class="container" style="max-width: 600px;">
+    <h4 class="mb-4 text-center">タイヤ編集</h4>
+    <form method="POST" class="p-3 border rounded bg-light">
+        {{ form.hidden_tag() }}
+        <div class="row mb-3 align-items-center">
+            <label class="col-sm-3 col-form-label fw-bold text-end pe-2">登録日</label>
+            <div class="col-sm-9">
+                <input type="text" value="{{ tire.registration_date }}" readonly class="form-control form-control-lg">
+            </div>
+        </div>
+        
+        {% set fields = [
+            ('width', '幅'), ('aspect_ratio', '扁平率'), ('inch', 'インチ'),
+            ('ply_rating', 'プライ'), ('manufacturer', 'メーカー'), ('manufacturing_year', '製造年'),
+            ('other_details', 'その他'), ('tread_depth', '残り溝'), ('uneven_wear', '片減り'), ('price', '価格')
+        ] %}
+
+        {% for field, label in fields %}
+        <div class="row mb-3 align-items-center" style="background-color: {% if loop.index is even %}#f8f9fa{% else %}#ffffff{% endif %}; padding: 8px; border-radius: 5px;">
+            <label class="col-sm-3 col-form-label fw-bold text-end pe-2">{{ label }}</label>
+            <div class="col-sm-9">
+                {{ form[field](class="form-control form-control-lg") }}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="row mb-3 align-items-center" style="background-color: {% if fields|length is even %}#ffffff{% else %}#f8f9fa{% endif %}; padding: 8px; border-radius: 5px;">
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary btn-lg">保存</button>
+            </div>
+        </div>
+    </form>
+</div>
 {% endblock %}

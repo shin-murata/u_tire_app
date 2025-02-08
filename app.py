@@ -6,9 +6,12 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from utils import role_required # role_requiredをインポート
 from routes.admin import admin_bp
 from config import Config
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 import pdfkit
 import uuid
+
+# ✅ グローバルで JST を定義（import の直後に記述する）
+JST = timezone(timedelta(hours=9))
 
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
@@ -151,11 +154,12 @@ def input_page():
         registration_date_str = request.form.get('registration_date')
         if registration_date_str:
             try:
-                registration_date = datetime.strptime(registration_date_str, '%Y-%m-%d').date()
+                registration_date = datetime.strptime(registration_date_str, '%Y-%m-%d')
             except ValueError:
-                registration_date = date.today()
+                registration_date = datetime.now(JST)  # ✅ JST に変換
+
         else:
-            registration_date = date.today()
+            registration_date = datetime.now(JST)  # ✅ JST に変換
 
         # 動的フォームのデータ取得
         manufacturers = request.form.getlist('manufacturer[]') or []
@@ -510,7 +514,7 @@ def dispatch_confirm():
     tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
 
     # 確定前なので `date.today()` を仮の出庫日として使用
-    dispatch_date = date.today()
+    dispatch_date = datetime.now(JST)  # ✅ JST で統一
     print(f"仮の出庫日: {dispatch_date}")
     
     # デバッグログ
@@ -537,7 +541,7 @@ def dispatch():
                 new_dispatch = DispatchHistory(
                     tire_id=tire_id,
                     user_id=1,  # 仮のログインユーザーID（実際にはセッションなどから取得）
-                    dispatch_date=date.today()
+                    dispatch_date=datetime.now(JST)  # 🔹 JST の現在時刻を取得
                 )
                 db.session.add(new_dispatch)
                 processed_tire_ids.append(tire_id)
@@ -668,9 +672,12 @@ def edit_page(id):
         edit_details = []
         updated = False  # 変更があったかどうかのフラグ
 
+        # 価格を更新
         if old_data['price'] != tire.price:
             new_price = int(tire.price) if tire.price is not None else None  # 🔹 小数を整数に変換
-            edit_details.append(f"価格: {old_data['price']} → {new_price}")
+            formatted_old_price = "{:,.0f}".format(old_data['price']) if old_data['price'] is not None else "なし"
+            formatted_new_price = "{:,.0f}".format(new_price) if new_price is not None else "なし"
+            edit_details.append(f"価格: {formatted_old_price} → {formatted_new_price}")
             tire.price = new_price
             updated = True
 
@@ -687,7 +694,7 @@ def edit_page(id):
                 tire_id=id,
                 user_id=current_user.id if current_user.is_authenticated else 1,  # ログインユーザーのIDを記録
                 action="編集",
-                edit_date=datetime.utcnow(),
+                edit_date=datetime.now(JST),  # 🔹 JST で記録
                 details=", ".join(edit_details)
             )
             db.session.add(new_edit)
@@ -712,38 +719,73 @@ def edit_page(id):
 
 @app.route('/history')
 def history_page():
+    import logging
+
+    logging.basicConfig()
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     # 出庫履歴を取得（新しい順）
     dispatch_history = DispatchHistory.query.all()
 
     # 編集履歴を取得（新しい順）
     edit_history = HistoryPage.query.all()
+    # 各レコードの `dispatch_date` のデータ型と値を確認
+    for record in dispatch_history:
+        print(f"デバッグ: {record.dispatch_date} (型: {type(record.dispatch_date)})")
 
     # 出庫履歴を共通フォーマットに変換
-    dispatch_records = [
-        {
-            "tire_id": record.tire_id,
-            "date": record.dispatch_date,
-            "user_id": record.user_id,
-            "action": "出庫",
-            "details": record.dispatch_note or "出庫処理"
-        }
-        for record in dispatch_history
-    ]
+    dispatch_records = []  # ここでリストを定義
+
+    for record in dispatch_history:
+        try:
+            # `dispatch_date` が文字列なら `datetime.strptime()` で変換
+            if isinstance(record.dispatch_date, str):
+                dispatch_date = datetime.strptime(record.dispatch_date, '%Y-%m-%d %H:%M:%S')
+            elif isinstance(record.dispatch_date, datetime):
+                dispatch_date = record.dispatch_date
+            else:
+                print(f"🚨 予期しないデータ型: {type(record.dispatch_date)} - {record.dispatch_date}")
+                continue  # 予期しない型ならスキップ
+
+            # タイムゾーンがない (naive) datetime の場合、UTC を設定
+            if dispatch_date.tzinfo is None:
+                dispatch_date = dispatch_date.replace(tzinfo=timezone.utc)
+
+            # UTC を JST に変換
+            dispatch_date = dispatch_date.astimezone(JST)
+
+            # 修正後の `dispatch_date` をリストに追加
+            dispatch_records.append({
+                "tire_id": record.tire_id,
+                "date": dispatch_date,
+                "user_id": record.user_id,
+                "action": "出庫",
+                "details": record.dispatch_note or "出庫処理"
+            })
+        except Exception as e:
+            print(f"🚨 変換エラー: {e} (値: {record.dispatch_date})")
 
     # 編集履歴を共通フォーマットに変換
-    edit_records = [
-        {
-            "tire_id": record.tire_id,
-            "date": record.edit_date,
-            "user_id": record.user_id,
-            "action": record.action,
-            "details": record.details
-        }
-        for record in edit_history
-    ]
+    edit_records = []
+    for record in edit_history:
+        try:
+            if isinstance(record.edit_date, str):  # 文字列の場合は変換
+                edit_date = datetime.strptime(record.edit_date, '%Y-%m-%d %H:%M:%S')
+            else:
+                edit_date = record.edit_date
+
+            edit_records.append({
+                "tire_id": record.tire_id,
+                "date": edit_date.astimezone(JST) if isinstance(edit_date, datetime) else edit_date,
+                "user_id": record.user_id,
+                "action": record.action,
+                "details": record.details
+            })
+        except Exception as e:
+            print(f"🚨 変換エラー: {e} (値: {record.edit_date})")
+
 
     # 履歴を統合し、日付順にソート（新しい順）
-    combined_history = sorted(dispatch_records + edit_records, key=lambda x: x["date"], reverse=True)
+    combined_history = sorted(dispatch_records + edit_records, key=lambda x: x["date"].astimezone(JST), reverse=True)
 
     return render_template('history_page.html', history=combined_history)
 
@@ -818,7 +860,7 @@ def inventory_list():
                         tire_id=tire.id,
                         user_id=current_user.id,  # ユーザーIDを記録
                         action="一括更新",
-                        edit_date=datetime.utcnow(),
+                        edit_date=datetime.now(JST),  # 🔹 JST で記録
                         details=", ".join(edit_details)
                     )
                     db.session.add(new_edit)
@@ -827,8 +869,7 @@ def inventory_list():
 
             # 編集者と日時を更新
             tire.last_edited_by = current_user.id if current_user.is_authenticated else None
-            tire.last_edited_at = datetime.utcnow()
-
+            tire.last_edited_at = datetime.now(JST)  # 🔹 JST で記録
         # 変更をデータベースに保存
         db.session.commit()
         flash("在庫データが更新されました。", "success")

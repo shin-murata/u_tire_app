@@ -54,7 +54,7 @@
                         <td>{{ tire.manufacturer_ref.name }}</td>
                         <td>{{ tire.manufacturing_year }}</td>
                         <td>
-                            <input type="text" name="price_{{ tire.id }}" value="{{ tire.price|currency }}" class="form-control" size="10">
+                            <input type="text" name="price_{{ tire.id }}" value="{{ tire.price|int|currency }}" class="form-control" size="10">
                         </td>
                         <td>{{ tire.tread_depth }}</td>
                         <td>{{ tire.uneven_wear }}</td>
