@@ -46,7 +46,7 @@
                     {% for tire in tires %}
                     <tr>
                         <td>{{ tire.id }}</td>
-                        <td>{{ tire.registration_date }}</td>
+                        <td>{{ tire.registration_date.strftime('%Y-%m-%d') if tire.registration_date else 'N/A' }}</td>
                         <td>{{ tire.width_ref.value }}</td>
                         <td>{{ tire.aspect_ratio_ref.value }}</td>
                         <td>{{ tire.inch_ref.value }}</td>

@@ -20,7 +20,7 @@
                 {% for record in history %}
                 <tr>
                     <td>{{ record.tire_id }}</td>
-                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ record.date }}</td>
                     <td>{{ record.user_id }}</td>
                     <td>
                         {% if record.action == "出庫" %}
