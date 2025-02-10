@@ -131,6 +131,25 @@ def input_page():
             )
 
     elif request.method == 'POST':
+
+        # `registration_date` を毎回新しく取得する
+        registration_date = datetime.now(JST).replace(microsecond=0)
+        print(f"New registration_date (before saving to DB): {registration_date}")  # 追加
+        # デバッグ出力
+        print(f"New registration_date: {registration_date}")
+
+        # フォームから `registration_date` を取得
+        registration_date_str = request.form.get('registration_date')
+
+        if registration_date_str:
+            try:
+                # 文字列を `datetime` に変換
+                registration_date = datetime.strptime(registration_date_str, '%Y-%m-%d')
+                registration_date = JST.localize(registration_date)  # ✅ JST タイムゾーンを適用
+            except ValueError:
+                registration_date = datetime.now(JST)  # ✅ 失敗時に現在時刻を代入
+
+        print(f"Final registration_date (datetime): {registration_date}")  # ✅ デバッグ出力
         # デバッグ用: 送信されたフォームデータを確認
         print(f"Received POST data: {request.form}")
         print(f"tread_depths raw value: {request.form.get('tread_depths')}")
@@ -268,7 +287,7 @@ def input_page():
             ids = []
             for entry in valid_entries:
                 new_tire = InputPage(
-                    registration_date=registration_date,
+                    registration_date=registration_date,  # ✅ 修正ポイント
                     width=width,
                     aspect_ratio=aspect_ratio,
                     inch=inch,
@@ -354,9 +373,13 @@ def register_success():
     # ✅ `registration_date` を明示的に取得する
     registration_date = request.args.get('registration_date') or invalid_common_data.get('registration_date')
 
-    # `registration_date` が `datetime.date` の場合は `str` に変換
-    if isinstance(registration_date, date):
-        registration_date = registration_date.strftime('%Y-%m-%d')
+    # `registration_date` が str 型なら `datetime` に変換
+    if isinstance(registration_date, str):
+        try:
+            registration_date = datetime.strptime(registration_date, '%Y-%m-%d %H:%M:%S.%f%z')
+            registration_date = registration_date.strftime('%Y-%m-%d')  # フォーマット適用
+        except ValueError:
+            pass  # 変換できない場合はそのまま使う
     
     # ✅ データベースから有効データを取得
     valid_tires = InputPage.query.filter(InputPage.id.in_(ids)).all() if ids else []
@@ -364,9 +387,6 @@ def register_success():
     # クエリが空の場合のデバッグ出力
     if not ids:
         print("No IDs provided for query.")
-    
-    # データベースから有効データを取得
-    valid_tires = InputPage.query.filter(InputPage.id.in_(ids)).all() if ids else []
     
     # ✅ デバッグ出力
     print(f"IDs for query: {ids}")
@@ -511,14 +531,20 @@ def dispatch_confirm():
     selected_tires = session.get('selected_tires', [])
     tires_to_dispatch = [InputPage.query.get(tire_id) for tire_id in selected_tires]
 
-    # 確定前なので `date.today()` を仮の出庫日として使用
-    dispatch_date = datetime.now(JST)  # ✅ JST で統一
-    print(f"仮の出庫日: {dispatch_date}")
+    # ✅ 出庫日を JST で取得し、マイクロ秒をカット
+    dispatch_date = datetime.now(JST).replace(microsecond=0)
+    formatted_dispatch_date = dispatch_date.strftime('%Y-%m-%d')  # 日付のみの形式に変換
+    print(f"仮の出庫日: {formatted_dispatch_date}")  # デバッグ
+
     
     # デバッグログ
     print(f"GET action - Tires to dispatch: {[tire.id for tire in tires_to_dispatch]} -> Count: {len(tires_to_dispatch)}")
     
-    return render_template('dispatch_confirm.html', tires_to_dispatch=tires_to_dispatch, dispatch_date=dispatch_date)
+    return render_template(
+        'dispatch_confirm.html', 
+        tires_to_dispatch=tires_to_dispatch, 
+        dispatch_date=formatted_dispatch_date  # ✅ テンプレート側で YYYY-MM-DD 表示
+    )
 
 @app.route('/dispatch', methods=['GET', 'POST'])
 def dispatch():
@@ -578,6 +604,17 @@ def dispatch_page():
         dispatch_date = dispatch_history[0].dispatch_date if dispatch_history else None
         print(f"Dispatch Date: {dispatch_date}")
 
+        # dispatch_date をフォーマットする
+        if dispatch_date:
+            if isinstance(dispatch_date, str):
+                try:
+                    # `str` なら `datetime` に変換
+                    dispatch_date = datetime.strptime(dispatch_date, '%Y-%m-%d %H:%M:%S.%f%z')
+                except ValueError:
+                    dispatch_date = datetime.strptime(dispatch_date, '%Y-%m-%d %H:%M:%S%z')
+            if isinstance(dispatch_date, datetime):
+                dispatch_date = dispatch_date.strftime('%Y-%m-%d')  # YYYY-MM-DD にフォーマット
+
         # 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)
         total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
@@ -591,7 +628,7 @@ def dispatch_page():
             tires_to_dispatch=tires_to_dispatch,
             total_tires=total_tires,
             total_price=total_price,
-            dispatch_date=dispatch_date  # dispatch_date をテンプレートに渡す
+            dispatch_date=dispatch_date  # ✅ フォーマット済みの日付を渡す
         )
     except Exception as e:
         print(f"Error fetching dispatch history: {e}")
@@ -732,7 +769,6 @@ def history_page():
 
     # 出庫履歴を共通フォーマットに変換
     dispatch_records = []  # ここでリストを定義
-
     for record in dispatch_history:
         try:
             # `dispatch_date` が文字列なら `datetime.strptime()` で変換
@@ -744,17 +780,16 @@ def history_page():
                 print(f"🚨 予期しないデータ型: {type(record.dispatch_date)} - {record.dispatch_date}")
                 continue  # 予期しない型ならスキップ
 
-            # タイムゾーンがない (naive) datetime の場合、UTC を設定
-            if dispatch_date.tzinfo is None:
-                dispatch_date = dispatch_date.replace(tzinfo=timezone.utc)
-
             # UTC を JST に変換
             dispatch_date = dispatch_date.astimezone(JST)
+
+            # 日付だけを取得（YYYY-MM-DD形式）
+            formatted_date = dispatch_date.strftime('%Y-%m-%d')
 
             # 修正後の `dispatch_date` をリストに追加
             dispatch_records.append({
                 "tire_id": record.tire_id,
-                "date": dispatch_date,
+                "date": formatted_date,  # フォーマット済みの値を格納
                 "user_id": record.user_id,
                 "action": "出庫",
                 "details": record.dispatch_note or "出庫処理"
@@ -766,14 +801,23 @@ def history_page():
     edit_records = []
     for record in edit_history:
         try:
-            if isinstance(record.edit_date, str):  # 文字列の場合は変換
+            if isinstance(record.edit_date, str):
                 edit_date = datetime.strptime(record.edit_date, '%Y-%m-%d %H:%M:%S')
-            else:
+            elif isinstance(record.edit_date, datetime):
                 edit_date = record.edit_date
+            else:
+                print(f"🚨 予期しないデータ型: {type(record.edit_date)} - {record.edit_date}")
+                continue
+
+            # JSTに変換
+            edit_date = edit_date.astimezone(JST)
+
+            # 日付だけを取得（YYYY-MM-DD形式）
+            formatted_date = edit_date.strftime('%Y-%m-%d')
 
             edit_records.append({
                 "tire_id": record.tire_id,
-                "date": edit_date.astimezone(JST) if isinstance(edit_date, datetime) else edit_date,
+                "date": formatted_date,  # フォーマット済みの値を格納
                 "user_id": record.user_id,
                 "action": record.action,
                 "details": record.details
@@ -782,8 +826,9 @@ def history_page():
             print(f"🚨 変換エラー: {e} (値: {record.edit_date})")
 
 
-    # 履歴を統合し、日付順にソート（新しい順）
-    combined_history = sorted(dispatch_records + edit_records, key=lambda x: x["date"].astimezone(JST), reverse=True)
+    # 履歴を統合し、新しい順（降順）にソート
+    combined_history = sorted(dispatch_records + edit_records, key=lambda x: x["date"], reverse=True)
+
 
     return render_template('history_page.html', history=combined_history)
 
@@ -801,6 +846,11 @@ def inventory_list():
     # GETリクエスト時：デフォルトで在庫があるものだけを取得
     query = query.filter(InputPage.is_dispatched == False)
     tires = query.all()
+
+    # `registration_date` をフォーマット
+    for tire in tires:
+        if isinstance(tire.registration_date, datetime):
+            tire.registration_date = tire.registration_date.strftime('%Y-%m-%d')
 
     # POSTリクエスト処理（フィルタリング）
     if request.method == 'POST':

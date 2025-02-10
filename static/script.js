@@ -99,7 +99,7 @@ function addTireForm(targetContainerId, defaultValues = {}) {
             <div class="input-wrap large-input" id="other-details">
                 <input type="text" name="other_details[]" id="other_details-${formCount}" class="form-control" placeholder="その他">
             </div>
-            <button type="button" class="btn copy-btn-group-2">コピー</button>
+            <button type="button" class="btn btn-primary copy-btn-group-2">コピー</button> <!-- 修正: btn-primary を追加 -->
         </div>
     </div>
     `;
@@ -199,7 +199,7 @@ function regenerateTireForm(containerId, invalidEntries) {
                         <input type="text" name="other_details[]" id="other_details-${formCount}" class="form-control"
                                value="${entry.other_details || ""}" placeholder="その他">
                     </div>
-                    <button type="button" class="btn copy-btn-group-2">コピー</button>
+                    <button type="button" class="btn btn-primary copy-btn-group-2">コピー</button> <!-- 修正: btn-primary を追加 -->
                 </div>
             </div>
         `;

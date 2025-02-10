@@ -32,7 +32,7 @@ class InputPage(db.Model):
     __tablename__ = 'input_page'  # テーブル名を明示的に指定
     
     id = db.Column(db.Integer, primary_key=True)
-    registration_date = db.Column(db.DateTime, nullable=False)
+    registration_date = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(JST).replace(microsecond=0))
     width = db.Column(db.Integer, db.ForeignKey('width.id'), nullable=False)
     aspect_ratio = db.Column(db.Integer, db.ForeignKey('aspect_ratio.id'), nullable=False)
     inch = db.Column(db.Integer, db.ForeignKey('inch.id'), nullable=False)
