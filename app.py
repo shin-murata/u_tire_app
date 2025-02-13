@@ -635,6 +635,10 @@ def dispatch_page():
         total_tires = len(tires_to_dispatch)
         total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
 
+        # 消費税と税込み合計金額を計算
+        tax = total_price * 0.1  # 消費税10%
+        total_price_with_tax = total_price + tax
+        
         # デバッグログ
         print(f"Processed tire IDs: {processed_tire_ids}")
         print(f"Tires to dispatch: {[tire.id for tire in tires_to_dispatch if tire]}")
@@ -644,6 +648,8 @@ def dispatch_page():
             tires_to_dispatch=tires_to_dispatch,
             total_tires=total_tires,
             total_price=total_price,
+            tax=tax,
+            total_price_with_tax=total_price_with_tax,
             dispatch_date=dispatch_date  # ✅ フォーマット済みの日付を渡す
         )
     except Exception as e:
