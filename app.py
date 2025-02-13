@@ -709,69 +709,59 @@ def edit_page(id):
     tire = InputPage.query.get_or_404(id)
     form = EditForm(obj=tire)
 
-    print(f"✅ 初期 ply_rating: {tire.ply_rating}")  # ✅ これでデータが渡っているか確認
-
     if request.method == "POST":
-        print(f"🔍 送信データ: {request.form}")  # ✅ フォーム送信データの確認
-        print(f"🔍 ply_rating (フォームデータ): {request.form.get('ply_rating')}")
+        if form.validate_on_submit():
+            old_data = {
+                'width': tire.width,
+                'aspect_ratio': tire.aspect_ratio,
+                'inch': tire.inch,
+                'ply_rating': tire.ply_rating,
+                'manufacturer': tire.manufacturer,
+                'manufacturing_year': tire.manufacturing_year,
+                'tread_depth': tire.tread_depth,
+                'uneven_wear': tire.uneven_wear,
+                'other_details': tire.other_details,
+                'price': tire.price
+            }
 
+            # フォームの内容でタイヤ情報を更新
+            form.populate_obj(tire)
 
-    if form.validate_on_submit():
-        print(f"✅ フォームバリデーション成功 - 編集を開始 (ID: {id})")
-        old_data = {
-            'price': tire.price,
-            'other_details': tire.other_details,
-            'ply_rating': tire.ply_rating
-        }
-        # フォームの内容でタイヤ情報を更新
-        form.populate_obj(tire)
+            edit_details = []
+            updated = False
 
-        edit_details = []
-        updated = False  # 変更があったかどうかのフラグ
+            for field, old_value in old_data.items():
+                new_value = getattr(tire, field)
+                if old_value != new_value:
+                    if field == 'price':
+                        formatted_old_price = "{:,.0f}".format(old_value) if old_value is not None else "なし"
+                        formatted_new_price = "{:,.0f}".format(new_value) if new_value is not None else "なし"
+                        edit_details.append(f"価格: {formatted_old_price} → {formatted_new_price}")
+                    else:
+                        edit_details.append(f"{field}: {old_value} → {new_value}")
+                    updated = True
 
-        # 価格を更新
-        if old_data['price'] != tire.price:
-            new_price = int(tire.price) if tire.price is not None else None  # 🔹 小数を整数に変換
-            formatted_old_price = "{:,.0f}".format(old_data['price']) if old_data['price'] is not None else "なし"
-            formatted_new_price = "{:,.0f}".format(new_price) if new_price is not None else "なし"
-            edit_details.append(f"価格: {formatted_old_price} → {formatted_new_price}")
-            tire.price = new_price
-            updated = True
+            if updated:
+                new_edit = HistoryPage(
+                    tire_id=id,
+                    user_id=current_user.id if current_user.is_authenticated else 1,
+                    action="編集",
+                    edit_date=datetime.now(JST),
+                    details=", ".join(edit_details)
+                )
+                db.session.add(new_edit)
 
-        if old_data['other_details'] != tire.other_details:
-            edit_details.append(f"詳細: {old_data['other_details']} → {tire.other_details}")
+            try:
+                db.session.commit()
+                flash("編集が完了しました。", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash("データの保存に失敗しました。", "danger")
 
-        if old_data['ply_rating'] != tire.ply_rating:
-            print(f"✅ ply_rating 更新: {old_data['ply_rating']} → {tire.ply_rating}")
+            return redirect(url_for('history_page'))
+        else:
+            flash("フォームのバリデーションに失敗しました。", "danger")
 
-
-        if updated:
-            print(f"編集履歴追加: {edit_details}")  # ✅ ここで履歴の内容を確認
-            new_edit = HistoryPage(
-                tire_id=id,
-                user_id=current_user.id if current_user.is_authenticated else 1,  # ログインユーザーのIDを記録
-                action="編集",
-                edit_date=datetime.now(JST),  # 🔹 JST で記録
-                details=", ".join(edit_details)
-            )
-            db.session.add(new_edit)
-
-        # ✅ 変更をデータベースに保存
-        try:
-            db.session.commit()
-            print("✅ データベースに変更を保存しました")
-            flash("編集が完了しました。", "success")
-        except Exception as e:
-            db.session.rollback()
-            print(f"❌ データベース保存エラー: {e}")
-            flash("データの保存に失敗しました。", "danger")
-
-        # ✅ 確実にリダイレクトする
-        return redirect(url_for('history_page'))
-    
-    else:
-        print(f"❌ フォームバリデーションエラー: {form.errors}")
-    
     return render_template('edit_page.html', form=form, tire=tire)
 
 @app.route('/history')
@@ -891,16 +881,19 @@ def inventory_list():
             edit_details = []
 
             # 価格を更新
-            if price_key in request.form and request.form[price_key]:
-                try:
-                    new_price = int(request.form[price_key].replace(',', '').strip())
-                    if old_price != new_price:
-                        tire.price = new_price
-                        edit_details.append(f"価格: {old_price} → {new_price}")
-                        updated = True
-                except ValueError:
-                    print(f"Invalid price value for tire ID {tire.id}, skipping update.")
-
+            if price_key in request.form:
+                new_price_str = request.form[price_key].replace(',', '').strip()
+                if new_price_str:
+                    try:
+                        new_price = int(new_price_str)
+                        if old_price != new_price:
+                            tire.price = new_price
+                            edit_details.append(f"価格: {old_price} → {new_price}")
+                            updated = True
+                    except ValueError:
+                        print(f"Invalid price value for tire ID {tire.id}, skipping update.")
+                else:
+                    print(f"No new price provided for tire ID {tire.id}, skipping update.")
             # その他の詳細を更新
             if other_details_key in request.form and request.form[other_details_key]:
                 new_details = request.form[other_details_key].strip()
@@ -919,18 +912,25 @@ def inventory_list():
                         edit_date=datetime.now(JST),  # 🔹 JST で記録
                         details=", ".join(edit_details)
                     )
+                    print(f"新規履歴レコード作成: {new_edit}")  # 追加のデバッグ出力
                     db.session.add(new_edit)
                 else:
                     print(f"Skipping history log for tire ID {tire.id} because user is not logged in.")
 
-            # 編集者と日時を更新
-            tire.last_edited_by = current_user.id if current_user.is_authenticated else None
-            tire.last_edited_at = datetime.now(JST)  # 🔹 JST で記録
+                # 編集者と日時を更新
+                tire.last_edited_by = current_user.id if current_user.is_authenticated else None
+                tire.last_edited_at = datetime.now(JST)  # 🔹 JST で記録
         # 変更をデータベースに保存
-        db.session.commit()
-        flash("在庫データが更新されました。", "success")
-        return redirect(url_for('inventory_list'))
+        try:
+            db.session.commit()
+            flash("在庫データが更新されました。", "success")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error committing to the database: {e}")
+            flash("データの保存に失敗しました。", "danger")
 
+        return redirect(url_for('inventory_list'))
+    
     return render_template('inventory_list.html', form=form, tires=tires)
 
 # Blueprintの登録
