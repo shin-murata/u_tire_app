@@ -69,7 +69,8 @@ h5 {
 
 /* グループ全体のレイアウト調整 */
 .form-group {
-    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 /* 1段目: width, /, aspect_ratio */

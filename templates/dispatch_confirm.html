@@ -3,39 +3,33 @@
 <div class="container my-4">
     <h5>以下のタイヤを出庫しますか？</h5>
     <form method="POST" action="{{ url_for('dispatch') }}">
+        <!-- 共通データ -->
         <div class="tire-confirmation">
             <h5>共通データ</h5>
-            <div class="tire-form">
-                <!-- 登録日（単独表示） -->
-                <div class="form-group registration-date">
-                    <label for="dispatch_date">出庫日:</label>
-                    <p id="dispatch_date" class="value">{{ dispatch_date }}</p>
-                </div>
-        
-                <!-- 1段目と2段目を横並びに表示 -->
-                <div class="form-group data-rows">
-                    <!-- 1段目: 幅と扁平率 -->
-                    <div class="data-group data-group-1">
+            <div class="tire-form border p-3 bg-light d-flex flex-column align-items-stretch flex-grow-1" style="min-height: auto;">
+                <div class="form-group data-rows d-flex flex-column flex-md-row align-items-stretch justify-content-between w-100 flex-grow-1" style="height: 100%; min-height: inherit;">
+                    <div class="data-group data-group-1 d-flex align-items-center flex-grow-1" style="height: 100%;">
                         <input type="hidden" name="width" value="{{ tires_to_dispatch[0].width_ref.value }}">
-                        <p id="width" class="value">{{ tires_to_dispatch[0].width_ref.value }}</p>
-                        <span class="separator">/</span>
+                        <p id="width" class="value m-0" style="height: 100%;">{{ tires_to_dispatch[0].width_ref.value }}</p>
+                        <span class="separator mx-2">/</span>
                         <input type="hidden" name="aspect_ratio" value="{{ tires_to_dispatch[0].aspect_ratio_ref.value }}">
-                        <p id="aspect_ratio" class="value">{{ tires_to_dispatch[0].aspect_ratio_ref.value }}</p>
+                        <p id="aspect_ratio" class="value m-0" style="height: 100%;">{{ tires_to_dispatch[0].aspect_ratio_ref.value }}</p>
                     </div>
-                    <!-- 2段目: R, インチとプライレーティング -->
-                    <div class="data-group data-group-2">
+                    <div class="data-group data-group-2 d-flex align-items-center flex-grow-1 mt-2 mt-md-0" style="height: 100%;">
                         <span class="prefix">R</span>
                         <input type="hidden" name="inch" value="{{ tires_to_dispatch[0].inch_ref.value }}">
-                        <p id="inch" class="value">{{ tires_to_dispatch[0].inch_ref.value }}</p>
+                        <p id="inch" class="value m-0 mx-2" style="height: 100%;">{{ tires_to_dispatch[0].inch_ref.value }}</p>
                         <input type="hidden" name="ply_rating" value="{{ tires_to_dispatch[0].ply_rating_ref.value }}">
-                        <p id="ply_rating" class="value">{{ tires_to_dispatch[0].ply_rating_ref.value }}</p>
+                        <p id="ply_rating" class="value m-0" style="height: 100%;">{{ tires_to_dispatch[0].ply_rating_ref.value }}</p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- 個別データの一覧表示 -->
-        <h5>個別データ</h5>
+        <!-- 個別データ -->
+       <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+            <h5 class="mb-0">個別データ</h5>
+            <span class="dispatch-date-text">出庫日: {{ dispatch_date }}</span>  {# こちらのみ残す #}
+        </div>
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">
                 <thead class="thead-light">
@@ -77,13 +71,9 @@
         <!-- 選択済みのタイヤIDを送信 -->
         {% for tire in selected_tires %}
             <input type="hidden" name="tire_ids" value="{{ tire.id }}">
-            <!-- デバッグ用 -->
-            <span>{{ tire.id }} {{ 'checked' if tire.id|string in selected_tires else '' }}</span>
         {% endfor %}
-        <!-- 戻るボタン -->
-        <!-- 戻るボタン -->
-        <button type="button" class="btn btn-secondary" id="backButton"
-            data-url="{{ url_for('dispatch_confirm', action='back') }}">
+
+        <button type="button" class="btn btn-secondary" id="backButton" data-url="{{ url_for('dispatch_confirm', action='back') }}">
             戻る
         </button>
     </form>
