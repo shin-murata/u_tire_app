@@ -58,31 +58,31 @@
                     <td>{{ tire.uneven_wear }}</td>
                     <td>{{ tire.ply_rating_ref.value }}</td>
                     <td>{{ tire.other_details }}</td>
-                    <td>{{ tire.price }}</td>
+                    <td style="text-align: right;">{{ tire.price|currency }}</td>
                 </tr>
                 {% endfor %}
                 <tr>
                     <td colspan="7" style="text-align: right;"><strong>合計本数:</strong></td>
-                    <td>{{ total_tires }}</td>
+                    <td style="text-align: right;">{{ total_tires }}</td>
                 </tr>
                 <tr>
                     <td colspan="7" style="text-align: right;"><strong>金額合計 (税抜):</strong></td>
-                    <td>{{ total_price|currency }}</td>
+                    <td style="text-align: right;">{{ total_price|currency }}</td>
                 </tr>
                 <tr>
                     <td colspan="7" style="text-align: right;"><strong>消費税 (10%):</strong></td>
-                    <td>{{ tax|currency }}</td>
+                    <td style="text-align: right;">{{ tax|currency }}</td>
                 </tr>
                 <tr>
                     <td colspan="7" style="text-align: right; font-weight: bold;"><strong>合計金額 (税込):</strong></td>
-                    <td style="font-weight: bold; color: #007bff;">{{ total_price_with_tax|currency }}</td>
+                    <td style="text-align: right; font-weight: bold; color: #007bff;">{{ total_price_with_tax|currency }}</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <form method="POST" action="{{ url_for('generate_dispatch_pdf') }}">
+    <form method="POST" action="https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwxG1knt9xhm6f5c8bJMADYjnLy-Iqc1fQoCewWqd1HpkYTuGo7Z66KtURVmIwaOn4b/exec/exec">
         <button type="submit" class="btn btn-info">指示書をPDFで印刷</button>
-    </form>
+    </form>    
 </div>
 {% endblock %}
