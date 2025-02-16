@@ -607,7 +607,7 @@ def dispatch():
         flash(f"エラーが発生しました: {e}", "danger")
 
     # 処理完了後、出庫履歴画面にリダイレクト
-    return redirect(url_for('dispatch_page'))
+    return redirect(url_for('dispatch_view'))
 
 @app.route('/dispatch_page', methods=['GET'])
 def dispatch_page():
@@ -657,6 +657,90 @@ def dispatch_page():
         flash(f"エラーが発生しました: {e}", "danger")
         return redirect(url_for('home'))
 
+# ダミーデータ（本番環境ではDBから取得）
+shipments = [
+    {
+        "id": 101,
+        "manufacturer": "Bridgestone",
+        "manufacturing_year": 2022,
+        "tread_depth": 7,
+        "uneven_wear": "なし",
+        "ply_rating": "8PR",
+        "other_details": "スタッドレス",
+        "price": 10000,
+        "width": 215,
+        "aspect_ratio": 60,
+        "inch": 16
+    },
+    {
+        "id": 102,
+        "manufacturer": "Yokohama",
+        "manufacturing_year": 2021,
+        "tread_depth": 6,
+        "uneven_wear": "若干",
+        "ply_rating": "10PR",
+        "other_details": "オールシーズン",
+        "price": 12000,
+        "width": 215,
+        "aspect_ratio": 60,
+        "inch": 16
+    }
+]
+
+# 出庫指示書ページのHTMLレンダリング
+@app.route("/dispatch_view")
+def dispatch_view():  # ← ここを変更（関数名を `dispatch_view` に統一）
+    print("🚀 Debug: shipments content →", shipments)  # 追加
+    
+    total_tires = len(shipments)
+    total_price = sum(tire["price"] for tire in shipments)
+    tax = int(total_price * 0.1)
+    total_price_with_tax = total_price + tax
+
+    # 共通データの取得（最初のタイヤ情報を使用）
+    common_data = {
+        "width": shipments[0]["width"],
+        "aspect_ratio": shipments[0]["aspect_ratio"],
+        "inch": shipments[0]["inch"],
+        "ply_rating": shipments[0]["ply_rating"]
+    }
+
+    return render_template(
+        "dispatch_page.html",
+        tires_to_dispatch=shipments,
+        total_tires=total_tires,
+        total_price=total_price,
+        tax=tax,
+        total_price_with_tax=total_price_with_tax,
+        dispatch_date="2025-02-15",
+        common_data=common_data  # 共通データを渡す
+    )
+
+# JSON API（Google Apps Script用）
+@app.route("/shipments")
+def get_shipments():
+    total_tires = len(shipments)
+    total_price = sum(tire["price"] for tire in shipments)
+    tax = int(total_price * 0.1)
+    total_price_with_tax = total_price + tax
+
+    # 共通データの取得（最初のタイヤ情報を使用）
+    common_data = {
+        "width": shipments[0]["width"],
+        "aspect_ratio": shipments[0]["aspect_ratio"],
+        "inch": shipments[0]["inch"],
+        "ply_rating": shipments[0]["ply_rating"]
+    }
+
+    return jsonify({
+        "shipments": shipments,
+        "total_tires": total_tires,
+        "total_price": total_price,
+        "tax": tax,
+        "total_price_with_tax": total_price_with_tax,
+        "dispatch_date": "2025-02-15",
+        "common_data": common_data  # JSON API に共通データを追加
+    })
 
 @app.route('/generate_dispatch_pdf', methods=['POST'])
 def generate_dispatch_pdf():
