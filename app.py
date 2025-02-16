@@ -607,7 +607,7 @@ def dispatch():
         flash(f"エラーが発生しました: {e}", "danger")
 
     # 処理完了後、出庫履歴画面にリダイレクト
-    return redirect(url_for('dispatch_view'))
+    return redirect(url_for('dispatch_page'))
 
 @app.route('/dispatch_page', methods=['GET'])
 def dispatch_page():
@@ -622,6 +622,10 @@ def dispatch_page():
         tires_to_dispatch = [
             InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history
         ]
+        
+        # デバッグ: 各タイヤの `price` を確認
+        for tire in tires_to_dispatch:
+            print(f"Debug: Tire ID {tire.id if tire else 'None'} - Price: {tire.price if tire and tire.price is not None else 'None'}")
 
         # ここで dispatch_date を取得（最初のデータのみを使用）
         dispatch_date = dispatch_history[0].dispatch_date if dispatch_history else None
@@ -657,135 +661,69 @@ def dispatch_page():
         flash(f"エラーが発生しました: {e}", "danger")
         return redirect(url_for('home'))
 
-# ダミーデータ（本番環境ではDBから取得）
-shipments = [
-    {
-        "id": 101,
-        "manufacturer": "Bridgestone",
-        "manufacturing_year": 2022,
-        "tread_depth": 7,
-        "uneven_wear": "なし",
-        "ply_rating": "8PR",
-        "other_details": "スタッドレス",
-        "price": 10000,
-        "width": 215,
-        "aspect_ratio": 60,
-        "inch": 16
-    },
-    {
-        "id": 102,
-        "manufacturer": "Yokohama",
-        "manufacturing_year": 2021,
-        "tread_depth": 6,
-        "uneven_wear": "若干",
-        "ply_rating": "10PR",
-        "other_details": "オールシーズン",
-        "price": 12000,
-        "width": 215,
-        "aspect_ratio": 60,
-        "inch": 16
-    }
-]
-
-# 出庫指示書ページのHTMLレンダリング
-@app.route("/dispatch_view")
-def dispatch_view():  # ← ここを変更（関数名を `dispatch_view` に統一）
-    print("🚀 Debug: shipments content →", shipments)  # 追加
-    
-    total_tires = len(shipments)
-    total_price = sum(tire["price"] for tire in shipments)
-    tax = int(total_price * 0.1)
-    total_price_with_tax = total_price + tax
-
-    # 共通データの取得（最初のタイヤ情報を使用）
-    common_data = {
-        "width": shipments[0]["width"],
-        "aspect_ratio": shipments[0]["aspect_ratio"],
-        "inch": shipments[0]["inch"],
-        "ply_rating": shipments[0]["ply_rating"]
-    }
-
-    return render_template(
-        "dispatch_page.html",
-        tires_to_dispatch=shipments,
-        total_tires=total_tires,
-        total_price=total_price,
-        tax=tax,
-        total_price_with_tax=total_price_with_tax,
-        dispatch_date="2025-02-15",
-        common_data=common_data  # 共通データを渡す
-    )
-
 # JSON API（Google Apps Script用）
 @app.route("/shipments")
 def get_shipments():
-    total_tires = len(shipments)
-    total_price = sum(tire["price"] for tire in shipments)
+    processed_tire_ids = session.get('processed_tires', [])
+    dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
+    tires_to_dispatch = [
+        InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)
+    ]
+
+    # ✅ デバッグ情報（出庫データの確認）
+    print("🚀 Debug: API tires_to_dispatch content →", [tire.id for tire in tires_to_dispatch if tire])
+
+    # ✅ 出庫日を取得（直近のデータのものを使用）
+    dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
+    print(f"🚀 Debug: Dispatch Date → {dispatch_date}")
+    
+    total_tires = len(tires_to_dispatch)
+    total_price = sum(tire.price if tire and tire.price is not None else 0 for tire in tires_to_dispatch)
     tax = int(total_price * 0.1)
     total_price_with_tax = total_price + tax
 
-    # 共通データの取得（最初のタイヤ情報を使用）
-    common_data = {
-        "width": shipments[0]["width"],
-        "aspect_ratio": shipments[0]["aspect_ratio"],
-        "inch": shipments[0]["inch"],
-        "ply_rating": shipments[0]["ply_rating"]
-    }
+    # ✅ 共通データの取得（最初のタイヤの情報を使用）
+    if tires_to_dispatch:
+        first_tire = tires_to_dispatch[0]
+        common_data = {
+            "width": first_tire.width,
+            "aspect_ratio": first_tire.aspect_ratio,
+            "inch": first_tire.inch,
+            "ply_rating": first_tire.ply_rating
+        }
+    else:
+        common_data = {}
 
+    # ✅ デバッグ情報（価格・合計金額）
+    print(f"🚀 Debug: Total Tires → {total_tires}")
+    print(f"🚀 Debug: Total Price → {total_price}")
+    print(f"🚀 Debug: Tax → {tax}")
+    print(f"🚀 Debug: Total Price with Tax → {total_price_with_tax}")
+
+    # ✅ **GAS 側でスプレッドシートへ書き込むため、この JSON 構造は必須**
     return jsonify({
-        "shipments": shipments,
+        "shipments": [
+            {
+                "id": tire.id,
+                "manufacturer": tire.manufacturer,
+                "manufacturing_year": tire.manufacturing_year,
+                "tread_depth": tire.tread_depth,
+                "uneven_wear": tire.uneven_wear,
+                "ply_rating": tire.ply_rating,
+                "other_details": tire.other_details,
+                "price": tire.price,
+                "width": tire.width,
+                "aspect_ratio": tire.aspect_ratio,
+                "inch": tire.inch
+            } for tire in tires_to_dispatch
+        ],
         "total_tires": total_tires,
         "total_price": total_price,
         "tax": tax,
         "total_price_with_tax": total_price_with_tax,
-        "dispatch_date": "2025-02-15",
-        "common_data": common_data  # JSON API に共通データを追加
+        "dispatch_date": dispatch_date,  # ✅ 出庫日を JSON に含める
+        "common_data": common_data  # ✅ 共通データを追加
     })
-
-@app.route('/generate_dispatch_pdf', methods=['POST'])
-def generate_dispatch_pdf():
-    try:
-        # 今回の出庫タイヤを取得
-        processed_tire_ids = session.get('processed_tires', [])
-
-        if not processed_tire_ids:
-            flash("出庫対象のタイヤが見つかりません。", "warning")
-            return redirect(url_for('dispatch_page'))
-
-        # 出庫履歴から対象データを取得
-        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
-
-        # 出庫対象タイヤを再取得
-        tires_to_dispatch = [
-            InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history
-        ]
-
-        # 合計本数と金額計算
-        total_tires = len(tires_to_dispatch)
-        total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
-
-        # デバッグログ
-        print(f"Processed tire IDs: {processed_tire_ids}")
-        print(f"Tires to dispatch for PDF: {[tire.id for tire in tires_to_dispatch if tire]}")
-        
-        # PDF生成用HTMLテンプレートをレンダリング
-        rendered_html = render_template(
-            'dispatch_pdf.html', 
-            tires_to_dispatch=tires_to_dispatch,
-            total_tires=total_tires,
-            total_price=total_price
-        )
-
-        # PDF生成
-        pdf = pdfkit.from_string(rendered_html, False)
-
-        # PDFをレスポンスとして返す
-        response = Response(pdf, content_type='application/pdf')
-        response.headers['Content-Disposition'] = 'inline; filename=dispatch_instructions.pdf'
-        return response
-    except Exception as e:
-        flash(f"PDF生成中にエラーが発生しました: {e}", "danger")
-        return redirect(url_for('dispatch_page'))
 
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
