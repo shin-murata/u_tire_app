@@ -662,9 +662,10 @@ def dispatch_page():
         return redirect(url_for('home'))
 
 # JSON API（Google Apps Script用）
-@app.route("/shipments")
+@app.route("/shipments", methods=["GET", "POST"])  # ← POST対応
 def get_shipments():
     processed_tire_ids = session.get('processed_tires', [])
+    print("🚀 Debug: Processed Tire IDs →", processed_tire_ids)
     dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
     tires_to_dispatch = [
         InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)
