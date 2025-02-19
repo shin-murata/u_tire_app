@@ -670,6 +670,14 @@ def get_shipments():
     processed_tire_ids = session.get('processed_tires', [])  
     print(f"🚀 Debug: Processed Tire IDs → {processed_tire_ids}")
 
+    # ✅ `dispatch_history` をデフォルトで空リストに設定（未定義エラーを防ぐ）
+    dispatch_history = []
+
+    if processed_tire_ids:
+        # ✅ 出庫履歴から今回の出庫データを取得
+        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
+
+
     if not dispatch_history:
         print("⚠️ 出庫データがないため、空のレスポンスを返します")
         return jsonify({
@@ -683,7 +691,6 @@ def get_shipments():
         })
 
     # ✅ 出庫履歴から今回の出庫データを取得
-    dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
     tires_to_dispatch = [
         InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)
     ]
