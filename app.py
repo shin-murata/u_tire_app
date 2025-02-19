@@ -666,8 +666,9 @@ def dispatch_page():
 def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
 
-    # ✅ データベースから最新の出庫データを取得（直近 10 件）
-    dispatch_history = DispatchHistory.query.order_by(DispatchHistory.dispatch_date.desc()).limit(10).all()
+    # ✅ 直前の `/dispatch` で処理されたタイヤの ID をセッションから取得
+    processed_tire_ids = session.get('processed_tires', [])  
+    print(f"🚀 Debug: Processed Tire IDs → {processed_tire_ids}")
 
     if not dispatch_history:
         print("⚠️ 出庫データがないため、空のレスポンスを返します")
@@ -681,7 +682,8 @@ def get_shipments():
             "common_data": {}
         })
 
-    # ✅ 出庫履歴から該当するタイヤ情報を取得
+    # ✅ 出庫履歴から今回の出庫データを取得
+    dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
     tires_to_dispatch = [
         InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)
     ]
