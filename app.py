@@ -664,6 +664,7 @@ def dispatch_page():
 # JSON API（Google Apps Script用）
 @app.route("/shipments", methods=["GET", "POST"])  # ← POST対応
 def get_shipments():
+    print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
     processed_tire_ids = session.get('processed_tires', [])
     print("🚀 Debug: Processed Tire IDs →", processed_tire_ids)
     dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
