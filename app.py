@@ -672,18 +672,18 @@ def dispatch_page():
 @app.route("/shipments", methods=["GET", "POST"])  # ← POST対応
 def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
-    print(f"🚀 Debug: Current session['processed_tires'] → {session.get('processed_tires')}")
-    # ✅ 直前の `/dispatch` で処理されたタイヤの ID をセッションから取得
-    processed_tire_ids = session.get('processed_tires', [])  
-    print(f"🚀 Debug: Processed Tire IDs → {processed_tire_ids}")
+    
+    # ✅ GAS から送信された JSON データを取得
+    request_data = request.get_json()
+    if not request_data or "tire_ids" not in request_data:
+        print("🚨 Error: 'tire_ids' がリクエストに含まれていません")
+        return jsonify({"error": "Missing 'tire_ids' in request"}), 400
 
-    # ✅ `dispatch_history` をデフォルトで空リストに設定（未定義エラーを防ぐ）
-    dispatch_history = []
+    tire_ids = request_data["tire_ids"]
+    print(f"🚀 Debug: Received Tire IDs → {tire_ids}")
 
-    if processed_tire_ids:
-        # ✅ 出庫履歴から今回の出庫データを取得
-        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
-        print(f"🚀 Debug: Retrieved Dispatch History IDs → {[dh.tire_id for dh in dispatch_history]}")
+    # ✅ タイヤIDを元に出庫履歴を取得
+    dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(tire_ids)).all()
 
     if not dispatch_history:
         print("⚠️ 出庫データがないため、空のレスポンスを返します")
