@@ -676,7 +676,7 @@ def get_shipments():
     if processed_tire_ids:
         # ✅ 出庫履歴から今回の出庫データを取得
         dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
-
+        print(f"🚀 Debug: Retrieved Dispatch History IDs → {[dh.tire_id for dh in dispatch_history]}")
 
     if not dispatch_history:
         print("⚠️ 出庫データがないため、空のレスポンスを返します")
