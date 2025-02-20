@@ -662,10 +662,35 @@ def dispatch_page():
         return redirect(url_for('home'))
 
 # JSON API（Google Apps Script用）
-@app.route("/shipments")
+@app.route("/shipments", methods=["GET", "POST"])  # ← POST対応
 def get_shipments():
-    processed_tire_ids = session.get('processed_tires', [])
-    dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
+    print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
+
+    # ✅ 直前の `/dispatch` で処理されたタイヤの ID をセッションから取得
+    processed_tire_ids = session.get('processed_tires', [])  
+    print(f"🚀 Debug: Processed Tire IDs → {processed_tire_ids}")
+
+    # ✅ `dispatch_history` をデフォルトで空リストに設定（未定義エラーを防ぐ）
+    dispatch_history = []
+
+    if processed_tire_ids:
+        # ✅ 出庫履歴から今回の出庫データを取得
+        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
+        print(f"🚀 Debug: Retrieved Dispatch History IDs → {[dh.tire_id for dh in dispatch_history]}")
+
+    if not dispatch_history:
+        print("⚠️ 出庫データがないため、空のレスポンスを返します")
+        return jsonify({
+            "shipments": [],
+            "total_tires": 0,
+            "total_price": 0,
+            "tax": 0,
+            "total_price_with_tax": 0,
+            "dispatch_date": None,
+            "common_data": {}
+        })
+
+    # ✅ 出庫履歴から今回の出庫データを取得
     tires_to_dispatch = [
         InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)
     ]
@@ -673,10 +698,10 @@ def get_shipments():
     # ✅ デバッグ情報（出庫データの確認）
     print("🚀 Debug: API tires_to_dispatch content →", [tire.id for tire in tires_to_dispatch if tire])
 
-    # ✅ 出庫日を取得（直近のデータのものを使用）
+    # ✅ 出庫日を取得（最新のデータのものを使用）
     dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
     print(f"🚀 Debug: Dispatch Date → {dispatch_date}")
-    
+
     total_tires = len(tires_to_dispatch)
     total_price = sum(tire.price if tire and tire.price is not None else 0 for tire in tires_to_dispatch)
     tax = int(total_price * 0.1)
@@ -724,7 +749,6 @@ def get_shipments():
         "dispatch_date": dispatch_date,  # ✅ 出庫日を JSON に含める
         "common_data": common_data  # ✅ 共通データを追加
     })
-
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):
