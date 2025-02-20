@@ -573,7 +573,7 @@ def dispatch():
     # デバッグログ
     print(f"Request method: {request.method}")
     print(f"Session selected tires before processing: {session.get('selected_tires')}")
-
+    print(f"🚀 Before processing, session['selected_tires']: {session.get('selected_tires')}")
     selected_tires = session.get('selected_tires', [])
     processed_tire_ids = []  # 処理済みタイヤIDのリスト
     dispatch_date = datetime.now(JST).replace(microsecond=0)  # ✅ `datetime` 型で統一
@@ -596,8 +596,11 @@ def dispatch():
         # データベースの変更を保存
         db.session.commit()
         print(f"Processed tire IDs: {processed_tire_ids}")
-        # セッションに保存
+
+        # ✅ セッションを永続化し、処理済みのタイヤIDを保存
+        session.permanent = True  # **← ここを追加**
         session['processed_tires'] = processed_tire_ids
+        print(f"✅ After processing, session['processed_tires']: {session.get('processed_tires')}")
 
         flash("出庫処理が完了しました。", "success")
     except Exception as e:
@@ -608,6 +611,10 @@ def dispatch():
 
     # 処理完了後、出庫履歴画面にリダイレクト
     return redirect(url_for('dispatch_page'))
+
+@app.route("/session_check", methods=["GET"])
+def check_session():
+    return jsonify({"processed_tires": session.get("processed_tires", [])})
 
 @app.route('/dispatch_page', methods=['GET'])
 def dispatch_page():
@@ -665,7 +672,7 @@ def dispatch_page():
 @app.route("/shipments", methods=["GET", "POST"])  # ← POST対応
 def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
-
+    print(f"🚀 Debug: Current session['processed_tires'] → {session.get('processed_tires')}")
     # ✅ 直前の `/dispatch` で処理されたタイヤの ID をセッションから取得
     processed_tire_ids = session.get('processed_tires', [])  
     print(f"🚀 Debug: Processed Tire IDs → {processed_tire_ids}")
