@@ -666,7 +666,7 @@ def dispatch_page():
     except Exception as e:
         print(f"Error fetching dispatch history: {e}")
         flash(f"エラーが発生しました: {e}", "danger")
-        return redirect(url_for('home'))
+        return redirect(url_for('search_page'))
 
 # JSON API（Google Apps Script用）
 @app.route("/shipments", methods=["POST"])
@@ -674,6 +674,8 @@ def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
 
     # ✅ JSONリクエストかどうかをチェック
+    print(f"🚀 Debug: Content-Type: {request.content_type}")
+
     if request.content_type != "application/json":
         print("🚨 415エラー: Content-Type が application/json ではありません")
         return jsonify({"error": "Unsupported Media Type. Please use 'application/json'"}), 415
@@ -681,6 +683,7 @@ def get_shipments():
     # ✅ リクエストボディから `tire_ids` を取得
     try:
         request_data = request.get_json()
+        print(f"🚀 Debug: 受信したリクエストデータ → {request_data}")
         tire_ids = request_data.get("tire_ids", [])
         print(f"🚀 Debug: 受信した Tire IDs → {tire_ids}")
 
@@ -695,7 +698,7 @@ def get_shipments():
 
     # ✅ データベースからデータを取得
     dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(tire_ids)).all()
-
+    print(f"🚀 Debug: 取得した出庫履歴の数 → {len(dispatch_history)}")
     if not dispatch_history:
         print("⚠️ 指定された `tire_ids` に対応する出庫履歴がありません")
         return jsonify({
@@ -710,7 +713,6 @@ def get_shipments():
 
     # ✅ 出庫データを取得
     tires_to_dispatch = [InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)]
-
     print(f"🚀 Debug: API tires_to_dispatch content → {[tire.id for tire in tires_to_dispatch if tire]}")
 
     # ✅ 出庫日を取得
