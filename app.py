@@ -669,24 +669,35 @@ def dispatch_page():
         return redirect(url_for('home'))
 
 # JSON API（Google Apps Script用）
-@app.route("/shipments", methods=["GET", "POST"])  # ← POST対応
+@app.route("/shipments", methods=["POST"])
 def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
-    
-    # ✅ GAS から送信された JSON データを取得
-    request_data = request.get_json()
-    if not request_data or "tire_ids" not in request_data:
-        print("🚨 Error: 'tire_ids' がリクエストに含まれていません")
-        return jsonify({"error": "Missing 'tire_ids' in request"}), 400
 
-    tire_ids = request_data["tire_ids"]
-    print(f"🚀 Debug: Received Tire IDs → {tire_ids}")
+    # ✅ JSONリクエストかどうかをチェック
+    if request.content_type != "application/json":
+        print("🚨 415エラー: Content-Type が application/json ではありません")
+        return jsonify({"error": "Unsupported Media Type. Please use 'application/json'"}), 415
 
-    # ✅ タイヤIDを元に出庫履歴を取得
+    # ✅ リクエストボディから `tire_ids` を取得
+    try:
+        request_data = request.get_json()
+        tire_ids = request_data.get("tire_ids", [])
+        print(f"🚀 Debug: 受信した Tire IDs → {tire_ids}")
+
+        # ✅ `tire_ids` が空の場合は 400 エラーを返す
+        if not tire_ids:
+            print("⚠️ リクエストに `tire_ids` が含まれていません")
+            return jsonify({"error": "No tire IDs provided"}), 400
+
+    except Exception as e:
+        print(f"🚨 JSONデコードエラー: {e}")
+        return jsonify({"error": "Invalid JSON format"}), 400
+
+    # ✅ データベースからデータを取得
     dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(tire_ids)).all()
 
     if not dispatch_history:
-        print("⚠️ 出庫データがないため、空のレスポンスを返します")
+        print("⚠️ 指定された `tire_ids` に対応する出庫履歴がありません")
         return jsonify({
             "shipments": [],
             "total_tires": 0,
@@ -697,15 +708,12 @@ def get_shipments():
             "common_data": {}
         })
 
-    # ✅ 出庫履歴から今回の出庫データを取得
-    tires_to_dispatch = [
-        InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)
-    ]
+    # ✅ 出庫データを取得
+    tires_to_dispatch = [InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)]
 
-    # ✅ デバッグ情報（出庫データの確認）
-    print("🚀 Debug: API tires_to_dispatch content →", [tire.id for tire in tires_to_dispatch if tire])
+    print(f"🚀 Debug: API tires_to_dispatch content → {[tire.id for tire in tires_to_dispatch if tire]}")
 
-    # ✅ 出庫日を取得（最新のデータのものを使用）
+    # ✅ 出庫日を取得
     dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
     print(f"🚀 Debug: Dispatch Date → {dispatch_date}")
 
@@ -714,7 +722,7 @@ def get_shipments():
     tax = int(total_price * 0.1)
     total_price_with_tax = total_price + tax
 
-    # ✅ 共通データの取得（最初のタイヤの情報を使用）
+    # ✅ 共通データの取得
     if tires_to_dispatch:
         first_tire = tires_to_dispatch[0]
         common_data = {
@@ -726,13 +734,6 @@ def get_shipments():
     else:
         common_data = {}
 
-    # ✅ デバッグ情報（価格・合計金額）
-    print(f"🚀 Debug: Total Tires → {total_tires}")
-    print(f"🚀 Debug: Total Price → {total_price}")
-    print(f"🚀 Debug: Tax → {tax}")
-    print(f"🚀 Debug: Total Price with Tax → {total_price_with_tax}")
-
-    # ✅ **GAS 側でスプレッドシートへ書き込むため、この JSON 構造は必須**
     return jsonify({
         "shipments": [
             {
@@ -753,8 +754,8 @@ def get_shipments():
         "total_price": total_price,
         "tax": tax,
         "total_price_with_tax": total_price_with_tax,
-        "dispatch_date": dispatch_date,  # ✅ 出庫日を JSON に含める
-        "common_data": common_data  # ✅ 共通データを追加
+        "dispatch_date": dispatch_date,
+        "common_data": common_data
     })
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
