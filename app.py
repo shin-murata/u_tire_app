@@ -672,9 +672,16 @@ def dispatch_page():
 @app.route("/shipments", methods=["POST"])
 def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
+    print(f"🚀 Debug: Request Method: {request.method}")  # リクエストのメソッドを確認
+    print(f"🚀 Debug: Content-Type: {request.content_type}")  # Content-Type を確認
 
     # ✅ JSONリクエストかどうかをチェック
     print(f"🚀 Debug: Content-Type: {request.content_type}")
+
+    # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
+    if request.method != "POST":
+        print("🚨 405エラー: GET などの不正なリクエストが送信されました")
+        return jsonify({"error": "Method Not Allowed. Use POST instead."}), 405
 
     if request.content_type != "application/json":
         print("🚨 415エラー: Content-Type が application/json ではありません")
