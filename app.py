@@ -674,6 +674,8 @@ def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
     print(f"🚀 Debug: Request Method: {request.method}")  # リクエストのメソッドを確認
     print(f"🚀 Debug: Content-Type: {request.content_type}")  # Content-Type を確認
+    print(f"🚀 Debug: Full Headers: {dict(request.headers)}")  # **リクエストヘッダー**
+    print(f"🚀 Debug: Raw Data: {request.data.decode('utf-8')}")  # **リクエストボディの生データ**
 
     # ✅ JSONリクエストかどうかをチェック
     print(f"🚀 Debug: Content-Type: {request.content_type}")
