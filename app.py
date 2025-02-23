@@ -596,10 +596,9 @@ def dispatch():
         # データベースの変更を保存
         db.session.commit()
         print(f"Processed tire IDs: {processed_tire_ids}")
-
-        # ✅ セッションを永続化し、処理済みのタイヤIDを保存
-        session.permanent = True  # **← ここを追加**
         session['processed_tires'] = processed_tire_ids
+        session.modified = True  # ✅ セッション変更を明示
+        
         print(f"✅ After processing, session['processed_tires']: {session.get('processed_tires')}")
 
         flash("出庫処理が完了しました。", "success")
@@ -608,6 +607,7 @@ def dispatch():
         db.session.rollback()
         print(f"Database error: {e}")  # デバッグログを強化
         flash(f"エラーが発生しました: {e}", "danger")
+        return jsonify({"error": "Database commit failed"}), 500  # ✅ エラー時に即座に処理を中断
 
     # 処理完了後、出庫履歴画面にリダイレクト
     return redirect(url_for('dispatch_page'))
@@ -708,17 +708,10 @@ def get_shipments():
     # ✅ データベースからデータを取得
     dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(tire_ids)).all()
     print(f"🚀 Debug: 取得した出庫履歴の数 → {len(dispatch_history)}")
+    # 🚨 **修正ポイント**: データがまだ反映されていない場合、`202 Accepted` を返す
     if not dispatch_history:
-        print("⚠️ 指定された `tire_ids` に対応する出庫履歴がありません")
-        return jsonify({
-            "shipments": [],
-            "total_tires": 0,
-            "total_price": 0,
-            "tax": 0,
-            "total_price_with_tax": 0,
-            "dispatch_date": None,
-            "common_data": {}
-        })
+        print("🚨 データがまだ反映されていない可能性があります。")
+        return jsonify({"error": "Dispatch data not available yet. Try again later."}), 202
 
     # ✅ 出庫データを取得
     tires_to_dispatch = [InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)]
