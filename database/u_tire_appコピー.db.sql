@@ -1,61 +1,105 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "users" (
-	id SERIAL PRIMARY KEY,
-	"username"	VARCHAR(150) NOT NULL,
-	"password_hash"	VARCHAR(150) NOT NULL,
-	"role_id"	INTEGER,
-	UNIQUE("username"),
-	FOREIGN KEY("role_id") REFERENCES "roles"("id")
+CREATE TABLE IF NOT EXISTS "AlertPage" (
+	"width"	INTEGER,
+	"aspect_ratio"	INTEGER,
+	"inch"	INTEGER,
+	"inventory_count"	INTEGER NOT NULL,
+	"search_count"	INTEGER NOT NULL,
+	FOREIGN KEY("aspect_ratio") REFERENCES "AspectRatio"("id"),
+	FOREIGN KEY("inch") REFERENCES "Inch"("id"),
+	FOREIGN KEY("width") REFERENCES "Width"("id")
 );
-CREATE TABLE IF NOT EXISTS "roles" (
-	id SERIAL PRIMARY KEY,
-	"name"	VARCHAR(50) NOT NULL,
-	"description"	VARCHAR(255),
-	UNIQUE("name")
-);
-CREATE TABLE IF NOT EXISTS "width" (
+CREATE TABLE IF NOT EXISTS "AspectRatio" (
 	id SERIAL PRIMARY KEY,
 	"value"	INTEGER NOT NULL
 );
-CREATE TABLE IF NOT EXISTS "aspect_ratio" (
+CREATE TABLE IF NOT EXISTS "DispatchHistory" (
 	id SERIAL PRIMARY KEY,
-	"value"	INTEGER NOT NULL
+	"tire_id"	INTEGER NOT NULL,
+	"user_id"	INTEGER NOT NULL,
+	"dispatch_date"	TIMESTAMP NOT NULL,
+	"dispatch_note"	TEXT,
+	FOREIGN KEY("tire_id") REFERENCES "InputPage"("id"),
+	FOREIGN KEY("user_id") REFERENCES "User"("id")
 );
-CREATE TABLE IF NOT EXISTS "inch" (
+CREATE TABLE IF NOT EXISTS "DropdownHistory" (
 	id SERIAL PRIMARY KEY,
-	"value"	INTEGER NOT NULL
+	"entity_id"	INTEGER NOT NULL,
+	"entity_type"	TEXT NOT NULL,
+	"user_id"	INTEGER NOT NULL,
+	"change_date"	TIMESTAMP NOT NULL,
+	"action"	TEXT NOT NULL,
+	"old_value"	TEXT,
+	"new_value"	TEXT,
+	FOREIGN KEY("user_id") REFERENCES "User"("id")
 );
-CREATE TABLE IF NOT EXISTS "manufacturer" (
+CREATE TABLE IF NOT EXISTS "DropdownManagement" (
 	id SERIAL PRIMARY KEY,
-	"name"	VARCHAR NOT NULL
+	"entity_type"	TEXT NOT NULL,
+	"entity_value"	INTEGER NOT NULL,
+	FOREIGN KEY("entity_value") REFERENCES "Width"("id")
 );
-CREATE TABLE IF NOT EXISTS "ply_rating" (
+CREATE TABLE IF NOT EXISTS "EditPage" (
 	id SERIAL PRIMARY KEY,
-	"value"	VARCHAR NOT NULL,
-	"is_custom"	INTEGER NOT NULL,
-	"added_date"	DATE NOT NULL
-);
-CREATE TABLE IF NOT EXISTS "alembic_version" (
-	"version_num"	VARCHAR(32) NOT NULL,
-	CONSTRAINT "alembic_version_pkc" PRIMARY KEY("version_num")
-);
-CREATE TABLE IF NOT EXISTS "input_page" (
-	id SERIAL PRIMARY KEY,
+	"registration_date"	TIMESTAMP NOT NULL,
 	"width"	INTEGER NOT NULL,
 	"aspect_ratio"	INTEGER NOT NULL,
 	"inch"	INTEGER NOT NULL,
 	"other_details"	TEXT,
 	"manufacturing_year"	INTEGER,
-	"manufacturer"	INTEGER NOT NULL,
+	"manufacturer"	TEXT NOT NULL,
 	"tread_depth"	INTEGER,
 	"uneven_wear"	INTEGER,
 	"ply_rating"	INTEGER NOT NULL,
-	"price"	FLOAT,
-	"is_dispatched"	BOOLEAN,
-	"registration_date"	TIMESTAMP
+	"price"	REAL NOT NULL,
+	FOREIGN KEY("aspect_ratio") REFERENCES "AspectRatio"("id"),
+	FOREIGN KEY("inch") REFERENCES "Inch"("id"),
+	FOREIGN KEY("manufacturer") REFERENCES "Manufacturer"("id"),
+	FOREIGN KEY("ply_rating") REFERENCES "PlyRating"("id"),
+	FOREIGN KEY("width") REFERENCES "Width"("id")
 );
-CREATE TABLE IF NOT EXISTS "search_page" (
+CREATE TABLE IF NOT EXISTS "HistoryPage" (
+	"tire_id"	INTEGER NOT NULL,
+	"user_id"	INTEGER NOT NULL,
+	"action"	TEXT NOT NULL,
+	"edit_date"	DATE NOT NULL,
+	"details"	TEXT,
+	FOREIGN KEY("tire_id") REFERENCES "InputPage"("id"),
+	FOREIGN KEY("user_id") REFERENCES "User"("id")
+);
+CREATE TABLE IF NOT EXISTS "InstructionPage" (
+	dispatch_id SERIAL PRIMARY KEY,
+	"width"	INTEGER NOT NULL,
+	"aspect_ratio"	INTEGER NOT NULL,
+	"inch"	INTEGER NOT NULL,
+	"manufacturer"	TEXT NOT NULL,
+	"manufacturing_year"	INTEGER,
+	"tread_depth"	INTEGER,
+	FOREIGN KEY("aspect_ratio") REFERENCES "AspectRatio"("id"),
+	FOREIGN KEY("inch") REFERENCES "Inch"("id"),
+	FOREIGN KEY("manufacturer") REFERENCES "Manufacturer"("id"),
+	FOREIGN KEY("width") REFERENCES "Width"("id")
+);
+CREATE TABLE IF NOT EXISTS "PlyRating" (
 	id SERIAL PRIMARY KEY,
+	"value"	TEXT NOT NULL,
+	"is_custom"	INTEGER NOT NULL CHECK("is_custom" IN (0, 1)),
+	"added_date"	DATE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "SearchPage" (
+	"width"	INTEGER,
+	"aspect_ratio"	INTEGER,
+	"inch"	INTEGER,
+	FOREIGN KEY("aspect_ratio") REFERENCES "AspectRatio"("id"),
+	FOREIGN KEY("inch") REFERENCES "Inch"("id"),
+	FOREIGN KEY("width") REFERENCES "Width"("id")
+);
+CREATE TABLE IF NOT EXISTS "alembic_version" (
+	"version_num"	VARCHAR(32) NOT NULL,
+	CONSTRAINT "alembic_version_pkc" PRIMARY KEY("version_num")
+);
+CREATE TABLE IF NOT EXISTS "alert_page" (
+	"id"	INTEGER NOT NULL,
 	"width"	INTEGER,
 	"aspect_ratio"	INTEGER,
 	"inch"	INTEGER,
@@ -64,6 +108,10 @@ CREATE TABLE IF NOT EXISTS "search_page" (
 	FOREIGN KEY("aspect_ratio") REFERENCES "aspect_ratio"("id"),
 	FOREIGN KEY("inch") REFERENCES "inch"("id"),
 	FOREIGN KEY("width") REFERENCES "width"("id")
+);
+CREATE TABLE IF NOT EXISTS "aspect_ratio" (
+	"id"	INTEGER NOT NULL,
+	"value"	INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "dispatch_history" (
 	id SERIAL PRIMARY KEY,
@@ -75,7 +123,7 @@ CREATE TABLE IF NOT EXISTS "dispatch_history" (
 	FOREIGN KEY("user_id") REFERENCES "users"("id")
 );
 CREATE TABLE IF NOT EXISTS "edit_page" (
-	id SERIAL PRIMARY KEY,
+	"id"	INTEGER NOT NULL,
 	"tire_id"	INTEGER NOT NULL,
 	"user_id"	INTEGER NOT NULL,
 	"action"	VARCHAR NOT NULL,
@@ -94,7 +142,42 @@ CREATE TABLE IF NOT EXISTS "history_page" (
 	FOREIGN KEY("tire_id") REFERENCES "input_page"("id"),
 	FOREIGN KEY("user_id") REFERENCES "users"("id")
 );
-CREATE TABLE IF NOT EXISTS "alert_page" (
+CREATE TABLE IF NOT EXISTS "inch" (
+	"id"	INTEGER NOT NULL,
+	"value"	INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "input_page" (
+	id SERIAL PRIMARY KEY,
+	"width"	INTEGER NOT NULL,
+	"aspect_ratio"	INTEGER NOT NULL,
+	"inch"	INTEGER NOT NULL,
+	"other_details"	TEXT,
+	"manufacturing_year"	INTEGER,
+	"manufacturer"	INTEGER NOT NULL,
+	"tread_depth"	INTEGER,
+	"uneven_wear"	INTEGER,
+	"ply_rating"	INTEGER NOT NULL,
+	"price"	FLOAT,
+	"is_dispatched"	BOOLEAN,
+	"registration_date"	TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS "manufacturer" (
+	"id"	INTEGER NOT NULL,
+	"name"	VARCHAR NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "ply_rating" (
+	"id"	INTEGER NOT NULL,
+	"value"	VARCHAR NOT NULL,
+	"is_custom"	INTEGER NOT NULL,
+	"added_date"	DATE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "roles" (
+	"id"	INTEGER NOT NULL,
+	"name"	VARCHAR(50) NOT NULL,
+	"description"	VARCHAR(255),
+	UNIQUE("name")
+);
+CREATE TABLE IF NOT EXISTS "search_page" (
 	id SERIAL PRIMARY KEY,
 	"width"	INTEGER,
 	"aspect_ratio"	INTEGER,
@@ -104,6 +187,18 @@ CREATE TABLE IF NOT EXISTS "alert_page" (
 	FOREIGN KEY("aspect_ratio") REFERENCES "aspect_ratio"("id"),
 	FOREIGN KEY("inch") REFERENCES "inch"("id"),
 	FOREIGN KEY("width") REFERENCES "width"("id")
+);
+CREATE TABLE IF NOT EXISTS "users" (
+	id SERIAL PRIMARY KEY,
+	"username"	VARCHAR(150) NOT NULL,
+	"password_hash"	VARCHAR(150) NOT NULL,
+	"role_id"	INTEGER,
+	UNIQUE("username"),
+	FOREIGN KEY("role_id") REFERENCES "roles"("id")
+);
+CREATE TABLE IF NOT EXISTS "width" (
+	id SERIAL PRIMARY KEY,
+	"value"	INTEGER NOT NULL
 );
 INSERT INTO alembic_version VALUES ('7346ce46d166');
 INSERT INTO aspect_ratio VALUES (1,40);
