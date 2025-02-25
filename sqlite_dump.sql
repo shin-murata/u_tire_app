@@ -133,62 +133,6 @@ CREATE TABLE edit_page (
 	FOREIGN KEY(tire_id) REFERENCES input_page (id), 
 	FOREIGN KEY(user_id) REFERENCES user (id)
 );
-CREATE TABLE AspectRatio (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    value INTEGER NOT NULL
-);
-CREATE TABLE PlyRating (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    value TEXT NOT NULL,
-    is_custom INTEGER NOT NULL CHECK(is_custom IN (0, 1)),
-    added_date DATE NOT NULL
-);
-CREATE TABLE SearchPage (
-    width INTEGER,
-    aspect_ratio INTEGER,
-    inch INTEGER,
-    FOREIGN KEY (width) REFERENCES Width(id),
-    FOREIGN KEY (aspect_ratio) REFERENCES AspectRatio(id),
-    FOREIGN KEY (inch) REFERENCES Inch(id)
-);
-CREATE TABLE HistoryPage (
-    tire_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    edit_date DATE NOT NULL,
-    details TEXT,
-    FOREIGN KEY (tire_id) REFERENCES InputPage(id),
-    FOREIGN KEY (user_id) REFERENCES User(id)
-);
-CREATE TABLE InstructionPage (
-    dispatch_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    width INTEGER NOT NULL,
-    aspect_ratio INTEGER NOT NULL,
-    inch INTEGER NOT NULL,
-    manufacturer TEXT NOT NULL,
-    manufacturing_year INTEGER,
-    tread_depth INTEGER,
-    FOREIGN KEY (width) REFERENCES Width(id),
-    FOREIGN KEY (aspect_ratio) REFERENCES AspectRatio(id),
-    FOREIGN KEY (inch) REFERENCES Inch(id),
-    FOREIGN KEY (manufacturer) REFERENCES Manufacturer(id)
-);
-CREATE TABLE AlertPage (
-    width INTEGER,
-    aspect_ratio INTEGER,
-    inch INTEGER,
-    inventory_count INTEGER NOT NULL,
-    search_count INTEGER NOT NULL,
-    FOREIGN KEY (width) REFERENCES Width(id),
-    FOREIGN KEY (aspect_ratio) REFERENCES AspectRatio(id),
-    FOREIGN KEY (inch) REFERENCES Inch(id)
-);
-CREATE TABLE DropdownManagement (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entity_type TEXT NOT NULL,
-    entity_value INTEGER NOT NULL,
-    FOREIGN KEY (entity_value) REFERENCES Width(id) -- 適宜修正
-);
 CREATE TABLE dispatch_history (
     id INTEGER PRIMARY KEY,
     tire_id INTEGER NOT NULL,
@@ -505,45 +449,6 @@ INSERT INTO history_page VALUES(34,385,2,'一括更新','2025-02-13 11:30:22.315
 INSERT INTO history_page VALUES(35,384,2,'一括更新','2025-02-13 11:30:22.315924','価格: 3000.0 → 2000, 詳細:  → テスト２');
 INSERT INTO history_page VALUES(36,395,2,'一括更新','2025-02-14 08:42:02.208581','価格: None → 2500, 詳細:  → テスト');
 INSERT INTO history_page VALUES(37,394,2,'一括更新','2025-02-14 08:42:02.208904','詳細:  → テスト');
-CREATE TABLE DispatchHistory (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tire_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    dispatch_date DATETIME NOT NULL,
-    dispatch_note TEXT,
-    FOREIGN KEY (tire_id) REFERENCES InputPage(id),
-    FOREIGN KEY (user_id) REFERENCES User(id)
-);
-CREATE TABLE DropdownHistory (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entity_id INTEGER NOT NULL,
-    entity_type TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
-    change_date DATETIME NOT NULL,
-    action TEXT NOT NULL,
-    old_value TEXT,
-    new_value TEXT,
-    FOREIGN KEY (user_id) REFERENCES User(id)
-);
-CREATE TABLE EditPage (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registration_date DATETIME NOT NULL,
-    width INTEGER NOT NULL,
-    aspect_ratio INTEGER NOT NULL,
-    inch INTEGER NOT NULL,
-    other_details TEXT,
-    manufacturing_year INTEGER,
-    manufacturer TEXT NOT NULL,
-    tread_depth INTEGER,
-    uneven_wear INTEGER,
-    ply_rating INTEGER NOT NULL,
-    price REAL NOT NULL,
-    FOREIGN KEY (aspect_ratio) REFERENCES AspectRatio(id),
-    FOREIGN KEY (inch) REFERENCES Inch(id),
-    FOREIGN KEY (manufacturer) REFERENCES Manufacturer(id),
-    FOREIGN KEY (ply_rating) REFERENCES PlyRating(id),
-    FOREIGN KEY (width) REFERENCES Width(id)
-);
 CREATE TABLE IF NOT EXISTS "input_page" (
     id INTEGER PRIMARY KEY,
     width INTEGER NOT NULL,
@@ -916,7 +821,4 @@ INSERT INTO input_page VALUES(395,1,1,1,'テスト',2023,6,8,1,0,2500.0,0,'2025-
 DELETE FROM sqlite_sequence;
 INSERT INTO sqlite_sequence VALUES('input_page',109);
 INSERT INTO sqlite_sequence VALUES('User',0);
-INSERT INTO sqlite_sequence VALUES('DispatchHistory',0);
-INSERT INTO sqlite_sequence VALUES('DropdownHistory',0);
-INSERT INTO sqlite_sequence VALUES('EditPage',0);
 COMMIT;
