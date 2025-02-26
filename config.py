@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     # Render の PostgreSQL URL を環境変数から取得
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    DATABASE_URL = os.getenv("postgresql://u_tire_app_user:RNQRkAKWbg3eBheet2fDfUOW2avVlj9t@dpg-cutev07noe9s73997blg-a.singapore-postgres.render.com/u_tire_app")
 
     # DATABASE_URL が設定されていなければ、SQLite をデフォルトにする
     if DATABASE_URL:
