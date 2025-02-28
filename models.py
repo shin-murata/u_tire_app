@@ -33,15 +33,15 @@ class InputPage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     registration_date = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(JST).replace(microsecond=0))
-    width = db.Column(db.Integer, db.ForeignKey('width.id'), nullable=False)
-    aspect_ratio = db.Column(db.Integer, db.ForeignKey('aspect_ratio.id'), nullable=False)
-    inch = db.Column(db.Integer, db.ForeignKey('inch.id'), nullable=False)
+    width = db.Column(db.Integer, db.ForeignKey('width.id'), nullable=True)
+    aspect_ratio = db.Column(db.Integer, db.ForeignKey('aspect_ratio.id'), nullable=True)
+    inch = db.Column(db.Integer, db.ForeignKey('inch.id'), nullable=True)
     other_details = db.Column(db.String)
     manufacturing_year = db.Column(db.Integer)
-    manufacturer = db.Column(db.Integer, db.ForeignKey('manufacturer.id'), nullable=False)
+    manufacturer = db.Column(db.Integer, db.ForeignKey('manufacturer.id'), nullable=True)
     tread_depth = db.Column(db.Integer)
     uneven_wear = db.Column(db.Integer)
-    ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=False)
+    ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=True)
     price = db.Column(db.Float, nullable=True)  # nullable=Trueに変更
     is_dispatched = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -55,7 +55,7 @@ class InputPage(db.Model):
 class HistoryPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     action = db.Column(db.String, nullable=False)
     edit_date = db.Column(db.DateTime, nullable=False)
     details = db.Column(db.String)
@@ -65,7 +65,7 @@ class DispatchHistory(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     dispatch_date = db.Column(db.DateTime, nullable=False)
     dispatch_note = db.Column(db.String)
 
@@ -89,7 +89,7 @@ class SearchPage(db.Model):
 class EditPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     action = db.Column(db.String, nullable=False)
     edit_date = db.Column(db.DateTime, nullable=False)
     details = db.Column(db.String)
@@ -121,7 +121,7 @@ class Role(db.Model):
 class EditHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tire_id = db.Column(db.Integer, db.ForeignKey('input_page.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     edit_date = db.Column(db.DateTime, default=datetime.utcnow)
     edit_details = db.Column(db.Text)
 

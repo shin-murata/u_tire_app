@@ -42,7 +42,7 @@ def index():
 # ユーザーローダー関数
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return User.query.filter_by(id=user_id).first()  # ✅ `users.id` を明確に指定
 
 # ログインルート
 @app.route('/login', methods=['GET', 'POST'])
@@ -587,7 +587,7 @@ def dispatch():
                 # 出庫履歴を記録
                 new_dispatch = DispatchHistory(
                     tire_id=tire_id,
-                    user_id=1,  # 仮のログインユーザーID（実際にはセッションなどから取得）
+                    user_id=current_user.id if current_user.is_authenticated else None,  # ✅ `users.id` を正しく参照
                     dispatch_date=dispatch_date  # ✅ `datetime` 型で統一
                 )
                 db.session.add(new_dispatch)
@@ -802,7 +802,7 @@ def edit_page(id):
             if updated:
                 new_edit = HistoryPage(
                     tire_id=id,
-                    user_id=current_user.id if current_user.is_authenticated else 1,
+                    user_id=current_user.id if current_user.is_authenticated else None,  # ✅ `users.id` に統一
                     action="編集",
                     edit_date=datetime.now(JST),
                     details=", ".join(edit_details)
