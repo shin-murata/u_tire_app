@@ -9,7 +9,7 @@ from config import Config
 from datetime import datetime, date, timezone, timedelta
 import pdfkit
 import uuid
-from flask_cors import CORS  # 🔥 追加
+from flask_cors import CORS, cross_origin  # 🔥 追加
 
 
 # ✅ グローバルで JST を定義（import の直後に記述する）
@@ -673,7 +673,8 @@ def dispatch_page():
         return redirect(url_for('search_page'))
 
 # JSON API（Google Apps Script用）
-@app.route("/shipments", methods=["POST"])
+@app.route("/shipments", methods=['OPTIONS',"POST"])
+@cross_origin()  # これを追加して CORS を適用
 def get_shipments():
     print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
     print(f"🚀 Debug: Request Method: {request.method}")  # リクエストのメソッドを確認
@@ -685,6 +686,13 @@ def get_shipments():
     raw_data = request.data.decode("utf-8") if request.data else "🚨 No request body received"
     print(f"🚀 Debug: Raw Data: {raw_data}")
 
+    if request.method == "OPTIONS":
+        # `204 No Content` を返すことで Preflight Request に対応
+        response = app.response_class(status=204)
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        return response
 
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
