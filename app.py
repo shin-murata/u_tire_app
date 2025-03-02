@@ -678,14 +678,16 @@ def get_shipments():
     print(f"🚀 Debug: Raw Data: {request.data.decode('utf-8')}")  # **リクエストボディの生データ**
 
     # ✅ JSONリクエストかどうかをチェック
-    print(f"🚀 Debug: Content-Type: {request.content_type}")
+    raw_data = request.data.decode("utf-8") if request.data else "🚨 No request body received"
+    print(f"🚀 Debug: Raw Data: {raw_data}")
+
 
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
         print("🚨 405エラー: GET などの不正なリクエストが送信されました")
         return jsonify({"error": "Method Not Allowed. Use POST instead."}), 405
 
-    if request.content_type != "application/json":
+    if request.content_type is None or "application/json" not in request.content_type:
         print("🚨 415エラー: Content-Type が application/json ではありません")
         return jsonify({"error": "Unsupported Media Type. Please use 'application/json'"}), 415
 
@@ -693,17 +695,23 @@ def get_shipments():
     try:
         request_data = request.get_json()
         print(f"🚀 Debug: 受信したリクエストデータ → {request_data}")
-        tire_ids = request_data.get("tire_ids", [])
-        print(f"🚀 Debug: 受信した Tire IDs → {tire_ids}")
-
-        # ✅ `tire_ids` が空の場合は 400 エラーを返す
-        if not tire_ids:
-            print("⚠️ リクエストに `tire_ids` が含まれていません")
-            return jsonify({"error": "No tire IDs provided"}), 400
-
     except Exception as e:
         print(f"🚨 JSONデコードエラー: {e}")
         return jsonify({"error": "Invalid JSON format"}), 400
+    
+    # ✅ 🔥 追加: JSONデータが `None` または空のチェック
+    if not request_data:
+        print("🚨 リクエストボディが空です")
+        return jsonify({"error": "Empty request body"}), 400
+    
+    # ✅ `tire_ids` の取得
+    tire_ids = request_data.get("tire_ids", [])
+    print(f"🚀 Debug: 受信した Tire IDs → {tire_ids}")
+    
+    # ✅ `tire_ids` が空の場合は 400 エラーを返す
+    if not tire_ids:
+        print("⚠️ リクエストに `tire_ids` が含まれていません")
+        return jsonify({"error": "No tire IDs provided"}), 400
 
     # ✅ データベースからデータを取得
     dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(tire_ids)).all()
