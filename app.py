@@ -9,12 +9,16 @@ from config import Config
 from datetime import datetime, date, timezone, timedelta
 import pdfkit
 import uuid
+from flask_cors import CORS  # 🔥 追加
+
 
 # ✅ グローバルで JST を定義（import の直後に記述する）
 JST = timezone(timedelta(hours=9))
 
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
+# CORS の適用範囲を広げる
+CORS(app, resources={r"/*": {"origins": "*"}})  # すべてのルートでCORS許可
 
 # 必要な設定
 app.config['SECRET_KEY'] = 'your_secret_key'
