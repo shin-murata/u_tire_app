@@ -693,6 +693,9 @@ def get_shipments():
         response.headers.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         return response
+    # ✅ `POST` リクエストを受信したら即座にレスポンスを返す（デバッグ用）
+    print("✅ Debug: `POST` リクエストを受信！")
+    return jsonify({"message": "POST request received"}), 200
 
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
