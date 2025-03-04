@@ -695,7 +695,7 @@ def get_shipments():
         return response
     # ✅ `POST` リクエストを受信したら即座にレスポンスを返す（デバッグ用）
     print("✅ Debug: `POST` リクエストを受信！")
-    # 明示的に JSON を返すようにする
+    # **レスポンスを明示的に JSON で返す**
     response_data = {
         "message": "POST request received",
         "status": "success",
