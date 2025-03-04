@@ -694,27 +694,21 @@ def get_shipments():
         return response
 
     print("✅ Debug: `POST` リクエストを受信！")
-    
+
     response_data = {
         "message": "POST request received",
         "status": "success",
         "received_tire_ids": request.get_json().get("tire_ids", [])
     }
 
-    # **🚀 追加: `print()` でレスポンスデータを直接出力**
-    print(f"🚀 Debug: 返すべき JSON データ: {response_data}")
-    
-    response = app.response_class(
-        response=json.dumps(response_data),
-        status=200,
-        mimetype="application/json"
-    )
+    response = jsonify(response_data)
     response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers["Content-Type"] = "application/json"
 
-    # ✅ 追加: `response.get_data(as_text=True)` でレスポンスの内容を確認
-    print(f"🚀 Debug: Flask のレスポンス: {response.get_data(as_text=True)}")
-    
+    # **🚀 ここでレスポンスを確実にログ出力する**
+    response_text = response.get_data(as_text=True)
+    print(f"🚀 Debug: Flask のレスポンス JSON (before send): {response_data}")
+    print(f"🚀 Debug: Flask のレスポンス (raw JSON): {response_text}")
+
     return response, 200
 
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
