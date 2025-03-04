@@ -10,7 +10,7 @@ from datetime import datetime, date, timezone, timedelta
 import pdfkit
 import uuid
 from flask_cors import CORS, cross_origin  # 🔥 追加
-
+import json  # ← これを追加
 
 # ✅ グローバルで JST を定義（import の直後に記述する）
 JST = timezone(timedelta(hours=9))
