@@ -695,12 +695,15 @@ def get_shipments():
         return response
     # ✅ `POST` リクエストを受信したら即座にレスポンスを返す（デバッグ用）
     print("✅ Debug: `POST` リクエストを受信！")
-    # JSONレスポンスを明示的に返す
-    response_data = {"message": "POST request received", "status": "success"}
+    # 明示的に JSON を返すようにする
+    response_data = {
+        "message": "POST request received",
+        "status": "success",
+        "received_tire_ids": request.get_json().get("tire_ids", [])
+    }
     response = jsonify(response_data)
     response.headers.add("Access-Control-Allow-Origin", "*")  # CORS ヘッダーを追加
     return response, 200
-
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
         print("🚨 405エラー: GET などの不正なリクエストが送信されました")
