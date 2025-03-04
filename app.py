@@ -704,7 +704,11 @@ def get_shipments():
     # **🚀 追加: `print()` でレスポンスデータを直接出力**
     print(f"🚀 Debug: 返すべき JSON データ: {response_data}")
     
-    response = jsonify(response_data)
+    response = app.response_class(
+        response=json.dumps(response_data),
+        status=200,
+        mimetype="application/json"
+    )
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers["Content-Type"] = "application/json"
 
