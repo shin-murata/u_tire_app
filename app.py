@@ -703,9 +703,13 @@ def get_shipments():
     
     response = jsonify(response_data)
     response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers["Content-Type"] = "application/json"  # ここを追加
-    return response, 200
+    response.headers["Content-Type"] = "application/json"
+
+    # ✅ 追加: `response.get_data(as_text=True)` でレスポンスの内容を確認
+    print(f"🚀 Debug: Flask のレスポンス: {response.get_data(as_text=True)}")
     
+    return response, 200
+
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
         print("🚨 405エラー: GET などの不正なリクエストが送信されました")
