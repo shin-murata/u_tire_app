@@ -700,6 +700,9 @@ def get_shipments():
         "status": "success",
         "received_tire_ids": request.get_json().get("tire_ids", [])
     }
+
+    # **🚀 追加: `print()` でレスポンスデータを直接出力**
+    print(f"🚀 Debug: 返すべき JSON データ: {response_data}")
     
     response = jsonify(response_data)
     response.headers.add("Access-Control-Allow-Origin", "*")
