@@ -687,23 +687,25 @@ def get_shipments():
     print(f"🚀 Debug: Raw Data: {raw_data}")
 
     if request.method == "OPTIONS":
-        # `204 No Content` を返すことで Preflight Request に対応
         response = app.response_class(status=204)
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         return response
-    # ✅ `POST` リクエストを受信したら即座にレスポンスを返す（デバッグ用）
+
     print("✅ Debug: `POST` リクエストを受信！")
-    # **レスポンスを明示的に JSON で返す**
+    
     response_data = {
         "message": "POST request received",
         "status": "success",
         "received_tire_ids": request.get_json().get("tire_ids", [])
     }
+    
     response = jsonify(response_data)
-    response.headers.add("Access-Control-Allow-Origin", "*")  # CORS ヘッダーを追加
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers["Content-Type"] = "application/json"  # ここを追加
     return response, 200
+    
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
         print("🚨 405エラー: GET などの不正なリクエストが送信されました")
