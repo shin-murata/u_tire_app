@@ -685,31 +685,36 @@ def get_shipments():
     # ✅ JSONリクエストかどうかをチェック
     raw_data = request.data.decode("utf-8") if request.data else "🚨 No request body received"
     print(f"🚀 Debug: Raw Data: {raw_data}")
+    """
+    ✅ Google Apps Script (GAS) API との連携:
+    1. クライアントから `POST` リクエストを受信
+    2. `Google Apps Script (GAS)` にデータを送信
+    3. `GAS` からのレスポンスを取得し、クライアントに返す
+    """
+    # ✅ `POST` リクエストのデータを取得
+    data = request.get_json()
+    print(f"🚀 Debug: 受信データ {data}")  # 受け取ったデータを確認
 
-    if request.method == "OPTIONS":
-        response = app.response_class(status=204)
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        return response
+    # ✅ `tire_ids` の存在確認
+    if not data or "tire_ids" not in data:
+        print("🚨 `tire_ids` がリクエストに含まれていません")
+        return jsonify({"error": "No tire IDs provided"}), 400
 
-    print("✅ Debug: `POST` リクエストを受信！")
+    # ✅ Google Apps Script の API エンドポイント (※ 必ず正しい URL に変更)
+    GAS_API_URL = "https://script.google.com/macros/s/AKfycby5LGqlslQJxXuT9p6RBiFm_QogqF8_sEfhvBROZGL8Bl7NYmjhgNTkjihWm89XINh4/exec"
 
-    response_data = {
-        "message": "POST request received",
-        "status": "success",
-        "received_tire_ids": request.get_json().get("tire_ids", [])
-    }
+    try:
+        # ✅ `GAS` にデータを送信
+        response = requests.post(GAS_API_URL, json=data)
+        print(f"🚀 Debug: GAS のレスポンス {response.text}")  # `GAS` からのレスポンス確認
 
-    response = jsonify(response_data)
-    response.headers.add("Access-Control-Allow-Origin", "*")
+        # ✅ `GAS` のレスポンスを Flask のレスポンスとして返す
+        return jsonify({"status": "success", "gas_response": response.text}), 200
 
-    # **🚀 ここでレスポンスを確実にログ出力する**
-    response_text = response.get_data(as_text=True)
-    print(f"🚀 Debug: Flask のレスポンス JSON (before send): {response_data}")
-    print(f"🚀 Debug: Flask のレスポンス (raw JSON): {response_text}")
-
-    return response, 200
+    except Exception as e:
+        # 🚨 `GAS` への送信エラーが発生した場合
+        print(f"🚨 Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
     # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
     if request.method != "POST":
