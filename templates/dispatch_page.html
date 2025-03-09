@@ -96,38 +96,44 @@
         if (!pdfForm) {
             console.error("❌ `pdfForm` が見つかりません！ JavaScript の実行前に HTML が完全にロードされていますか？");
             return;
-        } else {
-            console.log("✅ `pdfForm` が見つかりました:", pdfForm);
         }
+
+        console.log("✅ `pdfForm` が見つかりました:", pdfForm);
 
         pdfForm.addEventListener("submit", function(event) {
             event.preventDefault();  // ページ遷移を防ぐ
-
             console.log("🚀 `fetch()` を実行します...");
 
             var url = "https://script.google.com/macros/s/AKfycbwaO91xHAKW1sG5DUc8TUv8Qe_w0i6V7vt_qruMZwlPByD0afh_Or6u7Y9p--Z1irZu/exec";
             var data = {
                 message: "PDF印刷リクエスト",
                 dispatch_date: "{{ dispatch_date }}",
-                tires: [
-                    {% for tire in tires_to_dispatch %}
-                    {
-                        id: "{{ tire.id }}",
-                        manufacturer: "{{ tire.manufacturer_ref.name }}",
-                        manufacturing_year: "{{ tire.manufacturing_year }}",
-                        tread_depth: "{{ tire.tread_depth }}",
-                        uneven_wear: "{{ tire.uneven_wear }}",
-                        ply_rating: "{{ tire.ply_rating_ref.value }}",
-                        other_details: "{{ tire.other_details }}",
-                        price: "{{ tire.price }}"
-                    }{% if not loop.last %},{% endif %}
-                    {% endfor %}
-                ],
-                total_tires: "{{ total_tires }}",
-                total_price: "{{ total_price }}",
-                tax: "{{ tax }}",
-                total_price_with_tax: "{{ total_price_with_tax }}"
+                tires: []  // 初期値として空の配列
             };
+
+            let tireElements = document.querySelectorAll(".copied-tire-form");
+            if (tireElements.length === 0) {
+                console.warn("⚠️ `copied-tire-form` の要素が見つかりません。データが空です。");
+            } else {
+                tireElements.forEach(tire => {
+                    let tireData = {
+                        id: tire.querySelector('[name="id"]')?.value || "N/A",
+                        manufacturer: tire.querySelector('[name="manufacturer[]"]')?.value || "N/A",
+                        manufacturing_year: tire.querySelector('[name="manufacturing_year[]"]')?.value || "N/A",
+                        tread_depth: tire.querySelector('[name="tread_depth[]"]')?.value || "N/A",
+                        uneven_wear: tire.querySelector('[name="uneven_wear[]"]')?.value || "N/A",
+                        ply_rating: tire.querySelector('[name="ply_rating[]"]')?.value || "N/A",
+                        other_details: tire.querySelector('[name="other_details[]"]')?.value || "N/A",
+                        price: tire.querySelector('[name="price"]')?.value || "N/A"
+                    };
+                    data.tires.push(tireData);
+                });
+            }
+
+            data.total_tires = "{{ total_tires }}";
+            data.total_price = "{{ total_price }}";
+            data.tax = "{{ tax }}";
+            data.total_price_with_tax = "{{ total_price_with_tax }}";
 
             console.log("📦 送信データ:", JSON.stringify(data, null, 2));  // 送るデータを確認
 
