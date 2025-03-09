@@ -94,21 +94,19 @@
 
         let pdfForm = document.getElementById("pdfForm");
         if (!pdfForm) {
-            console.error("❌ `pdfForm` が見つかりません！ JavaScript の実行前に HTML が完全にロードされていますか？");
+            console.error("❌ `pdfForm` が見つかりません！");
             return;
         }
-
         console.log("✅ `pdfForm` が見つかりました:", pdfForm);
 
         pdfForm.addEventListener("submit", function(event) {
-            event.preventDefault();  // ページ遷移を防ぐ
-            console.log("🚀 `fetch()` を実行します...");
+            event.preventDefault();
 
-            var url = "https://script.google.com/macros/s/AKfycby5LGqlslQJxXuT9p6RBiFm_QogqF8_sEfhvBROZGL8Bl7NYmjhgNTkjihWm89XINh4/exec";
-            var data = {
+            let url = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+            let data = {
                 message: "PDF印刷リクエスト",
                 dispatch_date: "{{ dispatch_date }}",
-                tires: []  // 初期値として空の配列
+                tires: []
             };
 
             let tireElements = document.querySelectorAll(".copied-tire-form");
@@ -130,40 +128,31 @@
                 });
             }
 
-            data.total_tires = "{{ total_tires }}";
-            data.total_price = "{{ total_price }}";
-            data.tax = "{{ tax }}";
-            data.total_price_with_tax = "{{ total_price_with_tax }}";
-
-            console.log("📦 送信データ:", JSON.stringify(data, null, 2));  // 送るデータを確認
+            console.log("📦 送信データ:", data);
 
             fetch(url, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 mode: "cors",
                 body: JSON.stringify(data)
             })
             .then(response => {
                 console.log("📥 `fetch()` のレスポンスを受信:", response);
-                console.log("🔍 ステータスコード:", response.status);
-                console.log("🔍 レスポンスヘッダー:", [...response.headers.entries()]);
-
                 if (!response.ok) {
                     throw new Error("HTTPエラー, ステータス: " + response.status);
                 }
                 return response.text();
             })
             .then(result => {
-                console.log("✅ `fetch()` 成功:", result);
-                alert("📄 PDF生成リクエストを送信しました！");
+                console.log("✅ 成功:", result);
+                alert("PDF生成リクエストを送信しました！");
             })
             .catch(error => {
                 console.error("❌ `fetch()` エラー:", error);
-                alert("⚠️ 送信に失敗しました！");
+                alert("送信に失敗しました");
             });
         });
     });
+
 </script>    
 {% endblock %}
