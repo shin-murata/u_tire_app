@@ -693,7 +693,7 @@ def get_shipments():
     if not data or "tire_ids" not in data:
         return jsonify({"error": "No tire IDs provided"}), 400
 
-    # ✅ `JOIN` を使用して各フィールドを値に変換して取得
+    # ✅ `outerjoin` を使用して NULL の場合も取得できるようにする
     tires = (
         db.session.query(
             InputPage.id,
@@ -708,11 +708,11 @@ def get_shipments():
             InputPage.other_details,
             InputPage.price
         )
-        .join(Manufacturer, InputPage.manufacturer == Manufacturer.id)
-        .join(Width, InputPage.width == Width.id)
-        .join(AspectRatio, InputPage.aspect_ratio == AspectRatio.id)
-        .join(Inch, InputPage.inch == Inch.id)
-        .join(PlyRating, InputPage.ply_rating == PlyRating.id)
+        .outerjoin(Manufacturer, InputPage.manufacturer == Manufacturer.id)
+        .outerjoin(Width, InputPage.width == Width.id)
+        .outerjoin(AspectRatio, InputPage.aspect_ratio == AspectRatio.id)
+        .outerjoin(Inch, InputPage.inch == Inch.id)
+        .outerjoin(PlyRating, InputPage.ply_rating == PlyRating.id)
         .filter(InputPage.id.in_(data["tire_ids"]))
         .all()
     )
@@ -721,7 +721,6 @@ def get_shipments():
         return jsonify({"error": "No matching tires found"}), 404
 
     # ✅ GAS に送るデータを組み立て
-    # ✅ データを辞書に変換
     shipment_data = [
         {
             "id": tire.id,
@@ -743,6 +742,9 @@ def get_shipments():
         "shipments": shipment_data,
         "dispatch_date": datetime.now().strftime("%Y-%m-%d")  # 出庫日を追加
     }
+
+    # ✅ デバッグ用ログ
+    print("🚀 送信するデータ:", json.dumps(payload, ensure_ascii=False, indent=2))
 
     # ✅ GAS にデータを送信
     response = requests.post(GAS_API_URL, json=payload)
