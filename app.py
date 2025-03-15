@@ -7,7 +7,7 @@ from utils import role_required # role_requiredをインポート
 from routes.admin import admin_bp
 from config import Config
 from datetime import datetime, date, timezone, timedelta
-import pdfkit
+import requests
 import uuid
 from flask_cors import CORS, cross_origin  # 🔥 追加
 import json  # ← これを追加
@@ -671,138 +671,121 @@ def dispatch_page():
         print(f"Error fetching dispatch history: {e}")
         flash(f"エラーが発生しました: {e}", "danger")
         return redirect(url_for('search_page'))
+    
+# ✅ Google Apps Script の API エンドポイント (※ 必ず正しい URL に変更)
+GAS_API_URL = "https://script.google.com/macros/s/AKfycby5LGqlslQJxXuT9p6RBiFm_QogqF8_sEfhvBROZGL8Bl7NYmjhgNTkjihWm89XINh4/exec"
 
-# JSON API（Google Apps Script用）
-@app.route("/shipments", methods=['OPTIONS',"POST"])
-@cross_origin()  # これを追加して CORS を適用
+### =========================================
+### ✅ `/shipments` → タイヤ ID を受け取り詳細データを GAS へ送信
+### =========================================
+@app.route("/shipments", methods=["OPTIONS", "POST"])
 def get_shipments():
-    print("🚀 Debug: /shipments エンドポイントにリクエストを受信しました")
-    print(f"🚀 Debug: Request Method: {request.method}")  # リクエストのメソッドを確認
-    print(f"🚀 Debug: Content-Type: {request.content_type}")  # Content-Type を確認
-    print(f"🚀 Debug: Full Headers: {dict(request.headers)}")  # **リクエストヘッダー**
-    print(f"🚀 Debug: Raw Data: {request.data.decode('utf-8')}")  # **リクエストボディの生データ**
+    """フロントエンドから受け取ったタイヤ ID を元にデータベースから詳細情報を取得し、GAS へ送信する"""
+    
+    if request.method == "OPTIONS":
+        response = jsonify({"message": "CORS preflight response"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        return response, 200
 
-    # ✅ JSONリクエストかどうかをチェック
-    raw_data = request.data.decode("utf-8") if request.data else "🚨 No request body received"
-    print(f"🚀 Debug: Raw Data: {raw_data}")
-    """
-    ✅ Google Apps Script (GAS) API との連携:
-    1. クライアントから `POST` リクエストを受信
-    2. `Google Apps Script (GAS)` にデータを送信
-    3. `GAS` からのレスポンスを取得し、クライアントに返す
-    """
-    # ✅ `POST` リクエストのデータを取得
     data = request.get_json()
-    print(f"🚀 Debug: 受信データ {data}")  # 受け取ったデータを確認
-
-    # ✅ `tire_ids` の存在確認
     if not data or "tire_ids" not in data:
-        print("🚨 `tire_ids` がリクエストに含まれていません")
         return jsonify({"error": "No tire IDs provided"}), 400
 
-    # ✅ Google Apps Script の API エンドポイント (※ 必ず正しい URL に変更)
-    GAS_API_URL = "https://script.google.com/macros/s/AKfycby5LGqlslQJxXuT9p6RBiFm_QogqF8_sEfhvBROZGL8Bl7NYmjhgNTkjihWm89XINh4/exec"
+    # ✅ `tire_ids` からデータベースで詳細データを抽出
+    tires = InputPage.query.filter(InputPage.id.in_(data["tire_ids"])).all()
+
+    if not tires:
+        return jsonify({"error": "No matching tires found"}), 404
+
+    # ✅ GAS に送るデータを組み立て
+    shipment_data = []
+    for tire in tires:
+        shipment_data.append({
+            "id": tire.id,
+            "manufacturer": tire.manufacturer,
+            "manufacturing_year": tire.manufacturing_year,
+            "tread_depth": tire.tread_depth,
+            "uneven_wear": tire.uneven_wear,
+            "ply_rating": tire.ply_rating,
+            "other_details": tire.other_details,
+            "price": tire.price,
+            "width": tire.width,
+            "aspect_ratio": tire.aspect_ratio,
+            "inch": tire.inch
+        })
+
+    payload = {
+        "shipments": shipment_data,
+        "dispatch_date": datetime.now().strftime("%Y-%m-%d")  # 出庫日を追加
+    }
+
+    # ✅ GAS にデータを送信
+    response = requests.post(GAS_API_URL, json=payload)
+
+    return jsonify({"status": "success", "gas_response": response.text}), 200
+
+### =========================================
+### ✅ `/send_to_gas` → 確定した出庫データを GAS に送信
+### =========================================
+@app.route('/send_to_gas', methods=['POST'])
+def send_to_gas():
+    """確定した出庫データを GAS に送信し、スプレッドシート記録 & PDF 生成"""
 
     try:
-        # ✅ `GAS` にデータを送信
-        response = requests.post(GAS_API_URL, json=data)
-        print(f"🚀 Debug: GAS のレスポンス {response.text}")  # `GAS` からのレスポンス確認
+        # ✅ 出庫履歴から今回の出庫データを取得
+        processed_tire_ids = session.get('processed_tires', [])  # セッションから取得
+        dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
 
-        # ✅ `GAS` のレスポンスを Flask のレスポンスとして返す
+        # ✅ 出庫対象タイヤを取得
+        tires_to_dispatch = [InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history]
+
+        # ✅ 出庫日を取得（最初のデータを使用）
+        dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
+
+        # ✅ 合計数と合計金額を計算
+        total_tires = len(tires_to_dispatch)
+        total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
+        tax = int(total_price * 0.1)  # 消費税10%
+        total_price_with_tax = total_price + tax
+
+        # ✅ GAS に送るデータを組み立て
+        payload = {
+            "dispatch_date": dispatch_date,
+            "common_data": {
+                "width": tires_to_dispatch[0].width if tires_to_dispatch else None,
+                "aspect_ratio": tires_to_dispatch[0].aspect_ratio if tires_to_dispatch else None,
+                "inch": tires_to_dispatch[0].inch if tires_to_dispatch else None,
+                "ply_rating": tires_to_dispatch[0].ply_rating if tires_to_dispatch else None
+            },
+            "shipments": [
+                {
+                    "id": tire.id,
+                    "manufacturer": tire.manufacturer,
+                    "manufacturing_year": tire.manufacturing_year,
+                    "tread_depth": tire.tread_depth,
+                    "uneven_wear": tire.uneven_wear,
+                    "ply_rating": tire.ply_rating,
+                    "other_details": tire.other_details,
+                    "price": tire.price
+                } for tire in tires_to_dispatch
+            ],
+            "total_tires": total_tires,
+            "total_price": total_price,
+            "tax": tax,
+            "total_price_with_tax": total_price_with_tax
+        }
+
+        # ✅ GAS にデータを送信
+        response = requests.post(GAS_API_URL, json=payload)
+
         return jsonify({"status": "success", "gas_response": response.text}), 200
 
     except Exception as e:
-        # 🚨 `GAS` への送信エラーが発生した場合
         print(f"🚨 Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-    # ✅ メソッドチェック: Flask 側で `POST` 以外のリクエストを受け付けないようにする
-    if request.method != "POST":
-        print("🚨 405エラー: GET などの不正なリクエストが送信されました")
-        return jsonify({"error": "Method Not Allowed. Use POST instead."}), 405
-
-    if request.content_type is None or "application/json" not in request.content_type:
-        print("🚨 415エラー: Content-Type が application/json ではありません")
-        return jsonify({"error": "Unsupported Media Type. Please use 'application/json'"}), 415
-
-    # ✅ リクエストボディから `tire_ids` を取得
-    try:
-        request_data = request.get_json()
-        print(f"🚀 Debug: 受信したリクエストデータ → {request_data}")
-    except Exception as e:
-        print(f"🚨 JSONデコードエラー: {e}")
-        return jsonify({"error": "Invalid JSON format"}), 400
-    
-    # ✅ 🔥 追加: JSONデータが `None` または空のチェック
-    if not request_data:
-        print("🚨 リクエストボディが空です")
-        return jsonify({"error": "Empty request body"}), 400
-    
-    # ✅ `tire_ids` の取得
-    tire_ids = request_data.get("tire_ids", [])
-    print(f"🚀 Debug: 受信した Tire IDs → {tire_ids}")
-    
-    # ✅ `tire_ids` が空の場合は 400 エラーを返す
-    if not tire_ids:
-        print("⚠️ リクエストに `tire_ids` が含まれていません")
-        return jsonify({"error": "No tire IDs provided"}), 400
-
-    # ✅ データベースからデータを取得
-    dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(tire_ids)).all()
-    print(f"🚀 Debug: 取得した出庫履歴の数 → {len(dispatch_history)}")
-    # 🚨 **修正ポイント**: データがまだ反映されていない場合、`202 Accepted` を返す
-    if not dispatch_history:
-        print("🚨 データがまだ反映されていない可能性があります。")
-        return jsonify({"error": "Dispatch data not available yet. Try again later."}), 202
-
-    # ✅ 出庫データを取得
-    tires_to_dispatch = [InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history if InputPage.query.get(dispatch.tire_id)]
-    print(f"🚀 Debug: API tires_to_dispatch content → {[tire.id for tire in tires_to_dispatch if tire]}")
-
-    # ✅ 出庫日を取得
-    dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
-    print(f"🚀 Debug: Dispatch Date → {dispatch_date}")
-
-    total_tires = len(tires_to_dispatch)
-    total_price = sum(tire.price if tire and tire.price is not None else 0 for tire in tires_to_dispatch)
-    tax = int(total_price * 0.1)
-    total_price_with_tax = total_price + tax
-
-    # ✅ 共通データの取得
-    if tires_to_dispatch:
-        first_tire = tires_to_dispatch[0]
-        common_data = {
-            "width": first_tire.width,
-            "aspect_ratio": first_tire.aspect_ratio,
-            "inch": first_tire.inch,
-            "ply_rating": first_tire.ply_rating
-        }
-    else:
-        common_data = {}
-
-    return jsonify({
-        "shipments": [
-            {
-                "id": tire.id,
-                "manufacturer": tire.manufacturer,
-                "manufacturing_year": tire.manufacturing_year,
-                "tread_depth": tire.tread_depth,
-                "uneven_wear": tire.uneven_wear,
-                "ply_rating": tire.ply_rating,
-                "other_details": tire.other_details,
-                "price": tire.price,
-                "width": tire.width,
-                "aspect_ratio": tire.aspect_ratio,
-                "inch": tire.inch
-            } for tire in tires_to_dispatch
-        ],
-        "total_tires": total_tires,
-        "total_price": total_price,
-        "tax": tax,
-        "total_price_with_tax": total_price_with_tax,
-        "dispatch_date": dispatch_date,
-        "common_data": common_data
-    })
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):
