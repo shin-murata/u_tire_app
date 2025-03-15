@@ -693,28 +693,51 @@ def get_shipments():
     if not data or "tire_ids" not in data:
         return jsonify({"error": "No tire IDs provided"}), 400
 
-    # ✅ `tire_ids` からデータベースで詳細データを抽出
-    tires = InputPage.query.filter(InputPage.id.in_(data["tire_ids"])).all()
+    # ✅ `JOIN` を使用して各フィールドを値に変換して取得
+    tires = (
+        db.session.query(
+            InputPage.id,
+            Manufacturer.name.label("manufacturer"),
+            Width.value.label("width"),
+            AspectRatio.value.label("aspect_ratio"),
+            Inch.value.label("inch"),
+            PlyRating.value.label("ply_rating"),
+            InputPage.manufacturing_year,
+            InputPage.tread_depth,
+            InputPage.uneven_wear,
+            InputPage.other_details,
+            InputPage.price
+        )
+        .join(Manufacturer, InputPage.manufacturer == Manufacturer.id)
+        .join(Width, InputPage.width == Width.id)
+        .join(AspectRatio, InputPage.aspect_ratio == AspectRatio.id)
+        .join(Inch, InputPage.inch == Inch.id)
+        .join(PlyRating, InputPage.ply_rating == PlyRating.id)
+        .filter(InputPage.id.in_(data["tire_ids"]))
+        .all()
+    )
 
     if not tires:
         return jsonify({"error": "No matching tires found"}), 404
 
     # ✅ GAS に送るデータを組み立て
-    shipment_data = []
-    for tire in tires:
-        shipment_data.append({
+    # ✅ データを辞書に変換
+    shipment_data = [
+        {
             "id": tire.id,
             "manufacturer": tire.manufacturer,
+            "width": tire.width,
+            "aspect_ratio": tire.aspect_ratio,
+            "inch": tire.inch,
+            "ply_rating": tire.ply_rating,
             "manufacturing_year": tire.manufacturing_year,
             "tread_depth": tire.tread_depth,
             "uneven_wear": tire.uneven_wear,
-            "ply_rating": tire.ply_rating,
             "other_details": tire.other_details,
-            "price": tire.price,
-            "width": tire.width,
-            "aspect_ratio": tire.aspect_ratio,
-            "inch": tire.inch
-        })
+            "price": tire.price
+        }
+        for tire in tires
+    ]
 
     payload = {
         "shipments": shipment_data,
@@ -738,9 +761,33 @@ def send_to_gas():
         processed_tire_ids = session.get('processed_tires', [])  # セッションから取得
         dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
 
-        # ✅ 出庫対象タイヤを取得
-        tires_to_dispatch = [InputPage.query.get(dispatch.tire_id) for dispatch in dispatch_history]
-
+        if not dispatch_history:
+            return jsonify({"error": "No dispatch records found"}), 404
+        
+        # ✅ `JOIN` を使用してデータを取得
+        tires_to_dispatch = (
+            db.session.query(
+                InputPage.id,
+                Manufacturer.name.label("manufacturer"),
+                Width.value.label("width"),
+                AspectRatio.value.label("aspect_ratio"),
+                Inch.value.label("inch"),
+                PlyRating.value.label("ply_rating"),
+                InputPage.manufacturing_year,
+                InputPage.tread_depth,
+                InputPage.uneven_wear,
+                InputPage.other_details,
+                InputPage.price
+            )
+            .join(Manufacturer, InputPage.manufacturer == Manufacturer.id)
+            .join(Width, InputPage.width == Width.id)
+            .join(AspectRatio, InputPage.aspect_ratio == AspectRatio.id)
+            .join(Inch, InputPage.inch == Inch.id)
+            .join(PlyRating, InputPage.ply_rating == PlyRating.id)
+            .filter(InputPage.id.in_([dispatch.tire_id for dispatch in dispatch_history]))
+            .all()
+        )
+        
         # ✅ 出庫日を取得（最初のデータを使用）
         dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
 
