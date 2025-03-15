@@ -787,7 +787,7 @@ def send_to_gas():
             .filter(InputPage.id.in_([dispatch.tire_id for dispatch in dispatch_history]))
             .all()
         )
-        
+
         # ✅ 出庫日を取得（最初のデータを使用）
         dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
 
@@ -823,6 +823,9 @@ def send_to_gas():
             "tax": tax,
             "total_price_with_tax": total_price_with_tax
         }
+
+        # ✅ デバッグ出力
+        print("🚀 送信するデータ:", json.dumps(payload, ensure_ascii=False, indent=2))
 
         # ✅ GAS にデータを送信
         response = requests.post(GAS_API_URL, json=payload)
