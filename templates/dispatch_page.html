@@ -83,8 +83,8 @@
 
     <!-- PDF生成リクエストボタン -->
     <form id="pdfForm">
-        <button type="submit" class="btn btn-info">指示書をPDFで印刷</button>
-    </form>    
+        <button id="pdf-button" type="button" class="btn btn-info">指示書をPDFで印刷</button>
+    </form>
 </div>
 
 <!-- JavaScript 部分 -->
@@ -92,19 +92,18 @@
     document.addEventListener("DOMContentLoaded", function () {
         console.log("🚀 DOMが完全に読み込まれました");
 
-        let pdfForm = document.getElementById("pdfForm");
-        if (!pdfForm) {
-            console.error("❌ `pdfForm` が見つかりません！");
+        let pdfButton = document.getElementById("pdf-button");
+        if (!pdfButton) {
+            console.error("❌ `pdf-button` が見つかりません！");
             return;
         }
-        console.log("✅ `pdfForm` が見つかりました:", pdfForm);
+        console.log("✅ `pdf-button` が見つかりました:", pdfButton);
 
-        pdfForm.addEventListener("submit", function(event) {
-            event.preventDefault();
+        pdfButton.addEventListener("click", function(event) {
+            event.preventDefault();  // フォーム送信を防ぐ
 
-            let url = "https://script.google.com/macros/s/AKfycby5LGqlslQJxXuT9p6RBiFm_QogqF8_sEfhvBROZGL8Bl7NYmjhgNTkjihWm89XINh4/exec";
+            let url = "https://u-tire-app-dev.onrender.com/send_to_gas";  // Flask の API に変更
             let data = {
-                message: "PDF印刷リクエスト",
                 dispatch_date: "{{ dispatch_date }}",
                 tires: []
             };
@@ -133,18 +132,18 @@
             fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tire_ids: ["314"] })  // ✅ 一旦固定のIDを送る
+                body: JSON.stringify(data)  // ✅ 実際のデータを送信
             })
             .then(response => {
                 console.log("📥 `fetch()` のレスポンスを受信:", response);
                 if (!response.ok) {
                     throw new Error("HTTPエラー, ステータス: " + response.status);
                 }
-                return response.text();
+                return response.json();
             })
             .then(result => {
-                console.log("✅ 成功:", result);
-                alert("PDF生成リクエストを送信しました！");
+                console.log("✅ GAS へのリクエスト成功:", result);
+                alert("スプレッドシートへデータ送信 & PDF生成リクエストを送りました！");
             })
             .catch(error => {
                 console.error("❌ `fetch()` エラー:", error);
@@ -152,6 +151,5 @@
             });
         });
     });
-
 </script>    
 {% endblock %}
