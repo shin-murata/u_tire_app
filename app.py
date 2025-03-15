@@ -759,7 +759,13 @@ def send_to_gas():
     try:
         # ✅ 出庫履歴から今回の出庫データを取得
         processed_tire_ids = session.get('processed_tires', [])  # セッションから取得
+        print(f"🚀 DEBUG: processed_tire_ids = {processed_tire_ids}")  # デバッグ追加
+
+        if not processed_tire_ids:
+            return jsonify({"error": "No processed tire IDs found"}), 400
+
         dispatch_history = DispatchHistory.query.filter(DispatchHistory.tire_id.in_(processed_tire_ids)).all()
+        print(f"🚀 DEBUG: dispatch_history = {[d.tire_id for d in dispatch_history]}")  # デバッグ追加
 
         if not dispatch_history:
             return jsonify({"error": "No dispatch records found"}), 404
@@ -787,6 +793,11 @@ def send_to_gas():
             .filter(InputPage.id.in_([dispatch.tire_id for dispatch in dispatch_history]))
             .all()
         )
+
+        print(f"🚀 DEBUG: tires_to_dispatch = {[t.id for t in tires_to_dispatch]}")  # デバッグ追加
+
+        if not tires_to_dispatch:
+            return jsonify({"error": "No tires found for dispatch"}), 404
 
         # ✅ 出庫日を取得（最初のデータを使用）
         dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
