@@ -769,8 +769,8 @@ def send_to_gas():
 
         if not dispatch_history:
             return jsonify({"error": "No dispatch records found"}), 404
-        
-        # ✅ `JOIN` を使用してデータを取得
+
+        # ✅ `JOIN` を使用してデータを取得 (外部結合 & int() 適用)
         tires_to_dispatch = (
             db.session.query(
                 InputPage.id,
@@ -785,18 +785,19 @@ def send_to_gas():
                 InputPage.other_details,
                 InputPage.price
             )
-            .join(Manufacturer, InputPage.manufacturer == Manufacturer.id)
-            .join(Width, InputPage.width == Width.id)
-            .join(AspectRatio, InputPage.aspect_ratio == AspectRatio.id)
-            .join(Inch, InputPage.inch == Inch.id)
-            .join(PlyRating, InputPage.ply_rating == PlyRating.id)
-            .filter(InputPage.id.in_([dispatch.tire_id for dispatch in dispatch_history]))
+            .outerjoin(Manufacturer, InputPage.manufacturer == Manufacturer.id)
+            .outerjoin(Width, InputPage.width == Width.id)
+            .outerjoin(AspectRatio, InputPage.aspect_ratio == AspectRatio.id)
+            .outerjoin(Inch, InputPage.inch == Inch.id)
+            .outerjoin(PlyRating, InputPage.ply_rating == PlyRating.id)
+            .filter(InputPage.id.in_([int(dispatch.tire_id) for dispatch in dispatch_history]))
             .all()
         )
 
         print(f"🚀 DEBUG: tires_to_dispatch = {[t.id for t in tires_to_dispatch]}")  # デバッグ追加
 
         if not tires_to_dispatch:
+            print("🚨 ERROR: No matching tires found in InputPage.")
             return jsonify({"error": "No tires found for dispatch"}), 404
 
         # ✅ 出庫日を取得（最初のデータを使用）
@@ -846,7 +847,6 @@ def send_to_gas():
     except Exception as e:
         print(f"🚨 Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):
