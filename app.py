@@ -644,7 +644,7 @@ def dispatch_page():
 
         # dispatch_date をフォーマットする
         if dispatch_date and isinstance(dispatch_date, datetime):
-            dispatch_date = dispatch_date.strftime('%Y-%m-%d')
+            dispatch_date = (dispatch_date + timedelta(hours=9)).strftime('%Y-%m-%d')  # ✅ JST に変換
 
         # 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)
@@ -740,7 +740,7 @@ def get_shipments():
 
     payload = {
         "shipments": shipment_data,
-        "dispatch_date": datetime.now().strftime("%Y-%m-%d")  # 出庫日を追加
+        "dispatch_date": datetime.now(JST).strftime("%Y-%m-%d")  # ✅ JST に統一
     }
 
     # ✅ デバッグ用ログ
@@ -803,7 +803,13 @@ def send_to_gas():
             return jsonify({"error": "No tires found for dispatch"}), 404
 
         # ✅ 出庫日を取得（最初のデータを使用）
-        dispatch_date = dispatch_history[0].dispatch_date.strftime('%Y-%m-%d') if dispatch_history else None
+        dispatch_date = None
+        if dispatch_history:
+            first_dispatch = dispatch_history[0].dispatch_date
+            if isinstance(first_dispatch, datetime) and first_dispatch.tzinfo is None:
+                dispatch_date = (first_dispatch + timedelta(hours=9)).strftime('%Y-%m-%d')  # UTCなら+9時間
+            else:
+                dispatch_date = first_dispatch.astimezone(JST).strftime('%Y-%m-%d')  # すでにタイムゾーンがあるならJSTに変換
 
         # ✅ 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)
@@ -929,11 +935,13 @@ def history_page():
     dispatch_records = []  # ここでリストを定義
     for record in dispatch_history:
         try:
-            if record.dispatch_date:  # Noneチェック
-                dispatch_date = record.dispatch_date.astimezone(JST)  # JSTに変換
-                formatted_date = dispatch_date.strftime('%Y-%m-%d')  # YYYY-MM-DD 形式
+            if record.dispatch_date:
+                if isinstance(record.dispatch_date, datetime) and record.dispatch_date.tzinfo is None:
+                    dispatch_date = (record.dispatch_date + timedelta(hours=9)).strftime('%Y-%m-%d')  # UTCなら+9時間
+                else:
+                    dispatch_date = record.dispatch_date.astimezone(JST).strftime('%Y-%m-%d')  # すでにタイムゾーンがあるならJSTに変換
             else:
-                formatted_date = ''  # None の場合は空文字
+                dispatch_date = ''
 
             # 修正後の `dispatch_date` をリストに追加
             dispatch_records.append({
