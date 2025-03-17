@@ -673,7 +673,7 @@ def dispatch_page():
         return redirect(url_for('search_page'))
     
 # ✅ Google Apps Script の API エンドポイント (※ 必ず正しい URL に変更)
-GAS_API_URL = "https://script.google.com/macros/s/AKfycbyi7K5_WuxDlBSuhV3M1WEAFyKh1hR-UQ3wffqg1wi78L4yI0RXA7UxDAqWqhQNjCVc/exec"
+GAS_API_URL = "https://script.google.com/macros/s/AKfycbx7vd2e0SlpQMeByLzqgQD8FbOoRp4mmCp3aAFM0L44-usuLatefT8n4bRB1Xc8DS0/exec"
 
 ### =========================================
 ### ✅ `/shipments` → タイヤ ID を受け取り詳細データを GAS へ送信
