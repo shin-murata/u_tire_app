@@ -10,7 +10,10 @@
         function openPDF() {
             var pdfUrl = "{{ pdf_url }}";  // Flask から受け取った PDF の URL
             if (pdfUrl) {
-                window.open(pdfUrl, '_blank');  // ✅ 新しいタブで PDF を開く
+                console.log("🚀 PDF を開く:", pdfUrl);
+                window.open(pdfUrl, '_blank');  // ✅ **新しいタブで PDF を開く**
+            } else {
+                console.log("🚨 PDF URL が受信できませんでした");
             }
         }
     </script>

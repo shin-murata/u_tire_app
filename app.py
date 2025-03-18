@@ -673,7 +673,7 @@ def dispatch_page():
         return redirect(url_for('search_page'))
     
 # ✅ Google Apps Script の API エンドポイント (※ 必ず正しい URL に変更)
-GAS_API_URL = "https://script.google.com/macros/s/AKfycbxf90HwOMPaKC5C_gaQc35C3_VExC3OwLzIGW3PHQpGoPJ82XufwG_VVJZ_Ds6luFmO/exec"
+GAS_API_URL = "https://script.google.com/macros/s/AKfycbznU0uVFN7L5BvibBGbzkeLO60DFypsPwca0kKmFw22Fl_-rQUAWkYvVeZLVFxUNCoC/exec"
 
 ### =========================================
 ### ✅ `/shipments` → タイヤ ID を受け取り詳細データを GAS へ送信
@@ -858,14 +858,27 @@ def send_to_gas():
 
 @app.route('/generate-pdf', methods=['POST'])
 def generate_pdf():
-    # GAS から PDF URL を取得
+    # ✅ リクエストデータをデバッグログに記録
+    print("🚀 Flask: GAS からのリクエストを受信")
+
     gas_response = request.json  # GAS のレスポンスを受け取る
+    print("📥 Flask: 受信データ →", gas_response)
+
     pdf_url = gas_response.get("pdf_url")
 
     if not pdf_url:
-        return jsonify({"error": "PDF生成に失敗しました"})
+        print("🚨 Flask: PDF URL が見つかりません")
+        return jsonify({"error": "PDF生成に失敗しました"}), 400
 
-    return render_template('preview.html', pdf_url=pdf_url)
+    print("✅ Flask: 受信した PDF URL →", pdf_url)
+
+    # ✅ Flask のレスポンス
+    response = jsonify({
+        "status": "success",
+        "pdf_url": pdf_url
+    })
+
+    return response
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):
