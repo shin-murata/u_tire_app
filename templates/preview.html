@@ -1,21 +1,16 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF プレビュー</title>
-</head>
-<body onload="openPDF()">
+<body>
+    <h1>PDF プレビュー</h1>
+    <button onclick="openPDF()">PDF を開く</button>
+
     <script>
         function openPDF() {
             var pdfUrl = "{{ pdf_url }}";  // Flask から受け取った PDF の URL
             if (pdfUrl) {
                 console.log("🚀 PDF を開く:", pdfUrl);
-                window.open(pdfUrl, '_blank');  // ✅ **新しいタブで PDF を開く**
+                window.open(pdfUrl, '_blank');  // ✅ **手動クリックで開く**
             } else {
                 console.log("🚨 PDF URL が受信できませんでした");
             }
         }
     </script>
 </body>
-</html>
