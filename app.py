@@ -673,7 +673,7 @@ def dispatch_page():
         return redirect(url_for('search_page'))
     
 # ✅ Google Apps Script の API エンドポイント (※ 必ず正しい URL に変更)
-GAS_API_URL = "https://script.google.com/macros/s/AKfycbxr7sL5ezATzDot4GKMS9TWfZcwruuVA3q_oawElo4cGTyVEKOnG3se00--EqIW0SQl/exec"
+GAS_API_URL = "https://script.google.com/macros/s/AKfycbznH478KpfisTZZa9byIGjxwM7e9hzTdJXHp4ZibGEYxmNabpBP0nJVqCodN9FQHBhF/exec"
 
 ### =========================================
 ### ✅ `/shipments` → タイヤ ID を受け取り詳細データを GAS へ送信
@@ -862,6 +862,11 @@ def generate_pdf():
     print("🚀 Flask: GAS からのリクエストを受信")
 
     gas_response = request.json  # GAS のレスポンスを受け取る
+
+    if gas_response is None:
+        print("🚨 Flask: GAS からのデータが JSON ではない")
+        return jsonify({"error": "Invalid JSON received"}), 400
+
     print("📥 Flask: 受信データ →", gas_response)
 
     pdf_url = gas_response.get("pdf_url")
