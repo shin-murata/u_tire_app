@@ -11,6 +11,7 @@ import requests
 import uuid
 from flask_cors import CORS, cross_origin  # 🔥 追加
 import json  # ← これを追加
+import gc
 
 # ✅ グローバルで JST を定義（import の直後に記述する）
 JST = timezone(timedelta(hours=9))
@@ -849,11 +850,25 @@ def send_to_gas():
 
         # ✅ GAS にデータを送信
         response = requests.post(GAS_API_URL, json=payload)
+        response.raise_for_status()  # HTTPエラーなら例外を発生
 
-        return jsonify({"status": "success", "gas_response": response.text}), 200
+        # ✅ メモリ解放のため不要な変数を削除
+        del payload  
+        del response
+        gc.collect()
 
-    except Exception as e:
-        print(f"🚨 Error: {e}")
+        print(f"✅ GASからのレスポンス: {response.text}")  # レスポンス内容をログに出力
+
+        # ✅ GASのレスポンスを JSON で返す
+        try:
+            gas_response = response.json()
+        except ValueError:
+            gas_response = {"error": "Invalid JSON response from GAS", "response_text": response.text}
+
+        return jsonify(gas_response)
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ GASへのリクエストエラー: {e}")  # エラーログを出力
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/generate-pdf', methods=['POST'])
