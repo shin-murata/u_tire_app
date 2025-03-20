@@ -6,20 +6,31 @@
     <title>PDF プレビュー</title>
 </head>
 <body>
+    <h2>✅ PDF を開く準備ができました</h2>
+    <button id="openPdfButton">📄 PDF を開く</button>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             var pdfUrl = "{{ pdf_url }}";  // Flask から受け取った PDF の URL
-            
-            if (pdfUrl) {
-                console.log("🚀 PDF を開く:", pdfUrl);
-                window.open(pdfUrl, '_blank');  // ✅ 新しいタブで開く
+            var button = document.getElementById("openPdfButton");
 
-                // **現在のプレビュー画面を閉じる**
-                setTimeout(() => window.close(), 1000);
-            } else {
+            if (!pdfUrl) {
                 console.log("🚨 PDF URL が受信できませんでした");
                 document.body.innerHTML = "<h2>🚨 PDF の URL が取得できませんでした</h2>";
+                return;
             }
+
+            console.log("🚀 PDF を開く準備完了:", pdfUrl);
+
+            button.addEventListener("click", function () {
+                let newWindow = window.open(pdfUrl, '_blank');
+
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    alert("⚠️ ポップアップブロックが原因でPDFを開けませんでした。手動でURLを開いてください: " + pdfUrl);
+                } else {
+                    setTimeout(() => window.close(), 1000);  // **現在のウィンドウを閉じる**
+                }
+            });
         });
     </script>
 </body>
