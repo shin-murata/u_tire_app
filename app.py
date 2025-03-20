@@ -858,32 +858,27 @@ def send_to_gas():
 
 @app.route('/generate-pdf', methods=['POST'])
 def generate_pdf():
-    # ✅ リクエストデータをデバッグログに記録
-    print("🚀 Flask: GAS からのリクエストを受信")
+    print("🚀 Flask: /generate-pdf にリクエストを受信")
 
-    gas_response = request.json  # GAS のレスポンスを受け取る
+    try:
+        gas_response = request.json  # GAS のレスポンスを受け取る
+        print("📥 Flask: 受信データ →", gas_response)
 
-    if gas_response is None:
-        print("🚨 Flask: GAS からのデータが JSON ではない")
-        return jsonify({"error": "Invalid JSON received"}), 400
+        pdf_url = gas_response.get("pdf_url")
+        if not pdf_url:
+            raise ValueError("🚨 Flask: PDF URL が None です")
 
-    print("📥 Flask: 受信データ →", gas_response)
+        print("✅ Flask: 受信した PDF URL →", pdf_url)
+            
+        # ✅ フロントエンドに JSON で返す
+        return jsonify({
+            "status": "success",
+            "pdf_url": pdf_url
+        })
 
-    pdf_url = gas_response.get("pdf_url")
-
-    if not pdf_url:
-        print("🚨 Flask: PDF URL が見つかりません")
-        return jsonify({"error": "PDF生成に失敗しました"}), 400
-
-    print("✅ Flask: 受信した PDF URL →", pdf_url)
-
-    # ✅ Flask のレスポンス
-    response = jsonify({
-        "status": "success",
-        "pdf_url": pdf_url
-    })
-
-    return response
+    except Exception as e:
+        print("🚨 Flask: エラー発生", str(e))
+        return jsonify({"error": "サーバーエラー: " + str(e)}), 500
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_page(id):

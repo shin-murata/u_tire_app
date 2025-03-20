@@ -102,7 +102,7 @@
         pdfButton.addEventListener("click", function(event) {
             event.preventDefault();  // フォーム送信を防ぐ
 
-            let url = "https://u-tire-app-dev.onrender.com/send_to_gas";  // Flask の API に変更
+            let url = "https://u-tire-app-dev.onrender.com/send_to_gas";  // Flask の API
             let data = {
                 dispatch_date: "{{ dispatch_date }}",
                 tires: []
@@ -129,10 +129,11 @@
 
             console.log("📦 送信データ:", data);
 
+            // **スプレッドシートにデータ送信**
             fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)  // ✅ 実際のデータを送信
+                body: JSON.stringify(data)
             })
             .then(response => {
                 console.log("📥 `fetch()` のレスポンスを受信:", response);
@@ -143,7 +144,16 @@
             })
             .then(result => {
                 console.log("✅ GAS へのリクエスト成功:", result);
-                alert("スプレッドシートへデータ送信 & PDF生成リクエストを送りました！");
+
+                if (result.status === "success" && result.pdf_url) {
+                    console.log("🚀 PDF生成リクエストを送信中...");
+
+                    // PDFを開く処理
+                    window.open(result.pdf_url, "_blank"); // ✅ 新しいタブで開く
+                    alert("PDFが生成されました！");
+                } else {
+                    alert("PDF の URL が取得できませんでした");
+                }
             })
             .catch(error => {
                 console.error("❌ `fetch()` エラー:", error);
@@ -151,5 +161,5 @@
             });
         });
     });
-</script>    
+</script>
 {% endblock %}
