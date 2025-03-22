@@ -14,7 +14,7 @@
             var pdfUrl = "{{ pdf_url }}";  // Flask から受け取った PDF の URL
             var button = document.getElementById("openPdfButton");
 
-            if (!pdfUrl) {
+            if (!pdfUrl || pdfUrl === "None" || pdfUrl.trim() === "") {
                 console.log("🚨 PDF URL が受信できませんでした");
                 document.body.innerHTML = "<h2>🚨 PDF の URL が取得できませんでした</h2>";
                 return;

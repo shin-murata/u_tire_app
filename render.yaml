@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: u-tire-app-dev
+    env: python
+    buildCommand: ""
+    startCommand: gunicorn app:app --timeout 120
