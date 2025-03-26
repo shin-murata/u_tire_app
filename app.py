@@ -12,6 +12,12 @@ import uuid
 from flask_cors import CORS, cross_origin  # 🔥 追加
 import json  # ← これを追加
 import gc
+import subprocess
+from flask import send_file
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # .env を読み込む
 
 # ✅ グローバルで JST を定義（import の直後に記述する）
 JST = timezone(timedelta(hours=9))
@@ -1140,6 +1146,40 @@ def format_currency(value):
     except ValueError:
         return value  # フォーマットに失敗した場合は元の値を返す
 
+@app.route('/backup', methods=['GET'])
+def backup_database():
+    try:
+        # PostgreSQL 接続情報（Renderの情報に書き換えてください）
+        host = "dpg-cutev07noe9s73997blg-a.db.render.com"
+        user = "u_tire_app_user"
+        dbname = "u_tire_app"
+        port = "5432"
+        output_file = "backup.dump"
+
+        # 環境変数などでパスワードを管理している場合は、それに合わせて
+        env = {
+            "PGPASSWORD": "🔒ここにパスワードを記入（セキュアに保管が望ましい）"
+        }
+
+        # pg_dump コマンドの構築
+        command = [
+            "pg_dump",
+            "-h", host,
+            "-U", user,
+            "-p", port,
+            "-d", dbname,
+            "-F", "c",
+            "-f", output_file
+        ]
+
+        # 実行
+        subprocess.run(command, check=True, env=env)
+
+        # ファイル送信
+        return send_file(output_file, as_attachment=True)
+
+    except subprocess.CalledProcessError as e:
+        return f"バックアップに失敗しました: {str(e)}", 500
 
 if __name__ == '__main__':
     # print(app.url_map)  # 登録済みルートを確認
