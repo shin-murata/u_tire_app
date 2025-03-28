@@ -10,6 +10,7 @@ flask = "^2.3.0"
 gunicorn = ">=23.0.0,<24.0.0"
 # 他の依存ライブラリも必要に応じて追加
 flask-migrate = "^4.1.0"
+flask-login = "^0.6.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
