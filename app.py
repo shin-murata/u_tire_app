@@ -1150,16 +1150,14 @@ def format_currency(value):
 def backup_database():
     try:
         # PostgreSQL 接続情報（Renderの情報に書き換えてください）
-        host = "dpg-cutev07noe9s73997blg-a.db.render.com"
+        host = "dpg-cutev07noe9s73997blg-a.singapore-postgres.render.com"  # ← 正しいドメインに！
         user = "u_tire_app_user"
         dbname = "u_tire_app"
         port = "5432"
         output_file = "backup.dump"
 
-        # 環境変数などでパスワードを管理している場合は、それに合わせて
-        env = {
-            "PGPASSWORD": "🔒ここにパスワードを記入（セキュアに保管が望ましい）"
-        }
+        env = os.environ.copy()
+        env["PGPASSWORD"] = os.getenv("PGPASSWORD")  # .envから読み込み
 
         # pg_dump コマンドの構築
         command = [
