@@ -1,17 +1,15 @@
-[project]
+[tool.poetry]
 name = "u-tire-app"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "murata",email = "finesea_bluesky@icloud.com"}
-]
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "gunicorn (>=23.0.0,<24.0.0)"
-]
+authors = ["murata <finesea_bluesky@icloud.com>"]
 
+[tool.poetry.dependencies]
+python = ">=3.11"
+flask = "*"
+gunicorn = ">=23.0.0,<24.0.0"
+# 他の依存ライブラリも必要に応じて追加
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
