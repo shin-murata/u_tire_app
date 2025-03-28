@@ -6,7 +6,7 @@ authors = ["murata <finesea_bluesky@icloud.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.11"
-flask = "*"
+flask = "^2.3.0"
 gunicorn = ">=23.0.0,<24.0.0"
 # 他の依存ライブラリも必要に応じて追加
 
