@@ -150,9 +150,10 @@
 
                 if (result.status === "success" && result.pdf_url) {
                     console.log("🚀 PDF生成リクエストを送信中...");
-                    // 通常の成功パターン
-                    alert("PDFが生成されました！");
-                    window.open(result.pdf_url, "_blank");
+
+                    // ✅ /pdf_ready に遷移して「PDFを開くボタン」を表示する
+                    const encodedUrl = encodeURIComponent(result.pdf_url);
+                    window.location.href = `/pdf_ready?pdf_url=${encodedUrl}`;
                 } else {
                     alert("PDF の URL が取得できませんでした");
                 }
