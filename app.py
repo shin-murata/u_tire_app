@@ -869,8 +869,6 @@ def send_to_gas():
         del response
         gc.collect()
 
-        print(f"✅ GASからのレスポンス: {response.text}")  # レスポンス内容をログに出力
-
         # ✅ GASのレスポンスを JSON で返す
         try:
             gas_response = response.json()
