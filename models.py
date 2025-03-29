@@ -25,7 +25,6 @@ class PlyRating(db.Model):
     __tablename__ = 'ply_rating'  # テーブル名を明示的に指定
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.String, nullable=False)
-    is_custom = db.Column(db.Integer, nullable=False)
     added_date = db.Column(db.Date, nullable=False)
 
 class InputPage(db.Model):
@@ -99,7 +98,7 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'  # ✅ 修正: 'user' → 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
-    password_hash = db.Column(db.String(150), nullable=False)
+    password_hash = db.Column(db.Text, nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     role = db.relationship('Role', backref=db.backref('users', lazy=True))
 
