@@ -3,9 +3,10 @@ name = "u-tire-app"
 version = "0.1.0"
 description = ""
 authors = ["murata <finesea_bluesky@icloud.com>"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.11,<4.0"
 flask = "^2.3.0"
 gunicorn = ">=23.0.0,<24.0.0"
 # 他の依存ライブラリも必要に応じて追加
@@ -16,6 +17,7 @@ flask-wtf = "^1.2.2"
 email-validator = "^2.2.0"
 python-dotenv = "^1.1.0"
 requests = "^2.32.3"
+flask-cors = "^5.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
