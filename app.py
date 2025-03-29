@@ -873,7 +873,13 @@ def send_to_gas():
             except ValueError:
                 gas_response = {"error": "Invalid JSON response from GAS", "response_text": response_text}
 
-            return jsonify(gas_response)
+            # ✅ PDF URL を取り出して /pdf_ready にリダイレクト
+            pdf_url = gas_response.get("pdf_url")
+            if not pdf_url:
+                return jsonify({"status": "error", "message": "PDF URL が取得できませんでした"}), 500
+
+            # ✅ preview.html を表示するルートにリダイレクト
+            return redirect(url_for("pdf_ready", pdf_url=pdf_url))
 
         except requests.exceptions.RequestException as e:
             print(f"❌ GASへのリクエストエラー: {e}")
@@ -882,6 +888,12 @@ def send_to_gas():
     except requests.exceptions.RequestException as e:
         print(f"❌ GASへのリクエストエラー: {e}")  # エラーログを出力
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/pdf_ready')
+def pdf_ready():
+    pdf_url = request.args.get("pdf_url")
+    return render_template("preview.html", pdf_url=pdf_url)
+
 
 @app.route('/generate-pdf', methods=['POST'])
 def generate_pdf():

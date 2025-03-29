@@ -138,9 +138,10 @@
                 body: JSON.stringify(data)
             })
             .then(response => {
-                console.log("📥 `fetch()` のレスポンスを受信:", response);
-                if (!response.ok) {
-                    throw new Error("HTTPエラー, ステータス: " + response.status);
+                // ✅ ここが今回の重要な修正点：PDF URL付きで /pdf_ready にリダイレクトされた場合
+                if (response.redirected) {
+                    window.location.href = response.url;  // ✅ 自動遷移させる
+                    return;
                 }
                 return response.json();
             })
@@ -149,10 +150,9 @@
 
                 if (result.status === "success" && result.pdf_url) {
                     console.log("🚀 PDF生成リクエストを送信中...");
-
-                    // PDFを開く処理
-                    window.open(result.pdf_url, "_blank"); // ✅ 新しいタブで開く
+                    // 通常の成功パターン
                     alert("PDFが生成されました！");
+                    window.open(result.pdf_url, "_blank");
                 } else {
                     alert("PDF の URL が取得できませんでした");
                 }
