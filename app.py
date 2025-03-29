@@ -856,26 +856,28 @@ def send_to_gas():
         # ✅ デバッグ出力
         print("🚀 送信するデータ:", json.dumps(payload, ensure_ascii=False, indent=2))
 
-        # ✅ GAS にデータを送信
-        response = requests.post(GAS_API_URL, json=payload)
-        response.raise_for_status()  # HTTPエラーなら例外を発生
-
-       # ✅ GASのレスポンスを先に記録してから削除
-        response_text = response.text  # 🔸この行を追加
-        print(f"✅ GASからのレスポンス: {response_text}") 
-        
-        # ✅ メモリ解放のため不要な変数を削除
-        del payload  
-        del response
-        gc.collect()
-
-        # ✅ GASのレスポンスを JSON で返す
+    # ✅ 修正済：responseの安全な利用
         try:
-            gas_response = response.json()
-        except ValueError:
-            gas_response = {"error": "Invalid JSON response from GAS", "response_text": response.text}
+            response = requests.post(GAS_API_URL, json=payload)
+            response.raise_for_status()
 
-        return jsonify(gas_response)
+            response_text = response.text
+            print(f"✅ GASからのレスポンス: {response_text}")
+
+            del payload
+            del response
+            gc.collect()
+
+            try:
+                gas_response = json.loads(response_text)
+            except ValueError:
+                gas_response = {"error": "Invalid JSON response from GAS", "response_text": response_text}
+
+            return jsonify(gas_response)
+
+        except requests.exceptions.RequestException as e:
+            print(f"❌ GASへのリクエストエラー: {e}")
+            return jsonify({"status": "error", "message": str(e)}), 500
 
     except requests.exceptions.RequestException as e:
         print(f"❌ GASへのリクエストエラー: {e}")  # エラーログを出力
