@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, date
 
 db = SQLAlchemy()
 
@@ -24,8 +24,8 @@ class Manufacturer(db.Model):
 class PlyRating(db.Model):
     __tablename__ = 'ply_rating'  # テーブル名を明示的に指定
     id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.String, nullable=False)
-    added_date = db.Column(db.Date, nullable=False)
+    value = db.Column(db.String, nullable=True)
+    added_date = db.Column(db.Date, nullable=False, default=date.today)  # ← ここに default を追加
 
 class InputPage(db.Model):
     __tablename__ = 'input_page'  # テーブル名を明示的に指定
