@@ -128,6 +128,8 @@
             }
 
             console.log("📦 送信データ:", data);
+            console.log("📤 実際に送信するJSON文字列:", JSON.stringify(data));
+
 
             // **スプレッドシートにデータ送信**
             fetch(url, {

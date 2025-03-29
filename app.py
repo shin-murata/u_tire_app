@@ -763,6 +763,8 @@ def get_shipments():
 ### =========================================
 @app.route('/send_to_gas', methods=['POST'])
 def send_to_gas():
+    data = request.get_json()
+    print("📥 Flask側で受け取ったJSON:", data)
     """確定した出庫データを GAS に送信し、スプレッドシート記録 & PDF 生成"""
 
     try:
