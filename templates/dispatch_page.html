@@ -102,7 +102,7 @@
         pdfButton.addEventListener("click", function(event) {
             event.preventDefault();  // フォーム送信を防ぐ
 
-            let url = "https://u-tire-app-dev.onrender.com/send_to_gas";  // Flask の API
+            let url = "/send_to_gas";
             let data = {
                 dispatch_date: "{{ dispatch_date }}",
                 tires: []
