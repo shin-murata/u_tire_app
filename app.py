@@ -860,6 +860,10 @@ def send_to_gas():
         response = requests.post(GAS_API_URL, json=payload)
         response.raise_for_status()  # HTTPエラーなら例外を発生
 
+       # ✅ GASのレスポンスを先に記録してから削除
+        response_text = response.text  # 🔸この行を追加
+        print(f"✅ GASからのレスポンス: {response_text}") 
+        
         # ✅ メモリ解放のため不要な変数を削除
         del payload  
         del response
