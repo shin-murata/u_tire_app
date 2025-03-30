@@ -5,6 +5,7 @@ from forms import SearchForm, EditForm, CombinedForm
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required, AnonymousUserMixin
 from utils import role_required # role_requiredをインポート
 from routes.admin import admin_bp
+from debug import debug_bp  # ← これを追加！
 from config import Config
 from datetime import datetime, date, timezone, timedelta
 import requests
@@ -997,6 +998,7 @@ def history_page():
     # 出庫履歴を共通フォーマットに変換
     dispatch_records = []  # ここでリストを定義
     for record in dispatch_history:
+        formatted_date = ''  # ← ここで先に定義しておく
         try:
             if record.dispatch_date:
                 if isinstance(record.dispatch_date, datetime) and record.dispatch_date.tzinfo is None:
@@ -1020,6 +1022,7 @@ def history_page():
     # 編集履歴を共通フォーマットに変換
     edit_records = []
     for record in edit_history:
+        formatted_date = ''  # ← ここで先に定義しておく
         try:
             if record.edit_date:  # Noneチェック
                 edit_date = record.edit_date.astimezone(JST)  # JSTに変換
@@ -1152,6 +1155,7 @@ def inventory_list():
 
 # Blueprintの登録
 app.register_blueprint(admin_bp)
+app.register_blueprint(debug_bp)  # ← これを追加！
 
 # 金額を3桁区切りでフォーマットするカスタムフィルタ
 @app.template_filter('currency')
