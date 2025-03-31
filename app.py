@@ -177,7 +177,9 @@ def input_page():
         width = request.form.get('width')
         aspect_ratio = request.form.get('aspect_ratio')
         inch = request.form.get('inch')
-        ply_rating = request.form.get('ply_rating')
+        ply_rating_raw = request.form.get('ply_rating')
+        ply_rating = None if ply_rating_raw == "0" or not ply_rating_raw else int(ply_rating_raw)
+
         # `registration_date` の取得と変換
         if registration_date_str:
             try:
@@ -596,13 +598,20 @@ def dispatch():
             tire = InputPage.query.get(tire_id)  # タイヤ情報を取得
             if tire and not tire.is_dispatched:  # 未出庫のタイヤのみ処理
                 tire.is_dispatched = True  # 出庫済みフラグを設定
+
                 # 出庫履歴を記録
                 new_dispatch = DispatchHistory(
                     tire_id=tire_id,
-                    user_id=current_user.id if current_user.is_authenticated else None,  # ✅ `users.id` を正しく参照
+                    user_id=current_user.id if current_user.is_authenticated else 0,  # ✅ `users.id` を正しく参照
                     dispatch_date=dispatch_date  # ✅ `datetime` 型で統一
                 )
                 db.session.add(new_dispatch)
+
+                # ✅ 編集者・日時を input_page に記録
+                user_id = current_user.id if current_user.is_authenticated else 0
+                tire.last_edited_by = user_id
+                tire.last_edited_at = dispatch_date
+
                 processed_tire_ids.append(tire_id)
         print("Committing changes to the database...")
         # データベースの変更を保存
@@ -960,7 +969,7 @@ def edit_page(id):
             if updated:
                 new_edit = HistoryPage(
                     tire_id=id,
-                    user_id=current_user.id if current_user.is_authenticated else None,  # ✅ `users.id` に統一
+                    user_id=current_user.id if current_user.is_authenticated else 0,  # ✅ `users.id` に統一
                     action="編集",
                     edit_date=datetime.now(JST),
                     details=", ".join(edit_details)
@@ -1059,7 +1068,7 @@ def inventory_list():
     query = InputPage.query.order_by(InputPage.id.desc())
 
     # GETリクエスト時：デフォルトで在庫があるものだけを取得
-    query = query.filter(InputPage.is_dispatched == False)
+    query = query.filter(InputPage.is_dispatched.is_(False))
     tires = query.all()
 
     # ✅ `registration_date` は `datetime` 型のままにする（テンプレート側でフォーマットする）
@@ -1072,24 +1081,44 @@ def inventory_list():
 
     # POSTリクエスト処理（フィルタリング）
     if request.method == 'POST':
+        print("📝 送信された内容:", request.form)
+
         if 'reset' in request.form:
-            tires = query.all()
+            query = InputPage.query
+            tires = query.order_by(InputPage.id.desc()).all()
+
         elif 'filter_in_stock' in request.form:
-            query = query.filter(InputPage.is_dispatched == False)
-            tires = query.all()
+            query = InputPage.query.filter(InputPage.is_dispatched.is_(False))
+            tires = query.order_by(InputPage.id.desc()).all()
+
         elif 'filter_dispatched' in request.form:
-            query = query.filter(InputPage.is_dispatched == True)
-            tires = query.all()
-        else:
+            query = InputPage.query.filter(InputPage.is_dispatched.is_(True))
+            tires = query.order_by(InputPage.id.desc()).all()
+
+        elif 'filter_unpriced' in request.form:
+            query = InputPage.query.filter(InputPage.price.is_(None))
+            tires = query.order_by(InputPage.id.desc()).all()
+
+        elif 'search' in request.form:
             if form.validate_on_submit():
+                query = InputPage.query
                 if form.registration_date.data:
-                    query = query.filter(InputPage.registration_date == form.registration_date.data)
-                if 'filter_unpriced' in request.form:
-                    query = query.filter(InputPage.price.is_(None))
-            tires = query.all()
+                    target = form.registration_date.data
+                    next_day = target + timedelta(days=1)
+                    query = query.filter(InputPage.registration_date >= target,
+                                        InputPage.registration_date < next_day)
+                tires = query.order_by(InputPage.id.desc()).all()
+            else:
+                flash("日付の形式が正しくありません。", "warning")
+                tires = []
+
+        else:
+            tires = InputPage.query.order_by(InputPage.id.desc()).all()
 
     # 🔹 一括更新処理（履歴記録を追加）
     if request.method == 'POST' and 'update_all' in request.form:
+        updated = False  # ✅ ← ここで定義しておくと後で使える！
+
         for tire in tires:
             price_key = f"price_{tire.id}"
             other_details_key = f"other_details_{tire.id}"
@@ -1097,7 +1126,6 @@ def inventory_list():
             old_price = tire.price
             old_details = tire.other_details
 
-            updated = False  # 変更があったか判定
             edit_details = []
 
             # 価格を更新
@@ -1114,6 +1142,7 @@ def inventory_list():
                         print(f"Invalid price value for tire ID {tire.id}, skipping update.")
                 else:
                     print(f"No new price provided for tire ID {tire.id}, skipping update.")
+            
             # その他の詳細を更新
             if other_details_key in request.form and request.form[other_details_key]:
                 new_details = request.form[other_details_key].strip()
@@ -1122,32 +1151,50 @@ def inventory_list():
                     edit_details.append(f"詳細: {old_details} → {new_details}")
                     updated = True
 
-            # 変更があった場合のみ履歴に追加
-            if updated:
-                if current_user.is_authenticated:  # ✅ ログインしているか確認
-                    new_edit = HistoryPage(
-                        tire_id=tire.id,
-                        user_id=current_user.id,  # ユーザーIDを記録
-                        action="一括更新",
-                        edit_date=datetime.now(JST),  # 🔹 JST で記録
-                        details=", ".join(edit_details)
-                    )
-                    print(f"新規履歴レコード作成: {new_edit}")  # 追加のデバッグ出力
-                    db.session.add(new_edit)
-                else:
-                    print(f"Skipping history log for tire ID {tire.id} because user is not logged in.")
+            # ✅ 変更があった場合のみ履歴と編集者情報を記録
+            if edit_details:
+                user_id = current_user.id if current_user.is_authenticated else 0
 
-                # 編集者と日時を更新
-                tire.last_edited_by = current_user.id if current_user.is_authenticated else None
-                tire.last_edited_at = datetime.now(JST)  # 🔹 JST で記録
-        # 変更をデータベースに保存
-        try:
-            db.session.commit()
-            flash("在庫データが更新されました。", "success")
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error committing to the database: {e}")
-            flash("データの保存に失敗しました。", "danger")
+                # 履歴を追加
+                new_edit = HistoryPage(
+                    tire_id=tire.id,
+                    user_id=user_id,
+                    action="一括更新",
+                    edit_date=datetime.now(JST),
+                    details=", ".join(edit_details)
+                )
+                db.session.add(new_edit)
+
+                # 編集者情報をタイヤにも記録
+                tire.last_edited_by = user_id
+                tire.last_edited_at = datetime.now(JST)
+
+        if updated:
+            # ✅ ユーザーID（ログインしていなければゲストID=0）を決定
+            user_id = current_user.id if current_user.is_authenticated else 0
+
+            # 🔹 履歴の追加（ログインに関係なく記録する）
+            new_edit = HistoryPage(
+                tire_id=tire.id,
+                user_id=user_id,  # ← ゲストも含めて記録する
+                action="一括更新",
+                edit_date=datetime.now(JST),
+                details=", ".join(edit_details)
+            )
+            print(f"新規履歴レコード作成: {new_edit}")
+            db.session.add(new_edit)
+
+            # 編集者と日時を input_page に記録（ゲストも含める）
+            tire.last_edited_by = user_id
+            tire.last_edited_at = datetime.now(JST)
+            # 変更をデータベースに保存
+            try:
+                db.session.commit()
+                flash("在庫データが更新されました。", "success")
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error committing to the database: {e}")
+                flash("データの保存に失敗しました。", "danger")
 
         return redirect(url_for('inventory_list'))
     

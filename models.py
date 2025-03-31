@@ -43,6 +43,9 @@ class InputPage(db.Model):
     ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=True)
     price = db.Column(db.Float, nullable=True)  # nullable=Trueに変更
     is_dispatched = db.Column(db.Boolean, default=False, nullable=False)
+    last_edited_by = db.Column(db.Integer, nullable=True)
+    last_edited_at = db.Column(db.DateTime, nullable=True)
+
 
     # リレーションを定義
     width_ref = db.relationship('Width', backref='input_pages', lazy=True)
