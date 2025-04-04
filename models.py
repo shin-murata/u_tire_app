@@ -9,23 +9,52 @@ class Width(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Integer, nullable=False)
 
+    # ✅ 登録日時を追加
+    # ✅ 以下を追加
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
 class AspectRatio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Integer, nullable=False)
 
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
 class Inch(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Integer, nullable=False)
 
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 class Manufacturer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
 
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 class PlyRating(db.Model):
     __tablename__ = 'ply_rating'  # テーブル名を明示的に指定
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.String, nullable=True)
     added_date = db.Column(db.Date, nullable=False, default=date.today)  # ← ここに default を追加
+
+   # ✅ 追加：編集情報
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
+    # ✅ Userモデルとのリレーション
+    created_user = db.relationship('User', foreign_keys=[created_by], backref='created_ply_ratings')
+    updated_user = db.relationship('User', foreign_keys=[updated_by], backref='updated_ply_ratings')
 
 class InputPage(db.Model):
     __tablename__ = 'input_page'  # テーブル名を明示的に指定
@@ -103,6 +132,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # ✅ 追加！
+    
     role = db.relationship('Role', backref=db.backref('users', lazy=True))
 
     def set_password(self, password):

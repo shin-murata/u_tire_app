@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required
+from flask_login import login_required, current_user
 from utils import role_required  # utils.pyからrole_requiredをインポート
 from models import User, Role, Width, AspectRatio, Inch, Manufacturer, PlyRating, db, InputPage  # InputPage モデルが定義されている場所からインポート
+from datetime import datetime
 
 # Blueprintの定義
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -50,6 +51,11 @@ def add_data(model_name):
     # 新しいエントリを追加
     try:
         new_entry = model(**{field_name: request.form['value']})
+
+        # ✅ created_by を設定（存在するモデルのみ）
+        if hasattr(new_entry, 'created_by'):
+            new_entry.created_by = current_user.id
+
         db.session.add(new_entry)
         db.session.commit()
         flash(f"{model_name.capitalize()} added successfully!", "success")
@@ -68,13 +74,19 @@ def update_data(model_name, id):
     model = config['model']
     field_name = config['field']
 
-    # データの更新
     try:
         entry = model.query.get_or_404(id)
-        if model_name == 'manufacturers':
-            entry.name = request.form['value']  # Manufacturer の場合は name フィールドを更新
-        else:
-            entry.value = request.form['value']  # その他のモデルは value フィールドを更新
+        new_value = request.form['value']
+
+        # ✅ 値を更新
+        setattr(entry, field_name, new_value)
+
+        # ✅ 更新者と更新時刻を記録（存在するモデルのみ）
+        if hasattr(entry, 'updated_by'):
+            entry.updated_by = current_user.id
+        if hasattr(entry, 'updated_at'):
+            entry.updated_at = datetime.utcnow()
+
         db.session.commit()
         flash(f"{model_name.capitalize()} updated successfully!", "success")
     except Exception as e:
