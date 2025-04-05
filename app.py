@@ -25,6 +25,15 @@ JST = timezone(timedelta(hours=9))
 
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
+
+# 日本語形式に日時を整形するJinjaフィルター
+def format_datetime_jp(value):
+    if value is None:
+        return ''
+    return value.strftime('%Y年%-m月%-d日 %H:%M')  # Windowsなら%-m を %m に変更
+
+app.jinja_env.filters['datetime_jp'] = format_datetime_jp
+
 # CORS の適用範囲を広げる
 CORS(app, resources={r"/*": {"origins": "*"}})  # すべてのルートでCORS許可
 

@@ -8,7 +8,7 @@
         <div class="row mb-3 align-items-center">
             <label class="col-sm-3 col-form-label fw-bold text-end pe-2">登録日</label>
             <div class="col-sm-9">
-                <input type="text" value="{{ tire.registration_date }}" readonly class="form-control form-control-lg">
+                <input type="text" value="{{ tire.registration_date|datetime_jp if tire.registration_date else 'N/A' }}" readonly class="form-control form-control-lg">
             </div>
         </div>
         

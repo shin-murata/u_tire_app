@@ -46,7 +46,9 @@
                     {% for tire in tires %}
                     <tr>
                         <td>{{ tire.id }}</td>
-                        <td>{{ tire.registration_date.strftime('%Y-%m-%d') if tire.registration_date else 'N/A' }}</td>
+                        <td>
+                            {{ tire.last_edited_at|datetime_jp if tire.last_edited_at else 'N/A' }}
+                        </td>                          
                         <td>{{ tire.width_ref.value }}</td>
                         <td>{{ tire.aspect_ratio_ref.value }}</td>
                         <td>{{ tire.inch_ref.value }}</td>
@@ -69,7 +71,9 @@
                             <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" class="form-control" size="20">
                         </td>
                         <td>{{ tire.last_edited_by }}</td>
-                        <td>{{ tire.last_edited_at }}</td>
+                        <td>
+                            {{ tire.last_edited_at|datetime_jp if tire.last_edited_at else 'N/A' }}
+                        </td>
                         <td><a href="{{ url_for('edit_page', id=tire.id) }}" class="btn btn-warning">編集</a></td>
                     </tr>
                     {% endfor %}
