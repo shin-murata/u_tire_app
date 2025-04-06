@@ -23,6 +23,17 @@ load_dotenv()  # .env を読み込む
 # ✅ グローバルで JST を定義（import の直後に記述する）
 JST = timezone(timedelta(hours=9))
 
+# ✅ どんな datetime も JST（タイムゾーンあり）に揃える関数
+def to_jst(dt):
+    if dt is None:
+        return None
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc).astimezone(JST)
+        else:
+            return dt.astimezone(JST)
+    return None
+
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
 
@@ -159,15 +170,6 @@ def input_page():
         print(f"New registration_date (before saving to DB): {registration_date}")  # 追加
         # デバッグ出力
         print(f"New registration_date: {registration_date}")
-
-        # フォームから `registration_date` を取得
-        registration_date_str = request.form.get('registration_date')
-        if registration_date_str:
-            try:
-                registration_date = datetime.strptime(registration_date_str, '%Y-%m-%d')
-            except ValueError:
-                registration_date = datetime.now(JST)
-
         print(f"Final registration_date (datetime): {registration_date}")  # ✅ デバッグ出力
         # デバッグ用: 送信されたフォームデータを確認
         print(f"Received POST data: {request.form}")
@@ -188,18 +190,6 @@ def input_page():
         inch = request.form.get('inch')
         ply_rating_raw = request.form.get('ply_rating')
         ply_rating = None if ply_rating_raw == "0" or not ply_rating_raw else int(ply_rating_raw)
-
-        # `registration_date` の取得と変換
-        if registration_date_str:
-            try:
-                # `YYYY-MM-DD` を `datetime` 型に変換
-                registration_date = datetime.strptime(registration_date_str, '%Y-%m-%d')
-            except ValueError:
-                # 失敗時は現在時刻
-                registration_date = datetime.now(JST)
-        else:
-            # フォームに `registration_date` がない場合は現在時刻
-            registration_date = datetime.now(JST)
 
         # ✅ `registration_date` は `datetime` 型のまま
         print(f"Final registration_date (datetime): {registration_date}")
@@ -264,7 +254,8 @@ def input_page():
             'aspect_ratio': aspect_ratio,
             'inch': inch,
             'ply_rating': ply_rating,
-            'registration_date': registration_date.strftime('%Y-%m-%d'),  # ✅ `str` に変換
+            # ✅ 修正後（時刻も保持）
+            'registration_date': registration_date.strftime('%Y-%m-%d %H:%M:%S'),
             'errors': common_errors
         }
 
@@ -372,7 +363,7 @@ def input_page():
         aspect_ratio=aspect_ratio,
         inch=inch,
         ply_rating=ply_rating,
-        registration_date=registration_date.strftime('%Y-%m-%d')
+        registration_date=registration_date.strftime('%Y-%m-%d %H:%M:%S')  # ← ✅ 修正ポイント
     ))
     
     # 有効データがない場合は無効データのみ確認画面に渡す
@@ -408,11 +399,9 @@ def register_success():
                     registration_date = datetime.strptime(registration_date, '%Y-%m-%d')
                 elif len(registration_date) == 19:  # 'YYYY-MM-DD HH:MM:SS' の場合
                     registration_date = datetime.strptime(registration_date, '%Y-%m-%d %H:%M:%S')
-            # `datetime` 型ならそのまま
-            elif isinstance(registration_date, datetime):
-                pass
-            else:
-                registration_date = None  # 形式が合わない場合は `None`
+            # ✅ JST になってない場合だけ補正する（←重要！）
+            if registration_date.tzinfo is None:
+                registration_date = registration_date.replace(tzinfo=JST)
         except ValueError:
             registration_date = None  # 変換エラーが起きたら `None`
     else:
@@ -424,11 +413,9 @@ def register_success():
     # `valid_tires` から `registration_date` を取得（必要なら）
     if valid_tires and registration_date is None:
         registration_date = valid_tires[0].registration_date  # 最初のタイヤの登録日を使用
-
-    # `registration_date` を `YYYY-MM-DD` にフォーマット
-    if isinstance(registration_date, datetime):
-        registration_date = registration_date.strftime('%Y-%m-%d')
-    
+        if registration_date and registration_date.tzinfo is None:
+            registration_date = registration_date.replace(tzinfo=timezone.utc).astimezone(JST)
+  
     # クエリが空の場合のデバッグ出力
     if not ids:
         print("No IDs provided for query.")
@@ -588,7 +575,7 @@ def dispatch_confirm():
     return render_template(
         'dispatch_confirm.html', 
         tires_to_dispatch=tires_to_dispatch, 
-        dispatch_date=formatted_dispatch_date  # ✅ テンプレート側で YYYY-MM-DD 表示
+        dispatch_date=dispatch_date  # ← ✅ datetime型のまま渡す！
     )
 
 @app.route('/dispatch', methods=['GET', 'POST'])
@@ -670,7 +657,7 @@ def dispatch_page():
 
         # dispatch_date をフォーマットする
         if dispatch_date and isinstance(dispatch_date, datetime):
-            dispatch_date = (dispatch_date + timedelta(hours=9)).strftime('%Y-%m-%d')  # ✅ JST に変換
+            dispatch_date = dispatch_date + timedelta(hours=9)  # ← str にはしない
 
         # 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)
@@ -1016,49 +1003,25 @@ def history_page():
     # 出庫履歴を共通フォーマットに変換
     dispatch_records = []  # ここでリストを定義
     for record in dispatch_history:
-        formatted_date = ''  # ← ここで先に定義しておく
-        try:
-            if record.dispatch_date:
-                if isinstance(record.dispatch_date, datetime) and record.dispatch_date.tzinfo is None:
-                    dispatch_date = (record.dispatch_date + timedelta(hours=9)).strftime('%Y-%m-%d')  # UTCなら+9時間
-                else:
-                    dispatch_date = record.dispatch_date.astimezone(JST).strftime('%Y-%m-%d')  # すでにタイムゾーンがあるならJSTに変換
-            else:
-                dispatch_date = ''
-
-            # 修正後の `dispatch_date` をリストに追加
-            dispatch_records.append({
-                "tire_id": record.tire_id,
-                "date": formatted_date,  # フォーマット済みの値を格納
-                "user_id": record.user_id,
-                "action": "出庫",
-                "details": record.dispatch_note or "出庫処理"
-            })
-        except Exception as e:
-            print(f"🚨 変換エラー: {e} (値: {record.dispatch_date})")
+        dispatch_records.append({
+            "tire_id": record.tire_id,
+            "date": to_jst(record.dispatch_date),
+            "user_id": record.user_id,
+            "action": "出庫",
+            "details": record.dispatch_note or "出庫処理"
+        })
 
     # 編集履歴を共通フォーマットに変換
     edit_records = []
     for record in edit_history:
-        formatted_date = ''  # ← ここで先に定義しておく
-        try:
-            if record.edit_date:  # Noneチェック
-                edit_date = record.edit_date.astimezone(JST)  # JSTに変換
-                formatted_date = edit_date.strftime('%Y-%m-%d')  # YYYY-MM-DD 形式
-            else:
-                formatted_date = ''  # None の場合は空文字
-
-            edit_records.append({
-                "tire_id": record.tire_id,
-                "date": formatted_date,  # フォーマット済みの値を格納
-                "user_id": record.user_id,
-                "action": record.action,
-                "details": record.details
-            })
-        except Exception as e:
-            print(f"🚨 変換エラー: {e} (値: {record.edit_date})")
-
-
+        edit_records.append({
+            "tire_id": record.tire_id,
+            "date": to_jst(record.edit_date),
+            "user_id": record.user_id,
+            "action": record.action,
+            "details": record.details
+        })
+        
     # 履歴を統合し、新しい順（降順）にソート
     combined_history = sorted(dispatch_records + edit_records, key=lambda x: x["date"], reverse=True)
 
@@ -1080,13 +1043,12 @@ def inventory_list():
     query = query.filter(InputPage.is_dispatched.is_(False))
     tires = query.all()
 
-    # ✅ `registration_date` は `datetime` 型のままにする（テンプレート側でフォーマットする）
+    # JST補正（登録日・編集日）
     for tire in tires:
-        if not isinstance(tire.registration_date, datetime):
-            try:
-                tire.registration_date = datetime.strptime(tire.registration_date, '%Y-%m-%d %H:%M:%S')
-            except (ValueError, TypeError):
-                print(f"🚨 `registration_date` の変換失敗: {tire.registration_date}")
+        if isinstance(tire.registration_date, datetime) and tire.registration_date.tzinfo is None:
+            tire.registration_date = tire.registration_date.replace(tzinfo=timezone.utc).astimezone(JST)
+        if isinstance(tire.last_edited_at, datetime) and tire.last_edited_at.tzinfo is None:
+            tire.last_edited_at = tire.last_edited_at.replace(tzinfo=timezone.utc).astimezone(JST)
 
     # POSTリクエスト処理（フィルタリング）
     if request.method == 'POST':
@@ -1129,6 +1091,8 @@ def inventory_list():
         updated = False  # ✅ ← ここで定義しておくと後で使える！
 
         for tire in tires:
+            print(f"⛏️ チェック中: tire.id = {tire.id}, price = {tire.price}, other_details = {tire.other_details}")
+
             price_key = f"price_{tire.id}"
             other_details_key = f"other_details_{tire.id}"
 
@@ -1177,36 +1141,17 @@ def inventory_list():
                 # 編集者情報をタイヤにも記録
                 tire.last_edited_by = user_id
                 tire.last_edited_at = datetime.now(JST)
-
-        if updated:
-            # ✅ ユーザーID（ログインしていなければゲストID=0）を決定
-            user_id = current_user.id if current_user.is_authenticated else 0
-
-            # 🔹 履歴の追加（ログインに関係なく記録する）
-            new_edit = HistoryPage(
-                tire_id=tire.id,
-                user_id=user_id,  # ← ゲストも含めて記録する
-                action="一括更新",
-                edit_date=datetime.now(JST),
-                details=", ".join(edit_details)
-            )
-            print(f"新規履歴レコード作成: {new_edit}")
-            db.session.add(new_edit)
-
-            # 編集者と日時を input_page に記録（ゲストも含める）
-            tire.last_edited_by = user_id
-            tire.last_edited_at = datetime.now(JST)
-            # 変更をデータベースに保存
-            try:
-                db.session.commit()
-                flash("在庫データが更新されました。", "success")
-            except Exception as e:
-                db.session.rollback()
-                print(f"Error committing to the database: {e}")
-                flash("データの保存に失敗しました。", "danger")
+        # ✅ 最後に一括でコミット＆通知
+        try:
+            db.session.commit()
+            flash("在庫データが更新されました。", "success")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error committing to the database: {e}")
+            flash("データの保存に失敗しました。", "danger")
 
         return redirect(url_for('inventory_list'))
-    
+
     return render_template('inventory_list.html', form=form, tires=tires)
 
 # Blueprintの登録

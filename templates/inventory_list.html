@@ -47,8 +47,8 @@
                     <tr>
                         <td>{{ tire.id }}</td>
                         <td>
-                            {{ tire.last_edited_at|datetime_jp if tire.last_edited_at else 'N/A' }}
-                        </td>                          
+                            {{ tire.registration_date|datetime_jp if tire.registration_date else 'N/A' }}
+                        </td>                                         
                         <td>{{ tire.width_ref.value }}</td>
                         <td>{{ tire.aspect_ratio_ref.value }}</td>
                         <td>{{ tire.inch_ref.value }}</td>

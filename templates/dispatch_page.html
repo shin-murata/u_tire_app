@@ -31,7 +31,7 @@
     <!-- 個別データ -->
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
         <h5 class="mb-0">個別データ</h5>
-        <span class="dispatch-date-text">出庫日: {{ dispatch_date }}</span>  {# こちらのみ残す #}
+        <span class="dispatch-date-text">出庫日: {{ dispatch_date|datetime_jp if dispatch_date else 'N/A' }}</span>
     </div>
     
     <div class="table-responsive">
@@ -85,45 +85,79 @@
     <form id="pdfForm">
         <button id="pdf-button" type="button" class="btn btn-info">指示書をPDFで印刷</button>
     </form>
+    <!-- ✅ スピナーとメッセージ表示用の領域 -->
+    <div id="pdf-status" class="mt-3" style="display: none;">
+        <div class="d-flex align-items-center">
+            <!-- スピナー（Bootstrapのクラスを利用） -->
+            <div class="spinner-border text-primary mr-2" role="status" style="width: 1.5rem; height: 1.5rem;"></div>
+            <!-- テキストメッセージ -->
+            <strong>PDFを生成中です。しばらくお待ちください...</strong>
+        </div>
+    </div>
 </div>
 
 <!-- JavaScript -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const pdfButton = document.getElementById("pdf-button");
-    
-        if (!pdfButton) {
-            console.error("❌ PDFボタンが見つかりません");
-            return;
-        }
-    
+
         pdfButton.addEventListener("click", async function () {
-            // ✅ まず空のウィンドウを開いておく（←ここが重要！）
+            // ✅ 新しいウィンドウを開き、仮のHTMLを書き込む
             const newTab = window.open("", "_blank");
-    
+            if (!newTab) {
+                alert("ポップアップがブロックされました。ブラウザの設定を確認してください。");
+                return;
+            }
+
+            // ✅ 一時表示するメッセージ
+            newTab.document.write(`
+                <html>
+                    <head><title>PDFを生成中...</title></head>
+                    <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+                        <div>
+                            <div class="spinner" style="
+                                border: 8px solid #f3f3f3;
+                                border-top: 8px solid #007bff;
+                                border-radius: 50%;
+                                width: 60px;
+                                height: 60px;
+                                animation: spin 1s linear infinite;
+                                margin: 0 auto 20px auto;
+                            "></div>
+                            <p>📄 PDFを生成中です。しばらくお待ちください...</p>
+                        </div>
+                        <style>
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        </style>
+                    </body>
+                </html>
+            `);
+            newTab.document.close();  // ✅ 書き込みを完了
+
             try {
                 const response = await fetch("/send_to_gas", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({})
                 });
-    
+
                 const result = await response.json();
-                console.log("✅ GASからのレスポンス:", result);
-    
+
                 if (result.status === "success" && result.pdf_url) {
-                    // ✅ PDFを新しいウィンドウで開く
+                    // ✅ PDFに置き換える
                     newTab.location.href = result.pdf_url;
                 } else {
-                    newTab.close(); // 開いたウィンドウを閉じる
-                    alert("PDFのURLが取得できませんでした");
+                    newTab.document.body.innerHTML = "<p style='color:red;'>PDFのURLが取得できませんでした。</p>";
                 }
             } catch (err) {
-                newTab.close(); // 開いたウィンドウを閉じる
-                console.error("❌ エラー:", err);
-                alert("通信エラーが発生しました");
+                console.error("エラー:", err);
+                newTab.document.body.innerHTML = "<p style='color:red;'>通信エラーが発生しました。</p>";
             }
         });
     });
-    </script>
+
+</script>
 {% endblock %}

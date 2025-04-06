@@ -16,71 +16,158 @@
     {% endif %}
   {% endwith %}
 
-  {# モデルごとのデータ管理（横並びレイアウト） #}
+  {# その他のマスター項目（manufacturerとply_rating以外） #}
   <div class="row">
     {% for model_name, model_data in data.items() %}
-      <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
-          <div class="card-header">
-            <h2 class="h5 mb-0">{{ model_name | capitalize }}</h2>
-          </div>
-          <div class="card-body">
-            {# 新しいデータを追加するフォーム #}
-            <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}" class="mb-3">
-              <div class="input-group mb-2">
-                <input type="text" name="value" class="form-control" placeholder="新しい {{ model_name }} を追加">
-              </div>
-              <button type="submit" class="btn btn-primary w-100">追加</button>
-            </form>
-
-            {# 登録済みの各エントリを横並びに配置（デフォルト）し、レスポンシブで折り返し #}
-            <div class="d-flex flex-column gap-3">
-              {% for entry in model_data.entries %}
-                <div class="border rounded p-3 d-flex flex-nowrap align-items-center gap-2 flex-wrap">
-                  {# 更新フォーム（デフォルトで横並び、狭い画面で折り返し） #}
-                  <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" class="flex-grow-1">
-                    <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}" 
-                        class="form-control text-nowrap" style="min-width: 80px; max-width: 200px;">
-                  </form>
-
-                  {# ボタンコンテナ #}
-                  <div class="d-flex gap-2">
-                    <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}">
-                        <button type="submit" class="btn btn-success text-nowrap px-3">更新</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}">
-                        <button type="submit" class="btn btn-danger text-nowrap px-3">削除</button>
-                    </form>
-                  </div>
-
-                  <!-- ✅ 追加ここから -->
-                  <div class="w-100">
-                    <small class="text-muted">
-                      {% if entry.created_at %}
-                        登録: {{ entry.created_at|datetime_jp }}
-                      {% endif %}
-                      {% if entry.created_by %}
-                        by {{ entry.created_by }}
-                      {% endif %}
-                      <br>
-                      {% if entry.updated_at %}
-                        編集: {{ entry.updated_at|datetime_jp }}
-                      {% endif %}
-                      {% if entry.updated_by %}
-                        by {{ entry.updated_by }}
-                      {% endif %}
-                    </small>
-                  </div>
-                  <!-- ✅ 追加ここまで -->
-
-                </div>
-              {% endfor %}
+      {% if model_name not in ['manufacturer', 'ply_rating'] %}
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h2 class="h5 mb-0">{{ model_name | capitalize }}</h2>
             </div>
+            <div class="card-body">
+              {# 新しいデータを追加するフォーム #}
+              <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}" class="mb-3">
+                <div class="input-group mb-2">
+                  <input type="text" name="value" class="form-control" placeholder="新しい {{ model_name }} を追加">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">追加</button>
+              </form>
 
+              {# 登録済みの各エントリを横並びに配置（デフォルト）し、レスポンシブで折り返し #}
+              <div class="d-flex flex-column gap-3">
+                {% for entry in model_data.entries %}
+                  <div class="border rounded p-3 d-flex flex-nowrap align-items-center gap-2 flex-wrap">
+                    <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" class="flex-grow-1">
+                      <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}" 
+                          class="form-control text-nowrap" style="min-width: 80px; max-width: 200px;">
+                    </form>
+
+                    <div class="d-flex gap-2">
+                      <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}">
+                          <button type="submit" class="btn btn-success text-nowrap px-3">更新</button>
+                      </form>
+                      <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}">
+                          <button type="submit" class="btn btn-danger text-nowrap px-3">削除</button>
+                      </form>
+                    </div>
+
+                    <div class="w-100">
+                      <small class="text-muted">
+                        {% if entry.created_at %} 登録: {{ entry.created_at|datetime_jp }} {% endif %}
+                        {% if entry.created_by %} by {{ entry.created_by }} {% endif %}<br>
+                        {% if entry.updated_at %} 編集: {{ entry.updated_at|datetime_jp }} {% endif %}
+                        {% if entry.updated_by %} by {{ entry.updated_by }} {% endif %}
+                      </small>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {# Ply_rating（通常幅） #}
+  <div class="col-md-6 col-lg-4 mb-4">
+    {% set model_name = 'ply_rating' %}
+    {% set model_data = data[model_name] %}
+    <div class="card h-100">
+      <div class="card-header">
+        <h2 class="h5 mb-0">{{ model_name | capitalize }}</h2>
+      </div>
+      <div class="card-body">
+        {# 新規追加フォーム #}
+        <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}" class="mb-3">
+          <div class="input-group mb-2">
+            <input type="text" name="value" class="form-control" placeholder="新しい {{ model_name }} を追加">
+          </div>
+          <button type="submit" class="btn btn-primary w-100">追加</button>
+        </form>
+
+        {# 登録済みデータ #}
+        <div class="d-flex flex-column gap-3">
+          {% for entry in model_data.entries %}
+            <div class="border rounded p-3 d-flex flex-nowrap align-items-center gap-2 flex-wrap">
+              <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" class="flex-grow-1">
+                <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}"
+                        class="form-control text-nowrap" style="min-width: 80px; max-width: 200px;">
+              </form>
+              <div class="d-flex gap-2">
+                <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}">
+                  <button type="submit" class="btn btn-success text-nowrap px-3">更新</button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}">
+                  <button type="submit" class="btn btn-danger text-nowrap px-3">削除</button>
+                </form>
+              </div>
+              <div class="w-100">
+                <small class="text-muted">
+                  {% if entry.created_at %} 登録: {{ entry.created_at|datetime_jp }} {% endif %}
+                  {% if entry.created_by %} by {{ entry.created_by }} {% endif %}<br>
+                  {% if entry.updated_at %} 編集: {{ entry.updated_at|datetime_jp }} {% endif %}
+                  {% if entry.updated_by %} by {{ entry.updated_by }} {% endif %}
+                </small>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# モデルごとのデータ管理（横並びレイアウト） #}
+  <div class="row">
+    {# Manufacturer（幅2倍にする col-lg-8） #}
+    <div class="col-md-12 col-lg-8 mb-4">
+      {% set model_name = 'manufacturer' %}
+      {% set model_data = data[model_name] %}
+      <div class="card h-100">
+        <div class="card-header">
+          <h2 class="h5 mb-0">{{ model_name | capitalize }}</h2>
+        </div>
+        <div class="card-body">
+          {# 新規追加フォーム #}
+          <form method="POST" action="{{ url_for('admin.add_data', model_name=model_name) }}" class="mb-3">
+            <div class="input-group mb-2">
+              <input type="text" name="value" class="form-control" placeholder="新しい {{ model_name }} を追加">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">追加</button>
+          </form>
+
+          {# 登録済みデータ #}
+          <div class="d-flex flex-column gap-3">
+            {% for entry in model_data.entries %}
+              <div class="border rounded p-3 d-flex flex-nowrap align-items-center gap-2 flex-wrap">
+                <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}" class="flex-grow-1">
+                  <input type="text" name="value" value="{{ getattr(entry, model_data.field, 'N/A') }}"
+                         class="form-control text-nowrap" style="min-width: 180px; max-width: 200px;">
+                </form>
+                <div class="d-flex gap-2">
+                  <form method="POST" action="{{ url_for('admin.update_data', model_name=model_name, id=entry.id) }}">
+                    <button type="submit" class="btn btn-success text-nowrap px-3">更新</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin.delete_data', model_name=model_name, id=entry.id) }}">
+                    <button type="submit" class="btn btn-danger text-nowrap px-3">削除</button>
+                  </form>
+                </div>
+                <div class="w-100">
+                  <small class="text-muted">
+                    {% if entry.created_at %} 登録: {{ entry.created_at|datetime_jp }} {% endif %}
+                    {% if entry.created_by %} by {{ entry.created_by }} {% endif %}<br>
+                    {% if entry.updated_at %} 編集: {{ entry.updated_at|datetime_jp }} {% endif %}
+                    {% if entry.updated_by %} by {{ entry.updated_by }} {% endif %}
+                  </small>
+                </div>
+              </div>
+            {% endfor %}
           </div>
         </div>
       </div>
-    {% endfor %}
+    </div>
+  </div>
 </div>
 
 {# ユーザー管理セクション #}
@@ -128,8 +215,5 @@
         {% endfor %}
       </div>
     </div>
-</div>
-
-
 </div>
 {% endblock %}

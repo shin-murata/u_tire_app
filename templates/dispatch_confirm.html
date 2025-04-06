@@ -28,7 +28,7 @@
         <!-- 個別データ -->
        <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
             <h5 class="mb-0">個別データ</h5>
-            <span class="dispatch-date-text">出庫日: {{ dispatch_date }}</span>  {# こちらのみ残す #}
+            <span class="dispatch-date-text">出庫日: {{ dispatch_date|datetime_jp if dispatch_date else 'N/A' }}</span>
         </div>
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">
