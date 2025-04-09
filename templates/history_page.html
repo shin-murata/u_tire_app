@@ -21,7 +21,7 @@
                 <tr>
                     <td>{{ record.tire_id }}</td>
                     <td>{{ record.date|datetime_jp if record.date else 'N/A' }}</td>
-                    <td>{{ record.user_id }}</td>
+                    <td>{{ record.user_name }}</td>
                     <td>
                         {% if record.action == "出庫" %}
                             <span class="badge bg-danger">{{ record.action }}</span>

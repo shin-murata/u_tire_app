@@ -41,7 +41,15 @@ app.config.from_object(Config)  # Config クラスを読み込む
 def format_datetime_jp(value):
     if value is None:
         return ''
-    return value.strftime('%Y年%-m月%-d日 %H:%M')  # Windowsなら%-m を %m に変更
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value)
+        except Exception:
+            return value
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(JST).strftime('%Y年%-m月%-d日 %H:%M')
+
 
 app.jinja_env.filters['datetime_jp'] = format_datetime_jp
 
@@ -1003,10 +1011,12 @@ def history_page():
     # 出庫履歴を共通フォーマットに変換
     dispatch_records = []  # ここでリストを定義
     for record in dispatch_history:
+        user = User.query.get(record.user_id)
         dispatch_records.append({
             "tire_id": record.tire_id,
             "date": to_jst(record.dispatch_date),
             "user_id": record.user_id,
+            "user_name": user.username if user else "不明",  # 👈 追加
             "action": "出庫",
             "details": record.dispatch_note or "出庫処理"
         })
@@ -1014,10 +1024,12 @@ def history_page():
     # 編集履歴を共通フォーマットに変換
     edit_records = []
     for record in edit_history:
+        user = User.query.get(record.user_id)  # 🔍 ユーザー情報を取得
         edit_records.append({
             "tire_id": record.tire_id,
             "date": to_jst(record.edit_date),
             "user_id": record.user_id,
+            "user_name": user.username if user else "不明",  # 👈 追加
             "action": record.action,
             "details": record.details
         })
@@ -1038,11 +1050,18 @@ def inventory_list():
     form = SearchForm()
     edit_forms = {}
     query = InputPage.query.order_by(InputPage.id.desc())
+    price_alert = False  # ← 通知モーダル表示用のフラグ
+    tires = []  # ← 🔧 POST時のために仮定義しておく
 
-    # GETリクエスト時：デフォルトで在庫があるものだけを取得
-    query = query.filter(InputPage.is_dispatched.is_(False))
-    tires = query.all()
-
+    # GET時：価格未登録がある場合はそれを優先表示
+    if request.method == 'GET':
+        unpriced = InputPage.query.filter(InputPage.price == None, InputPage.is_dispatched.is_(False)).all()
+        if unpriced:
+            tires = unpriced
+            price_alert = True  # ← モーダル表示用
+        else:
+            tires = query.filter(InputPage.is_dispatched.is_(False)).all()
+    
     # JST補正（登録日・編集日）
     for tire in tires:
         if isinstance(tire.registration_date, datetime) and tire.registration_date.tzinfo is None:
@@ -1151,8 +1170,20 @@ def inventory_list():
             flash("データの保存に失敗しました。", "danger")
 
         return redirect(url_for('inventory_list'))
+    
+    # 編集者IDの一覧を取得してUserテーブルから名前を一括取得
+    editor_ids = list({t.last_edited_by for t in tires if t.last_edited_by})
+    users = User.query.filter(User.id.in_(editor_ids)).all()
+    user_map = {u.id: u.username for u in users}
 
-    return render_template('inventory_list.html', form=form, tires=tires)
+    # 各タイヤに username をセット
+    for tire in tires:
+        if tire.last_edited_by:
+            tire.last_edited_name = user_map.get(tire.last_edited_by, "不明")
+        else:
+            tire.last_edited_name = ""
+
+    return render_template('inventory_list.html', form=form, tires=tires, price_alert=price_alert)
 
 # Blueprintの登録
 app.register_blueprint(admin_bp)

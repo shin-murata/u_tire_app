@@ -42,17 +42,17 @@ class Manufacturer(db.Model):
     updated_at = db.Column(db.DateTime, nullable=True)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 class PlyRating(db.Model):
-    __tablename__ = 'ply_rating'  # テーブル名を明示的に指定
+    __tablename__ = 'ply_rating'
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.String, nullable=True)
-    added_date = db.Column(db.Date, nullable=False, default=date.today)  # ← ここに default を追加
 
-   # ✅ 追加：編集情報
+    # 他と揃えて renamed
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # ←追加
     updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    # ✅ Userモデルとのリレーション
     created_user = db.relationship('User', foreign_keys=[created_by], backref='created_ply_ratings')
     updated_user = db.relationship('User', foreign_keys=[updated_by], backref='updated_ply_ratings')
 

@@ -2,6 +2,31 @@
 
 {% block content %}
 <div class="container my-4">
+    {# 🔔 価格未入力のモーダル通知（表示条件付き） #}
+    {% if price_alert %}
+    <script>
+      window.addEventListener('DOMContentLoaded', function() {
+        var myModal = new bootstrap.Modal(document.getElementById('priceAlertModal'));
+        myModal.show();
+      });
+    </script>
+
+    <div class="modal fade" id="priceAlertModal" tabindex="-1" aria-labelledby="priceAlertModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="priceAlertModalLabel">価格未入力のお知らせ</h5>
+          </div>
+          <div class="modal-body">
+            一部の在庫に価格が未登録です。価格を入力してください。
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
     <!-- 検索条件フォーム -->
     <form method="POST" class="mb-4">
         {{ form.hidden_tag() }}
@@ -70,7 +95,7 @@
                         <td>
                             <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" class="form-control" size="20">
                         </td>
-                        <td>{{ tire.last_edited_by }}</td>
+                        <td>{{ tire.last_edited_name }}</td>
                         <td>
                             {{ tire.last_edited_at|datetime_jp if tire.last_edited_at else 'N/A' }}
                         </td>
