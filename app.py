@@ -37,6 +37,10 @@ def to_jst(dt):
 app = Flask(__name__)
 app.config.from_object(Config)  # Config クラスを読み込む
 
+@app.context_processor
+def inject_config():
+    return dict(config=app.config)
+
 # 日本語形式に日時を整形するJinjaフィルター
 def format_datetime_jp(value):
     if value is None:
