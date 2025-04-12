@@ -57,7 +57,8 @@ app.jinja_env.filters['datetime_jp'] = format_datetime_jp
 CORS(app, resources={r"/*": {"origins": "*"}})  # すべてのルートでCORS許可
 
 # 必要な設定
-app.config['SECRET_KEY'] = 'your_secret_key'
+# 修正後（環境変数から読み込む）
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret_key')
 
 # データベースを初期化
 db.init_app(app)
