@@ -63,7 +63,7 @@
                         <td>{{ tire.uneven_wear }}</td>
                         <td>{{ tire.other_details }}</td>
                         <td>{{ tire.price }}</td>
-                        <td>{{ tire.registration_date.strftime('%Y-%m-%d') if tire.registration_date else 'N/A' }}</td>
+                        <td>{{ tire.registration_date|datetime_jp if tire.registration_date else 'N/A' }}</td>
                         <td>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" name="tire_ids" value="{{ tire.id }}"

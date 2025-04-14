@@ -668,10 +668,6 @@ def dispatch_page():
         dispatch_date = dispatch_history[0].dispatch_date if dispatch_history else None
         print(f"Dispatch Date: {dispatch_date}")
 
-        # dispatch_date をフォーマットする
-        if dispatch_date and isinstance(dispatch_date, datetime):
-            dispatch_date = dispatch_date + timedelta(hours=9)  # ← str にはしない
-
         # 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)
         total_price = sum(tire.price for tire in tires_to_dispatch if tire and tire.price)
@@ -835,9 +831,9 @@ def send_to_gas():
         if dispatch_history:
             first_dispatch = dispatch_history[0].dispatch_date
             if isinstance(first_dispatch, datetime) and first_dispatch.tzinfo is None:
-                dispatch_date = (first_dispatch + timedelta(hours=9)).strftime('%Y-%m-%d')  # UTCなら+9時間
+                dispatch_date = (first_dispatch + timedelta(hours=9)).strftime('%Y年%-m月%-d日 %H:%M')
             else:
-                dispatch_date = first_dispatch.astimezone(JST).strftime('%Y-%m-%d')  # すでにタイムゾーンがあるならJSTに変換
+                dispatch_date = first_dispatch.astimezone(JST).strftime('%Y年%-m月%-d日 %H:%M')
 
         # ✅ 合計数と合計金額を計算
         total_tires = len(tires_to_dispatch)

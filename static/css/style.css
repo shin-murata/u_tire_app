@@ -329,6 +329,21 @@ h5 {
     text-align: center; /* 入力欄内のテキストも中央寄せ */
 }
 
+/* テーブルの行の高さをコンパクトに調整 */
+.table td,
+.table th {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* テーブル内の入力フォームもコンパクトに */
+.table input.form-control {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    height: 1.8rem;
+    font-size: 0.9rem;
+}
+
 .dispatch-confirmation .data-rows {
     display: flex;
     justify-content: space-between;
@@ -369,9 +384,15 @@ h5 {
   .btn:active {
     transform: scale(0.98);
   }
-  
-  /* バリアントごとの色指定 */
-  
+
+  /* 編集ボタンの折り返し防止とサイズ調整 */
+.table .btn {
+    white-space: nowrap;
+    min-width: 60px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
   /* プライマリ（主なアクション用） */
   .btn-primary {
     background-color: #007bff;
