@@ -344,16 +344,19 @@ def input_page():
             flash("登録中にエラーが発生しました。", "danger")
             return redirect(url_for('register_success', ids=','.join(map(str, ids)), width=width, aspect_ratio=aspect_ratio, inch=inch, ply_rating=ply_rating, registration_date=registration_date))
     
-    # ✅ 常に `invalid_common_data` を作成
-    session['invalid_common_data'] = {
-        'width': width,
-        'aspect_ratio': aspect_ratio,
-        'inch': inch,
-        'ply_rating': ply_rating,
-        'registration_date': registration_date.strftime('%Y-%m-%d'),
-        'errors': common_errors if common_errors else []  # エラーがなくても空リストを設定
-    }
-        
+    # ✅ 常に `invalid_common_data` を作成  ← コメントは残して OK
+    if common_errors or invalid_entries:                 # ★ この行を追加
+        session['invalid_common_data'] = {
+            'width': width,
+            'aspect_ratio': aspect_ratio,
+            'inch': inch,
+            'ply_rating': ply_rating,
+            'registration_date': registration_date.strftime('%Y-%m-%d'),
+            'errors': common_errors if common_errors else []
+        }
+    else:                                                # ★ この行と次を追加
+        session.pop('invalid_common_data', None)
+
     # ✅ 有効データがある場合、`session` に `ids` を保存
     if valid_entries:
         session['valid_entry_ids'] = ids
