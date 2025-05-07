@@ -52,6 +52,7 @@
                     <tr>
                         <th style="min-width: 100px;">在庫番号</th>
                         <th style="min-width: 200px;">登録日</th>
+                        <th style="min-width: 150px;">登録者</th>
                         <th style="min-width: 80px;">幅</th>
                         <th style="min-width: 100px;">扁平率</th>
                         <th style="min-width: 80px;">インチ</th>
@@ -73,7 +74,8 @@
                         <td>{{ tire.id }}</td>
                         <td>
                             {{ tire.registration_date|datetime_jp if tire.registration_date else 'N/A' }}
-                        </td>                                         
+                        </td>
+                        <td>{{ tire.created_name }}</td>                                         
                         <td>{{ tire.width_ref.value }}</td>
                         <td>{{ tire.aspect_ratio_ref.value }}</td>
                         <td>{{ tire.inch_ref.value }}</td>
@@ -95,9 +97,17 @@
                         <td>
                             <input type="text" name="other_details_{{ tire.id }}" value="{{ tire.other_details }}" class="form-control" size="20">
                         </td>
-                        <td>{{ tire.last_edited_name }}</td>
                         <td>
-                            {{ tire.last_edited_at|datetime_jp if tire.last_edited_at else 'N/A' }}
+                            {{ tire.display_name }}
+                            {% if tire.last_edited_at %}
+                                <br><small class="text-muted">(登録: {{ tire.created_name }})</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ tire.display_time|datetime_jp }}
+                            {% if tire.last_edited_at %}
+                                <br><small class="text-muted">(登録: {{ tire.registration_date|datetime_jp }})</small>
+                            {% endif %}
                         </td>
                         <td><a href="{{ url_for('edit_page', id=tire.id) }}" class="btn btn-warning">編集</a></td>
                     </tr>

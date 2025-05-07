@@ -1181,19 +1181,39 @@ def inventory_list():
 
         return redirect(url_for('inventory_list'))
     
-    # 編集者IDの一覧を取得してUserテーブルから名前を一括取得
-    editor_ids = list({t.last_edited_by for t in tires if t.last_edited_by})
-    users = User.query.filter(User.id.in_(editor_ids)).all()
-    user_map = {u.id: u.username for u in users}
+    # ===== 差し替え開始 ==================================================
+    # 登録者・編集者に登場する user_id をまとめて取得
+    creator_ids = {t.created_by for t in tires if t.created_by}
+    editor_ids  = {t.last_edited_by for t in tires if t.last_edited_by}
+    user_ids    = creator_ids.union(editor_ids)
 
-    # 各タイヤに username をセット
+    users     = User.query.filter(User.id.in_(user_ids)).all()
+    user_map  = {u.id: u.username for u in users}
+
     for tire in tires:
-        if tire.last_edited_by:
-            tire.last_edited_name = user_map.get(tire.last_edited_by, "不明")
-        else:
-            tire.last_edited_name = ""
+        # 登録者
+        tire.created_name = user_map.get(tire.created_by, "不明") if tire.created_by else ""
+        tire.created_time = tire.registration_date
 
-    return render_template('inventory_list.html', form=form, tires=tires, price_alert=price_alert)
+        # 最終更新者
+        tire.last_edited_name = user_map.get(tire.last_edited_by, "") if tire.last_edited_by else ""
+        tire.last_edited_time = tire.last_edited_at
+
+        # 表示用（更新があれば更新者、なければ登録者）
+        if tire.last_edited_at:
+            tire.display_name = tire.last_edited_name or tire.created_name
+            tire.display_time = tire.last_edited_time
+        else:
+            tire.display_name = tire.created_name
+            tire.display_time = tire.created_time
+
+    return render_template(
+        'inventory_list.html',
+        form=form,
+        tires=tires,
+        price_alert=price_alert
+    )
+    # ===== 差し替え終了 ==================================================
 
 # Blueprintの登録
 app.register_blueprint(admin_bp)

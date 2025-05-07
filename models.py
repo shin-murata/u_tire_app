@@ -74,7 +74,7 @@ class InputPage(db.Model):
     ply_rating = db.Column(db.Integer, db.ForeignKey('ply_rating.id'), nullable=True)
     price = db.Column(db.Float, nullable=True)  # nullable=Trueに変更
     is_dispatched = db.Column(db.Boolean, default=False, nullable=False)
-    last_edited_by = db.Column(db.Integer, nullable=True)
+    last_edited_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     last_edited_at = db.Column(db.DateTime, nullable=True)
 
 
@@ -84,6 +84,9 @@ class InputPage(db.Model):
     inch_ref = db.relationship('Inch', backref='input_pages', lazy=True)
     manufacturer_ref = db.relationship('Manufacturer', backref='input_pages', lazy=True)
     ply_rating_ref = db.relationship('PlyRating', backref='input_pages', lazy=True)  # 新たに追加
+    # --- ★ 追加リレーション（2 行） ---
+    created_user      = db.relationship('User', foreign_keys=[created_by])
+    last_edited_user  = db.relationship('User', foreign_keys=[last_edited_by])
 
 class HistoryPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
