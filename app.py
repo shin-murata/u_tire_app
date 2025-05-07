@@ -957,6 +957,11 @@ def edit_page(id):
             # フォームの内容でタイヤ情報を更新
             form.populate_obj(tire)
 
+            # ---------- ★ 追加：0 → None 変換 ----------
+            ply_val = form.ply_rating.data       # 0 または 実ID
+            tire.ply_rating = ply_val if ply_val else None
+            # -------------------------------------
+
             edit_details = []
             updated = False
 
