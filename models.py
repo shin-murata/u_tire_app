@@ -61,6 +61,8 @@ class InputPage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     registration_date = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(JST).replace(microsecond=0))
+    # ★ ここを追加
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     width = db.Column(db.Integer, db.ForeignKey('width.id'), nullable=True)
     aspect_ratio = db.Column(db.Integer, db.ForeignKey('aspect_ratio.id'), nullable=True)
     inch = db.Column(db.Integer, db.ForeignKey('inch.id'), nullable=True)

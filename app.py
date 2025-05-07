@@ -318,6 +318,7 @@ def input_page():
             for entry in valid_entries:
                 new_tire = InputPage(
                     registration_date=registration_date,  # ✅ 修正ポイント
+                    created_by=current_user.id if current_user.is_authenticated else 0,  # ★ 追加
                     width=width,
                     aspect_ratio=aspect_ratio,
                     inch=inch,
