@@ -43,7 +43,9 @@
                 <thead class="table-light">
                     <tr>
                         <th>在庫番号</th>
+                        <th>扁平率</th> <!-- 追加 -->
                         <th>メーカー</th>
+                        <th>プライレー</th> <!-- 追加 -->
                         <th>製造年</th>
                         <th>溝</th>
                         <th>片減り</th>
@@ -57,7 +59,9 @@
                     {% for tire in tires %}
                     <tr>
                         <td>{{ tire.id }}</td>
+                        <td>{{ tire.aspect_ratio_ref.value if tire.aspect_ratio_ref else '' }}</td> <!-- 追加 -->
                         <td>{{ tire.manufacturer_ref.name }}</td>
+                        <td>{{ tire.ply_rating_ref.value if tire.ply_rating_ref else '' }}</td> <!-- 追加 -->
                         <td>{{ tire.manufacturing_year }}</td>
                         <td>{{ tire.tread_depth }}</td>
                         <td>{{ tire.uneven_wear }}</td>
