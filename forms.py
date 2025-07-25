@@ -116,7 +116,7 @@ class EditForm(CombinedForm):
 class EditForm(FlaskForm):
     id = IntegerField('ID')  # 編集対象のID（編集対象を識別）
     width = SelectField('幅', coerce=int, validators=[DataRequired()])
-    aspect_ratio = SelectField('扁平率', coerce=int, validators=[DataRequired()])
+    aspect_ratio = SelectField('扁平率', coerce=int, validators=[Optional()])
     inch = SelectField('インチ', coerce=int, validators=[DataRequired()])
     ply_rating = SelectField(
         'プライ',

@@ -201,6 +201,10 @@ def input_page():
         width = request.form.get('width')
         aspect_ratio = request.form.get('aspect_ratio')
         inch = request.form.get('inch')
+
+        # ここで「0」や空欄ならNoneに変換
+        aspect_ratio = None if aspect_ratio == "0" or not aspect_ratio else int(aspect_ratio)
+
         ply_rating_raw = request.form.get('ply_rating')
         ply_rating = None if ply_rating_raw == "0" or not ply_rating_raw else int(ply_rating_raw)
 
@@ -475,15 +479,20 @@ def search_page():
         form.ply_rating.data = search_conditions.get('ply_rating', '')
 
         # 検索クエリの実行
-        query = InputPage.query.filter_by(
-            width=search_conditions.get('width'),
-            aspect_ratio=search_conditions.get('aspect_ratio'),
-            inch=search_conditions.get('inch')
-        )
-        if search_conditions.get('ply_rating') and search_conditions['ply_rating'] != '0':
-            query = query.filter(InputPage.ply_rating == search_conditions['ply_rating'])
+        # ...existing code...
+        query = InputPage.query
+
+        if search_conditions.get('width') not in [None, '', 0, '0']:
+            query = query.filter(InputPage.width == int(search_conditions.get('width')))
+        if search_conditions.get('aspect_ratio') not in [None, '', 0, '0']:
+            query = query.filter(InputPage.aspect_ratio == int(search_conditions.get('aspect_ratio')))
+        if search_conditions.get('inch') not in [None, '', 0, '0']:
+            query = query.filter(InputPage.inch == int(search_conditions.get('inch')))
+        if search_conditions.get('ply_rating') not in [None, '', 0, '0']:
+            query = query.filter(InputPage.ply_rating == int(search_conditions.get('ply_rating')))
+
         tires = query.filter(InputPage.is_dispatched == False).all()
-        
+        # ...existing code...
         # クエリ結果をデバッグ
         print(f"GET action from dispatch_confirm - Conditions: {search_conditions}")
         print(f"Tires after GET action: {[tire.id for tire in tires]} -> Count: {len(tires)}")
@@ -520,11 +529,13 @@ def search_page():
             }
             session['search_conditions'] = search_conditions  # セッションに保存
             # 検索クエリの実行
-            query = InputPage.query.filter_by(
-                width=search_conditions['width'],
-                aspect_ratio=search_conditions['aspect_ratio'],
-                inch=search_conditions['inch']
-            )
+            query = InputPage.query
+            if search_conditions.get('width'):
+                query = query.filter(InputPage.width == search_conditions.get('width'))
+            if search_conditions.get('aspect_ratio') and str(search_conditions.get('aspect_ratio')) not in ["", "0", "None"]:
+                query = query.filter(InputPage.aspect_ratio == search_conditions.get('aspect_ratio'))
+            if search_conditions.get('inch'):
+                query = query.filter(InputPage.inch == search_conditions.get('inch'))
             # ply_rating の条件追加
             if search_conditions['ply_rating'] and search_conditions['ply_rating'] != '0':
                 query = query.filter(InputPage.ply_rating == search_conditions['ply_rating'])
@@ -961,10 +972,33 @@ def edit_page(id):
             # フォームの内容でタイヤ情報を更新
             form.populate_obj(tire)
 
-            # ---------- ★ 追加：0 → None 変換 ----------
-            ply_val = form.ply_rating.data       # 0 または 実ID
-            tire.ply_rating = ply_val if ply_val else None
-            # -------------------------------------
+            # aspect_ratio（扁平率）の判定
+            if form.aspect_ratio.data == 0:
+                tire.aspect_ratio = None
+            else:
+                tire.aspect_ratio = form.aspect_ratio.data
+
+            # 他のID項目も同様に
+            if form.width.data == 0:
+                tire.width = None
+            else:
+                tire.width = form.width.data
+
+            if form.inch.data == 0:
+                tire.inch = None
+            else:
+                tire.inch = form.inch.data
+
+            if form.ply_rating.data == 0:
+                tire.ply_rating = None
+            else:
+                tire.ply_rating = form.ply_rating.data
+
+            if form.manufacturer.data == 0:
+                tire.manufacturer = None
+            else:
+                tire.manufacturer = form.manufacturer.data
+            # ...（この後は既存の履歴記録・コミット処理）...
 
             edit_details = []
             updated = False
