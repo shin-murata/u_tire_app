@@ -5,9 +5,9 @@ venv/
 .env
 .env.dev
 .env.prod
+.env.*
 !.env.dev.example
 !.env.prod.example
-.env.*
 
 # python cache
 __pycache__/
