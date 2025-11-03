@@ -1,2 +1,19 @@
+# virtual env
+venv/
+
+# environment files (絶対にトラッキングしない)
 .env
-.DS_Store
+.env.dev
+.env.prod
+.env.*
+
+# python cache
+__pycache__/
+*.pyc
+
+# local db / instance
+*.db
+instance/
+
+# alembic cache
+migrations/__pycache__/
